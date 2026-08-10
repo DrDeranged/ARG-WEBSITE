@@ -121,7 +121,14 @@ export default function BlogArticlePage() {
         <meta name="description" content={article.description} />
         <meta property="og:title" content={article.title} />
         <meta property="og:description" content={article.description} />
-        {article.coverImage && <meta property="og:image" content={article.coverImage} />}
+        <meta property="og:url" content={`https://advancedrecoverygroup.com/blog/${slug}/`} />
+        {article.coverImage && (
+          <meta property="og:image" content={`https://advancedrecoverygroup.com${article.coverImage}`} />
+        )}
+        {article.coverImage && (
+          <meta name="twitter:image" content={`https://advancedrecoverygroup.com${article.coverImage}`} />
+        )}
+        <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
 
       <ReadingProgress />

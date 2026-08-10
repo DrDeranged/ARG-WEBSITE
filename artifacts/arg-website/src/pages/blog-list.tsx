@@ -23,6 +23,7 @@ export default function BlogListPage() {
       <Helmet>
         <title>Insights & Updates | Advanced Recovery Group</title>
         <meta name="description" content="Expertise in commercial collections, corporate finance, and agency news from Advanced Recovery Group." />
+        <meta property="og:url" content="https://advancedrecoverygroup.com/blog/" />
       </Helmet>
 
       <section className="pt-32 pb-24 md:pt-48 md:pb-24 bg-mist border-b border-rule">

@@ -606,6 +606,7 @@ export default function HomePage() {
       <Helmet>
         <title>Advanced Recovery Group | Commercial Collections Agency</title>
         <meta name="description" content="Advanced Recovery Group specializes exclusively in B2B commercial debt recovery. Operating on a strict contingency basis — no recovery, no fee." />
+        <meta property="og:url" content="https://advancedrecoverygroup.com/" />
       </Helmet>
 
       {/* 01 / 07  HERO */}

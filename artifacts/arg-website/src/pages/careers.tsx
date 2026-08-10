@@ -8,6 +8,7 @@ export default function CareersPage() {
       <Helmet>
         <title>Careers | Advanced Recovery Group</title>
         <meta name="description" content="Join Advanced Recovery Group — a fast-paced, results-driven commercial collections firm in Fairfield, NJ. Current opening: Collections Recovery Specialist." />
+        <meta property="og:url" content="https://advancedrecoverygroup.com/careers/" />
       </Helmet>
 
       <section className="pt-32 pb-24 md:pt-48 md:pb-24 bg-paper border-b border-rule">
@@ -48,7 +49,7 @@ export default function CareersPage() {
               </div>
               <div className="md:w-1/4 md:text-right pt-2">
                 <a
-                  href="mailto:collect@advancedrecoverygroup.com?subject=Application for Collections Recovery Specialist (ARG-001)"
+                  href="mailto:collect@advancedrecoverygroup.com?subject=Application%20for%20Collections%20Recovery%20Specialist%20%28ARG-001%29"
                   className="link-draw inline-block border border-ink text-ink hover:bg-ink hover:text-paper transition-colors px-6 py-3 text-sm font-medium rounded-sm"
                 >
                   Apply via Email
