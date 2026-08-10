@@ -14,11 +14,27 @@
     <meta name="twitter:title" content="Advanced Recovery Group | Commercial Collections Agency" />
     <meta name="twitter:description" content="Advanced Recovery Group is a full-service B2B commercial collections agency operating exclusively on contingency. No recovery, no fee." />
     <meta name="twitter:image" content="/images/team-2.jpg" />
+    <!-- Favicon: upload /public/favicon.png to activate; SVG kept as modern-browser fallback -->
+    <link rel="icon" type="image/png" href="/favicon.png" sizes="any" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <link rel="preload" as="image" href="/images/hero-team.jpg" />
+    <!-- Organization structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Advanced Recovery Group",
+      "url": "https://advancedrecoverygroup.com",
+      "telephone": "+1-877-464-8470",
+      "email": "collect@advancedrecoverygroup.com",
+      "sameAs": ["https://www.linkedin.com/company/adrgroup/"]
+    }
+    </script>
+    <!-- Plausible Analytics loaded in main.tsx via import.meta.env.VITE_PLAUSIBLE_DOMAIN -->
   </head>
   <body>
     <div id="root"></div>

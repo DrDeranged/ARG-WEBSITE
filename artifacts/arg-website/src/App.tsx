@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState, type ComponentProps } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
@@ -18,6 +18,13 @@ import BlogListPage from '@/pages/blog-list';
 import BlogArticlePage from '@/pages/blog-article';
 
 const queryClient = new QueryClient();
+
+/** Client-side redirect — replaces history entry so back-button works correctly */
+function Redirect({ to }: { to: string }) {
+  const [, navigate] = useLocation();
+  useEffect(() => { navigate(to, { replace: true }); }, []);
+  return null;
+}
 
 /* ── Ledger-turn page transition ───────────────────────────
    1. Outgoing: fades + slips UP 8px (150ms)
@@ -99,6 +106,25 @@ function Router() {
           <Route path="/blog/"       component={BlogListPage} />
           <Route path="/blog/:slug"  component={BlogArticlePage} />
           <Route path="/blog/:slug/" component={BlogArticlePage} />
+          {/* ── Legacy URL redirects (old site served articles at root level) ── */}
+          {/* Direct article → new /blog/ location */}
+          <Route path="/a-journey-of-compassion-my-service-trip-to-the-dr"  component={() => <Redirect to="/blog/a-journey-of-compassion-my-service-trip-to-the-dr/" />} />
+          <Route path="/a-journey-of-compassion-my-service-trip-to-the-dr/" component={() => <Redirect to="/blog/a-journey-of-compassion-my-service-trip-to-the-dr/" />} />
+          <Route path="/when-is-the-right-time-to-partner-with-a-commercial-collections-firm"  component={() => <Redirect to="/blog/when-is-the-right-time-to-partner-with-a-commercial-collections-firm/" />} />
+          <Route path="/when-is-the-right-time-to-partner-with-a-commercial-collections-firm/" component={() => <Redirect to="/blog/when-is-the-right-time-to-partner-with-a-commercial-collections-firm/" />} />
+          {/* Articles not ported → blog index */}
+          <Route path="/revenue-based-financing-grow"   component={() => <Redirect to="/blog/" />} />
+          <Route path="/revenue-based-financing-grow/"  component={() => <Redirect to="/blog/" />} />
+          <Route path="/economic-pulse-octob-2023"   component={() => <Redirect to="/blog/" />} />
+          <Route path="/economic-pulse-octob-2023/"  component={() => <Redirect to="/blog/" />} />
+          <Route path="/what-the-q3-delinquency-rates-mean-for-the-us-economy"   component={() => <Redirect to="/blog/" />} />
+          <Route path="/what-the-q3-delinquency-rates-mean-for-the-us-economy/"  component={() => <Redirect to="/blog/" />} />
+          <Route path="/credit-card-debt-in-q3-rising-consumer-confidence-and-increased-spending"   component={() => <Redirect to="/blog/" />} />
+          <Route path="/credit-card-debt-in-q3-rising-consumer-confidence-and-increased-spending/"  component={() => <Redirect to="/blog/" />} />
+          <Route path="/economic-pulse-september-2023"   component={() => <Redirect to="/blog/" />} />
+          <Route path="/economic-pulse-september-2023/"  component={() => <Redirect to="/blog/" />} />
+          <Route path="/the-importance-of-ethical-recovery-services-in-maintaining-trust-in-the-economy"   component={() => <Redirect to="/blog/" />} />
+          <Route path="/the-importance-of-ethical-recovery-services-in-maintaining-trust-in-the-economy/"  component={() => <Redirect to="/blog/" />} />
           <Route component={NotFound} />
         </Switch>
       </div>

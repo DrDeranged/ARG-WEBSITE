@@ -9,6 +9,7 @@ const articleData: Record<string, {
   title: string;
   description: string;
   date: string;
+  author?: string;
   coverImage: string;
   content: string;
   placeholder?: boolean;
@@ -44,9 +45,31 @@ const articleData: Record<string, {
     title: "A Journey of Compassion: My Service Trip to the DR",
     description: "A personal account of ARG's mission trip to the Dominican Republic — feeding families, building connections, and living out our values.",
     date: "August 15, 2023",
+    author: "Manny Yosipov, CEO",
     coverImage: "/images/dr-trip.jpg",
-    placeholder: true,
-    content: ``
+    content: `
+      <p>As CEO of ARG, I'm thrilled to share some exciting news with all of you. We at ARG have always believed in the power of compassion and the change that collective efforts can bring about. Today, I feel immensely proud and humbled to announce our collaboration with FMSC. Together, we are embarking on a service trip to the Dominican Republic (DR) to participate in community service at their medical facilities and kitchens.</p>
+
+      <p>Ever since ARG's inception, our vision has been more than just profit and growth. We've wanted to be a company with a heart, a company that doesn't shy away from its responsibility towards the larger community. And what better way to exemplify this spirit than by having our leadership be at the forefront of our charitable initiatives?</p>
+
+      <p>This service trip isn't just about showing up; it's about immersing ourselves in the needs of the community, understanding the challenges they face, and putting our skills and resources to best use. As I prepare for this journey, I can't help but reflect upon a philosophy that I've held close to my heart: those blessed with more should be the guiding light for those in need. This isn't merely a duty; it's a privilege.</p>
+
+      <p>The excitement and pride I feel about this journey is not just because of our company's involvement. I must take a moment to express my profound gratitude to Shawn Smith of Dedicated Financial. Without his unwavering support and expertise in arranging this trip, this wouldn't have been possible. Shawn, your generosity and commitment to making a difference are truly commendable, and we are grateful to have you as a partner on this journey.</p>
+
+      <p>As I stand on the cusp of this transformative experience, I want to be more than a mere participant. I want to witness firsthand the difference we're making in the lives of children. I yearn to see the spark in their eyes, the hope in their smiles, and the resilience in their spirits. Every child deserves a fair chance at life, and if ARG can be a small beacon of hope, then every effort, every hour, every resource expended would be worth it.</p>
+
+      <p>However, this isn't just my journey. It's our collective journey as a company, as a community, and as human beings. While I might be representing ARG in the DR, it's the collective spirit of every ARG employee, stakeholder, and supporter that I carry with me. Together, we represent a force for good, a force that believes in the power of community service to transform lives.</p>
+
+      <p>There's a special kind of fulfillment that comes from giving back. From witnessing the immediate impact of our actions on the lives of people. This is not about charity; this is about empowerment. We aim to leave behind more than just resources and assistance; we want to foster a spirit of self-reliance, dignity, and hope.</p>
+
+      <p>It's easy to get lost in the daily hustle and bustle of our lives, to be consumed by deadlines, meetings, and targets. But when we pause and take a moment to look beyond ourselves, to reach out and touch the life of another, it provides a sense of purpose and fulfillment that's unparalleled.</p>
+
+      <p>In conclusion, this service trip is a testament to ARG's commitment to make a positive difference in the world. But beyond corporate objectives and missions, this is a deeply personal journey for me. It's a reminder of the values I hold dear and the kind of legacy I want to leave behind.</p>
+
+      <p>As I head to the DR, I promise to soak in every moment, to learn, to share, and to give my all in service. I'm not just going there to extend a helping hand but to truly witness and be part of the change that we, as a collective, can bring about.</p>
+
+      <p>Thank you for being a part of this journey. Let's keep the spirit of giving alive, today and always!</p>
+    `
   }
 };
 
@@ -116,6 +139,11 @@ export default function BlogArticlePage() {
             <time className="font-mono text-sm text-slate tabular-nums block">
               {article.date}
             </time>
+            {article.author && (
+              <p className="font-mono text-xs text-slate/60 mt-2 uppercase tracking-widest">
+                By {article.author}
+              </p>
+            )}
           </div>
         </header>
 
