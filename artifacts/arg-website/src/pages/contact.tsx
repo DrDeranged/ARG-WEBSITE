@@ -431,7 +431,10 @@ export default function ContactPage() {
     <Shell>
       <Helmet>
         <title>Contact Us | Advanced Recovery Group</title>
-        <meta name="description" content="Contact Advanced Recovery Group to discuss your commercial collections needs. Call (877) 464-8470 or send an inquiry — no upfront fees." />
+        <meta name="description" content="Place an account or request a consultation with Advanced Recovery Group, a commercial collections agency serving MCA funders, factors, lessors, and lenders." />
+        <meta property="og:title" content="Contact Us | Advanced Recovery Group" />
+        <meta property="og:description" content="Place an account or request a consultation with Advanced Recovery Group, a commercial collections agency serving MCA funders, factors, lessors, and lenders." />
+        <meta property="og:url" content="https://advancedrecoverygroup.com/contact-us/" />
       </Helmet>
 
       <section className="pt-32 pb-24 md:pt-48 md:pb-32 bg-paper border-b border-rule">

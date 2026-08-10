@@ -1,0 +1,53 @@
+Mobile scaling pass for the enriched hero + recent features. Target
+375px and 390px widths first, then verify 768px tablet. Principles:
+on mobile, simplify — don't shrink.
+
+1. LEDGER CARD ON MOBILE:
+   - Card goes full-width (edge padding 16px), max-width none.
+   - Drop row height to 44px; font stays ≥12px mono.
+   - Day-stamps: keep them, but right-aligned tight (DAY 01 style,
+     no extra padding). If a row's label + stamp would wrap or
+     truncate at 375px, shorten labels for mobile only:
+     "SKIP TRACE COMPLETE" → "SKIP TRACE ✓", "PAYMENT PLAN SECURED"
+     → "PLAN SECURED".
+   - CARD DECK: render only ONE offset edge behind the card on
+     mobile (4px offset) — two offsets eat horizontal space.
+   - The redacted amount row keeps its resolve animation but the
+     dash string shortens to fit ($ ————).
+2. LEDGER-GRID BACKDROP: on mobile reduce to horizontal baselines
+   only (no vertical column rules) at 4% opacity — vertical rules at
+   narrow widths read as clutter.
+3. HERO STACK ORDER + MATH on mobile: eyebrow → headline (clamp
+   floor 2.75rem, check no mid-word wrap) → subhead → card →
+   CTAs (full-width, stacked, 12px gap) → live status line →
+   scroll cue. Hero height cap becomes auto on mobile (no 92vh
+   forcing) — let it flow naturally with 48px top padding under the
+   header and 40px bottom before the ticker.
+4. SCROLL CUE + FOLIO: on mobile, hide the "SCROLL ↓" cue entirely
+   (thumbs already know) and shrink section folios to 10px, ensuring
+   they never overlap the card or headings.
+5. MARGINALIA SPINE: confirm hidden below 1280px (no reserved space
+   leaking padding).
+6. TICKER: verify no horizontal page scroll at 375px; item font
+   ≥11px; touch scrolling over the ticker must not hijack vertical
+   page scroll.
+7. FEATURE SWEEP AT 375px — walk every page and fix anything that
+   fails these checks:
+   - Estimator: sliders full-width, thumbs ≥28px, readouts don't
+     collide, outlook bar fits, explanation area doesn't jump.
+   - Command palette: opens full-screen sheet style on mobile
+     (inset 0, safe-area padding), input auto-focused, list
+     scrollable, close button ≥44px.
+   - Contact: direct-contact card rows full-width tappable; dog
+     image scales without cropping the headset.
+   - Blog article: cover image aspect stable, progress bar visible,
+     68ch measure becomes full-width minus 20px padding.
+   - Careers: apply button full-width; row hover accents become
+     active-state (touch) styles.
+   - Footer finale: "Still owed? Let's fix that." wraps to two
+     clean lines; phone number stays on one line at 375px (shrink
+     to 1.5rem if needed).
+8. GLOBAL: no horizontal overflow on any page at 375px (add
+   overflow-x guard test), all touch targets ≥44px, form inputs
+   ≥16px font. Test with iOS safe-area insets top and bottom.
+Commit as "Mobile scaling pass".

@@ -1,0 +1,55 @@
+Combined pass: hero enrichment + favicon + contact page meta.
+
+PART A — HERO ENRICHMENT (homepage hero + spacing only):
+1. LEDGER-GRID BACKDROP: full-bleed background grid on the hero —
+   horizontal baseline rules every 56px and 3 vertical column rules,
+   rule color at 5% opacity (8% behind the card). Decorative,
+   aria-hidden.
+2. CARD PRESENCE: enlarge the ledger card to ~460px wide on desktop.
+   Header row gains a mono file number that changes each cycle
+   (FILE № 2026-0847 style, randomized suffix). Each lifecycle row
+   gains a right-aligned mono day-stamp: DAY 01, DAY 03, DAY 09,
+   DAY 21, DAY 34 — appearing with its row. Add one redacted amount
+   row before the final row: "AMOUNT RECOVERED  $ ———————" whose
+   dashes resolve to "$ CONFIRMED" in recovered green on the final
+   beat. Row height 48px, stronger header contrast.
+3. CARD DECK: two offset empty card edges behind the main card
+   (translate 8px/16px down-right, 1px rule borders, paper fill) so
+   it reads as the top file on a stack.
+4. MARGINALIA SPINE: on ≥1280px viewports, vertical mono text
+   (writing-mode: vertical-rl, uppercase, tracking-widest, slate at
+   40%) along the hero's right edge: "ADVANCED RECOVERY GROUP —
+   COMMERCIAL COLLECTIONS — FAIRFIELD NJ". Hidden below 1280px.
+5. LIVE LINE: under the CTA pair, small mono line reusing the
+   office-status hook: green dot + "Reviewing new placements — open
+   until 5:00 PM ET" (closed-state equivalent after hours).
+6. SCROLL CUE: bottom-left of hero, mono "SCROLL ↓", fades out after
+   100px of scroll.
+7. VERTICAL MATH: eyebrow sits ~120px below the header on desktop;
+   hero height capped at min(92vh, 900px); ticker begins within 80px
+   of the CTA row — kill the dead bands above and below the content.
+8. WIDE SCREENS: hero container expands to max-w-7xl at ≥1536px;
+   interior sections stay max-w-6xl.
+All new elements respect prefers-reduced-motion (static final states)
+and use only existing design tokens.
+
+PART B — FAVICON: I've uploaded the real favicon.png (ARG lettermark
+on a white rounded tile, 512×512) to public/. Verify index.html picks
+it up: PNG primary, SVG fallback, apple-touch-icon all resolving with
+no 404s in the preview network tab. Delete or update the old
+placeholder favicon.svg so the SVG fallback also shows the ARG mark
+(if regenerating the SVG isn't practical, remove the SVG link tag and
+ship PNG-only).
+
+PART C — CONTACT PAGE META (still missing from the earlier pass):
+Add via Helmet in contact.tsx:
+- <title>Contact Us | Advanced Recovery Group</title>
+- meta description: "Place an account or request a consultation with
+  Advanced Recovery Group, a commercial collections agency serving
+  MCA funders, factors, lessors, and lenders."
+- og:url https://advancedrecoverygroup.com/contact-us/ plus matching
+  og:title and og:description.
+Verify careers, blog list, and the 404 each have a unique
+title + description pair; add any missing using the same pattern.
+
+Commit and push as "Hero enrichment + favicon + contact meta".

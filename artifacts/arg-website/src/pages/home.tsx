@@ -69,11 +69,12 @@ function SectionFolio({ n, total = 7 }: { n: number; total?: number }) {
 ───────────────────────────────────────────────────────── */
 const FILE_TYPES = ['MCA DEFAULT', 'EQUIPMENT LEASE', 'COMMERCIAL LOAN', 'JUDGMENT MATTER'];
 const LIFECYCLE_STEPS = [
-  { label: 'FILE PLACED',          final: false, middle: false },
-  { label: 'SKIP TRACE COMPLETE',  final: false, middle: true  },
-  { label: 'DEBTOR CONTACTED',     final: false, middle: true  },
-  { label: 'PAYMENT PLAN SECURED', final: false, middle: true  },
-  { label: 'FILE RECOVERED ✓',     final: true,  middle: false },
+  { label: 'FILE PLACED',          middle: false, amount: false, day: 'DAY 01', final: false },
+  { label: 'SKIP TRACE COMPLETE',  middle: true,  amount: false, day: 'DAY 03', final: false },
+  { label: 'DEBTOR CONTACTED',     middle: true,  amount: false, day: 'DAY 09', final: false },
+  { label: 'PAYMENT PLAN SECURED', middle: true,  amount: false, day: 'DAY 21', final: false },
+  { label: 'AMOUNT RECOVERED',     middle: false, amount: true,  day: 'DAY 34', final: false },
+  { label: 'FILE RECOVERED \u2713', middle: false, amount: false, day: '',       final: true  },
 ];
 
 function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
@@ -82,9 +83,10 @@ function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
       ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
       : false;
 
-  const [fileIdx, setFileIdx] = useState(0);
+  const [fileIdx,    setFileIdx]  = useState(0);
+  const [fileNumber, setFileNum]  = useState(() => 1000 + Math.floor(Math.random() * 8999));
   const [visibleRows, setVisible] = useState(prefersReduced ? LIFECYCLE_STEPS.length : 0);
-  const [fading, setFading] = useState(false);
+  const [fading,     setFading]   = useState(false);
 
   useEffect(() => {
     if (prefersReduced) return;
@@ -94,6 +96,7 @@ function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
     function startCycle() {
       fi = fi % FILE_TYPES.length;
       setFileIdx(fi);
+      setFileNum(1000 + Math.floor(Math.random() * 8999));
       setVisible(0);
       setFading(false);
       for (let row = 1; row <= LIFECYCLE_STEPS.length; row++) {
@@ -112,10 +115,11 @@ function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
 
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase();
+  const isFinal = visibleRows >= LIFECYCLE_STEPS.length;
 
   return (
     <div
-      className="bg-paper font-mono text-sm md:text-xs"
+      className="bg-paper font-mono text-[11px]"
       style={{
         border: `1px solid ${borderColor ?? 'var(--color-rule, #d5dae4)'}`,
         opacity: fading ? 0 : 1,
@@ -123,39 +127,52 @@ function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
       }}
       aria-hidden="true"
     >
+      {/* Header — strong ink contrast */}
+      <div className="border-b border-rule px-4 py-3 flex justify-between items-center bg-ink">
+        <span className="text-paper/70 tracking-widest uppercase text-[9px]">Recovery File</span>
+        <span className="text-paper/40 tabular-nums text-[9px]">{dateStr}</span>
+      </div>
+      {/* File type + randomized file number */}
       <div className="border-b border-rule px-4 py-3 flex justify-between items-center bg-mist">
-        <span className="text-slate tracking-widest uppercase">Recovery File</span>
-        <span className="text-slate/60 tabular-nums">{dateStr}</span>
-      </div>
-      <div className="border-b border-rule px-4 py-3">
         <span className="text-ink font-medium tracking-wider">{FILE_TYPES[fileIdx]}</span>
+        <span className="text-slate/40 tabular-nums text-[9px]">FILE № 2026-{fileNumber}</span>
       </div>
+      {/* Lifecycle rows */}
       <div className="divide-y divide-rule">
         {LIFECYCLE_STEPS.map((step, i) => (
           <div
             key={step.label}
-            className={`px-4 py-3 flex justify-between items-center ${step.final ? 'bg-recovered/[0.08]' : ''}`}
+            className={`px-4 flex justify-between items-center min-h-[48px] ${step.final ? 'bg-recovered/[0.08]' : ''}`}
             style={{ opacity: i < visibleRows ? 1 : 0, transition: 'opacity 300ms ease' }}
           >
-            <span className={step.final ? 'text-recovered font-medium' : 'text-ink'}>{step.label}</span>
+            {/* Label */}
+            <span className={
+              step.final ? 'text-recovered font-medium' :
+              step.amount && isFinal ? 'text-recovered font-medium' :
+              'text-ink'
+            }>
+              {step.label}
+            </span>
+
+            {/* Right-side annotation */}
             {i < visibleRows && (
-              <span
-                className="tabular-nums"
-                style={{
-                  color: step.final
-                    ? 'var(--color-recovered)'
-                    : step.middle
-                    ? 'var(--color-signal)'
-                    : 'hsl(213 19.5% 36.1% / 0.5)',
-                }}
-              >
-                {step.final ? '●' : '○'}
-              </span>
+              step.amount ? (
+                <span className={`tabular-nums ${isFinal ? 'text-recovered font-medium' : 'text-slate/35'}`}>
+                  {isFinal ? '$ CONFIRMED' : '$\u00a0\u2014\u2014\u2014\u2014\u2014\u2014\u2014'}
+                </span>
+              ) : step.final ? (
+                <span style={{ color: 'var(--color-recovered)' }}>●</span>
+              ) : (
+                <span className="flex items-center gap-3 text-[9px]">
+                  <span style={{ color: step.middle ? 'var(--color-signal)' : 'hsl(213 19.5% 36.1% / 0.4)' }}>○</span>
+                  <span className="text-slate/40 tabular-nums">{step.day}</span>
+                </span>
+              )
             )}
           </div>
         ))}
       </div>
-      <div className="border-t border-rule px-4 py-2 text-slate/40">
+      <div className="border-t border-rule px-4 py-2 text-slate/35 text-[9px]">
         Representative recovery lifecycle.
       </div>
     </div>
@@ -523,6 +540,25 @@ function RecoveryEstimator() {
 }
 
 /* ─────────────────────────────────────────────────────────
+   HERO — office status for live line
+───────────────────────────────────────────────────────── */
+function getHeroStatus(): { open: boolean; label: string } {
+  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const day = now.getDay(), totalMin = now.getHours() * 60 + now.getMinutes();
+  const OPEN = 9 * 60, CLOSE_WD = 17 * 60, CLOSE_FR = 16 * 60;
+  if (day >= 1 && day <= 4 && totalMin >= OPEN && totalMin < CLOSE_WD)
+    return { open: true,  label: 'Reviewing new placements — open until 5:00 PM ET' };
+  if (day === 5 && totalMin >= OPEN && totalMin < CLOSE_FR)
+    return { open: true,  label: 'Reviewing new placements — open until 4:00 PM ET' };
+  return { open: false, label: 'Currently closed — inquiries reviewed next business day' };
+}
+function useHeroStatus() {
+  const [st, setSt] = useState<{ open: boolean; label: string }>(getHeroStatus);
+  useEffect(() => { const id = setInterval(() => setSt(getHeroStatus()), 60_000); return () => clearInterval(id); }, []);
+  return st;
+}
+
+/* ─────────────────────────────────────────────────────────
    HERO — with scroll-linked ledger card depth
 ───────────────────────────────────────────────────────── */
 function lerpColor(t: number): string {
@@ -537,24 +573,54 @@ function HeroSection() {
   const prefersReduced = typeof window !== 'undefined'
     ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : true;
   const [scrollY, setScrollY] = useState(0);
+  const [scrollCueVisible, setScrollCueVisible] = useState(true);
+  const heroStatus = useHeroStatus();
 
   useEffect(() => {
     if (prefersReduced) return;
-    const onScroll = () => setScrollY(window.scrollY);
+    const onScroll = () => { const y = window.scrollY; setScrollY(y); setScrollCueVisible(y < 100); };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, [prefersReduced]);
 
-  // Card lags behind page scroll by 15% → apparent depth
   const cardParallaxY = prefersReduced ? 0 : scrollY * 0.15;
-  const borderProgress = Math.min(1, scrollY / 300);
-  const borderColor = lerpColor(borderProgress);
+  const borderColor   = lerpColor(Math.min(1, scrollY / 300));
 
   return (
-    <section className="relative bg-paper border-b border-rule min-h-[85vh] flex items-center">
+    <section
+      className="relative bg-paper border-b border-rule flex items-center overflow-hidden"
+      style={{ minHeight: 'min(92vh, 900px)' }}
+    >
+      {/* ── Ledger-grid backdrop ── */}
+      <div
+        className="absolute inset-0 pointer-events-none select-none"
+        aria-hidden="true"
+        style={{
+          backgroundImage: [
+            'repeating-linear-gradient(to bottom, transparent 0px, transparent 55px, rgba(0,0,0,0.05) 55px, rgba(0,0,0,0.05) 56px)',
+            'linear-gradient(to right,' +
+              ' transparent 25%, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.05) calc(25% + 1px), transparent calc(25% + 1px),' +
+              ' transparent 50%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.05) calc(50% + 1px), transparent calc(50% + 1px),' +
+              ' transparent 75%, rgba(0,0,0,0.05) 75%, rgba(0,0,0,0.05) calc(75% + 1px), transparent calc(75% + 1px))',
+          ].join(', '),
+        }}
+      />
+
       <SectionFolio n={1} />
+
+      {/* ── Marginalia spine — xl+ only ── */}
+      <div
+        className="absolute right-5 top-0 bottom-0 hidden xl:flex items-center justify-center"
+        aria-hidden="true"
+        style={{ writingMode: 'vertical-rl' }}
+      >
+        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-slate/25 select-none">
+          ADVANCED RECOVERY GROUP — COMMERCIAL COLLECTIONS — FAIRFIELD NJ
+        </span>
+      </div>
+
       <div className="w-full">
-        <div className="max-w-6xl mx-auto px-6 md:px-8 py-24 md:py-32 mt-16">
+        <div className="max-w-6xl 2xl:max-w-7xl mx-auto px-6 md:px-8 py-20 md:py-24 mt-16">
           <div className="grid grid-cols-1 lg:grid-cols-[60fr_40fr] gap-16 lg:gap-20 items-center">
 
             {/* Left 60% */}
@@ -566,7 +632,7 @@ function HeroSection() {
               <p className="text-lg md:text-xl text-slate font-sans max-w-prose leading-relaxed mb-10">
                 Advanced Recovery Group specializes exclusively in B2B debt recovery. Operating on a strict contingency basis, we deploy professional, firm, and proven strategies to restore your cash flow.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <MagneticWrapper>
                   <Link href="/contact-us/"
                     className="bg-ink text-paper px-8 py-4 text-sm font-medium rounded-sm hover:bg-ink/90 transition-colors text-center inline-block">
@@ -578,20 +644,38 @@ function HeroSection() {
                   See How It Works
                 </a>
               </div>
+              {/* Live status line */}
+              <div className="flex items-center gap-2 font-mono text-xs text-slate/55">
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${heroStatus.open ? 'bg-recovered' : 'bg-slate/30'}`} />
+                {heroStatus.label}
+              </div>
             </div>
 
-            {/* Right 40% — animated ledger card; visible on mobile (stacks below headline) */}
+            {/* Right 40% — card deck */}
             <div
               className="mt-8 lg:mt-0"
-              style={{
-                transform: `translateY(${cardParallaxY}px)`,
-                willChange: prefersReduced ? undefined : 'transform',
-              }}
+              style={{ transform: `translateY(${cardParallaxY}px)`, willChange: prefersReduced ? undefined : 'transform' }}
             >
-              <AnimatedLedgerCard borderColor={borderColor} />
+              {/* Stack: two shadow cards behind the main card */}
+              <div className="relative pb-4 pr-4 lg:max-w-[460px] lg:ml-auto">
+                <div className="absolute bg-paper" style={{ inset: 0, transform: 'translate(16px,16px)', border: '1px solid var(--color-rule)', zIndex: 0 }} />
+                <div className="absolute bg-paper" style={{ inset: 0, transform: 'translate(8px,8px)',  border: '1px solid var(--color-rule)', zIndex: 1 }} />
+                <div className="relative" style={{ zIndex: 2 }}>
+                  <AnimatedLedgerCard borderColor={borderColor} />
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── Scroll cue ── */}
+      <div
+        className="absolute bottom-8 left-8 hidden md:flex items-center gap-2 font-mono text-[10px] text-slate/30 uppercase tracking-widest select-none pointer-events-none"
+        style={{ opacity: scrollCueVisible && !prefersReduced ? 1 : 0, transition: 'opacity 400ms ease' }}
+        aria-hidden="true"
+      >
+        SCROLL ↓
       </div>
     </section>
   );
