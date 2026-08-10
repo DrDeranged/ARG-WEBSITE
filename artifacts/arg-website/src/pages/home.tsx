@@ -165,7 +165,7 @@ function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
 /* ─────────────────────────────────────────────────────────
    HERO HEADLINE stagger
 ───────────────────────────────────────────────────────── */
-const HERO_LINES = ['We recover', 'what you\u2019re owed.'];
+const HERO_LINES = ['We recover', "what you\u2019re owed."];
 
 function HeroHeadline() {
   const prefersReduced =
@@ -302,7 +302,7 @@ function ProcessSection() {
         <SectionRule />
         <Reveal delay={100}>
           <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-4 uppercase">Our Process</p>
-          <h2 className="text-h2 font-serif text-ink mb-16 md:mb-24">From Placement to Recovery</h2>
+          <h2 className="text-h2 font-serif text-ink mb-16 md:mb-24">From placement to recovery</h2>
         </Reveal>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
           <div className="flex flex-col gap-12 relative">
@@ -630,7 +630,7 @@ export default function HomePage() {
             {[
               { num: '01', title: 'Contingency-Based Recovery', desc: 'You only pay when we collect. Zero upfront fees, zero risk. Our incentives are perfectly aligned with your success.' },
               { num: '02', title: 'B2B Specialists', desc: 'We handle commercial debt exclusively — business-to-business, not consumer. We understand corporate structures, contracts, and negotiation.' },
-              { num: '03', title: 'Litigation-Ready', desc: 'When negotiation isn\u2019t enough, we escalate through affiliated counsel — liens, judgments, and enforcement, pursued properly.' },
+              { num: '03', title: 'Litigation-Ready', desc: "When negotiation isn\u2019t enough, we escalate through affiliated counsel — liens, judgments, and enforcement, pursued properly." },
               { num: '04', title: 'Relationship-Preserving', desc: 'We operate with a level of professionalism that protects your reputation and, when possible, preserves your client relationships.' },
             ].map(f => <FeatureRow key={f.num} {...f} />)}
           </div>
@@ -652,7 +652,7 @@ export default function HomePage() {
             <div className="lg:col-span-5">
               <Reveal delay={100}>
                 <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-4 uppercase">Trusted Partners</p>
-                <h2 className="text-h2 font-serif text-ink mb-8">Industries We Serve</h2>
+                <h2 className="text-h2 font-serif text-ink mb-8">Industries we serve</h2>
               </Reveal>
               <ul className="flex flex-col gap-4 font-mono text-sm text-slate">
                 {['Merchant Cash Advance','Factoring','Equipment Leasing','Commercial Loans','Fintech Lending','Law Firms & Judgment Holders'].map((industry, i) => (
@@ -684,7 +684,7 @@ export default function HomePage() {
             <div>
               <Reveal>
                 <p className="font-mono text-recovered tracking-widest text-xs font-semibold mb-4 uppercase">Giving Back</p>
-                <h2 className="text-h2 font-serif text-paper mb-8">Feeding Hope, Building Community</h2>
+                <h2 className="text-h2 font-serif text-paper mb-8">Feeding hope, building community</h2>
               </Reveal>
               <Reveal delay={100}>
                 <p className="text-paper/80 leading-relaxed mb-6 max-w-prose">
@@ -721,7 +721,7 @@ export default function HomePage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
               <div>
                 <p className="font-mono text-recovered tracking-widest text-xs font-semibold mb-4 uppercase">Insights</p>
-                <h2 className="text-h2 font-serif text-ink">From the Blog</h2>
+                <h2 className="text-h2 font-serif text-ink">From the blog</h2>
               </div>
               <Link href="/blog/" className="link-draw font-mono text-sm text-ink hover:text-recovered transition-colors">
                 View All Articles →
@@ -731,7 +731,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             {[
               { title: 'When Is the Right Time to Partner with a Commercial Collections Firm?', date: 'Nov 9, 2023', excerpt: 'As defaults slip from 30 to 60 to 90 days overdue, the likelihood of collecting diminishes.', link: '/blog/when-is-the-right-time-to-partner-with-a-commercial-collections-firm/' },
-              { title: 'A Journey of Compassion: My Service Trip to the DR', date: 'Aug 15, 2023', excerpt: 'A personal account of ARG\u2019s mission trip to the Dominican Republic — feeding families, building connections.', link: '/blog/a-journey-of-compassion-my-service-trip-to-the-dr/' },
+              { title: 'A Journey of Compassion: My Service Trip to the DR', date: 'Aug 15, 2023', excerpt: "A personal account of ARG\u2019s mission trip to the Dominican Republic — feeding families, building connections.", link: '/blog/a-journey-of-compassion-my-service-trip-to-the-dr/' },
             ].map((article, i) => (
               <Reveal key={article.title} delay={i * 100}>
                 <Link href={article.link} className="group block list-row relative border-t border-rule pt-6 pl-4 hover:bg-mist/30 transition-colors">
@@ -747,18 +747,26 @@ export default function HomePage() {
       </section>
 
       {/* 07 / 07  CLOSING CTA */}
-      <section className="relative bg-recovered text-paper py-20 md:py-24">
+      <section className="relative bg-ink text-paper py-24 md:py-32 border-t border-recovered">
         <SectionFolio n={7} />
         <div className="max-w-4xl mx-auto px-6 md:px-8 text-center flex flex-col items-center">
           <Reveal>
-            <h2 className="text-h2 font-serif mb-6">Ready to Recover What You\u2019re Owed?</h2>
-            <p className="text-lg md:text-xl text-paper/90 mb-10 font-sans max-w-prose mx-auto">No upfront fees. Contingency-only. Get started today.</p>
-            <MagneticWrapper>
-              <Link href="/contact-us/"
-                className="bg-paper text-ink px-10 py-4 text-sm font-medium rounded-sm hover:bg-paper/90 transition-colors inline-block">
-                Contact Us
-              </Link>
-            </MagneticWrapper>
+            <h2 className="text-h2 font-serif text-paper mb-6">Ready to recover what you&rsquo;re owed?</h2>
+            <p className="text-lg md:text-xl text-paper/80 mb-10 font-sans max-w-prose mx-auto">
+              Contingency-based — no recovery, no fee.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <MagneticWrapper>
+                <Link href="/contact-us/"
+                  className="inline-block bg-recovered hover:bg-recovered-bright text-paper px-10 py-4 text-sm font-medium rounded-sm transition-colors">
+                  Start a recovery
+                </Link>
+              </MagneticWrapper>
+              <a href="tel:8774648470"
+                className="inline-block border border-paper/30 text-paper/70 hover:text-paper hover:border-paper/50 px-10 py-4 text-sm font-medium rounded-sm transition-colors">
+                Call (877) 464-8470
+              </a>
+            </div>
           </Reveal>
         </div>
       </section>

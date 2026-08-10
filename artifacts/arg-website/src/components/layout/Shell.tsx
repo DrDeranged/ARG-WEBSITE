@@ -323,6 +323,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 Advanced Recovery Group is a full-service commercial collections agency, providing successful management solutions with professionalism and efficiency.
               </p>
               <div className="mt-8">
+                {/* CONFIRM: BBB accreditation active — remove seal if not */}
                 <img src="/images/bbb-seal.svg" alt="BBB Accredited Business" className="h-12 opacity-80" />
               </div>
             </div>
