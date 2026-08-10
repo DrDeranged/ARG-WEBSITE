@@ -461,3 +461,20 @@
     inset: -1px;
   }
 }
+
+/* ── Global horizontal overflow guard ────────────────────── */
+html, body {
+  overflow-x: hidden;
+}
+
+/* ── Hero section: natural height on mobile, min(92vh, 900px) on desktop ── */
+@media (min-width: 768px) {
+  .hero-height {
+    min-height: min(92vh, 900px);
+  }
+}
+
+/* ── Ticker: pan-y so horizontal animation doesn't hijack vertical scroll ── */
+.ticker-animate {
+  touch-action: pan-y;
+}

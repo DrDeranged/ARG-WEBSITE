@@ -50,7 +50,7 @@ export default function CareersPage() {
               <div className="md:w-1/4 md:text-right pt-2">
                 <a
                   href="mailto:collect@advancedrecoverygroup.com?subject=Application%20for%20Collections%20Recovery%20Specialist%20%28ARG-001%29"
-                  className="link-draw inline-block border border-ink text-ink hover:bg-ink hover:text-paper transition-colors px-6 py-3 text-sm font-medium rounded-sm"
+                  className="link-draw block md:inline-block w-full md:w-auto text-center border border-ink text-ink hover:bg-ink hover:text-paper transition-colors px-6 py-3 text-sm font-medium rounded-sm"
                 >
                   Apply via Email
                 </a>

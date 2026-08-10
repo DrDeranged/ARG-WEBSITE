@@ -82,7 +82,7 @@ function CommandPalette({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4"
+      className="fixed inset-0 z-[100] flex md:items-start md:justify-center md:pt-[15vh] md:px-4"
       role="dialog" aria-modal="true" aria-label="Command palette"
       onClick={e => { if (e.target === overlayRef.current) onClose(); }}
       style={{ opacity: animated ? 1 : 0, transition: `opacity ${dur} ease` }}
@@ -91,11 +91,18 @@ function CommandPalette({
         className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
         onClick={onClose} aria-hidden="true"
       />
+      {/* Panel: full-screen on mobile, floating card on desktop */}
       <div
-        className="relative w-full max-w-xl bg-paper border border-rule rounded-sm overflow-hidden"
-        style={{ transform: animated ? 'scale(1)' : 'scale(0.98)', transition: `transform ${dur} ${ease}` }}
+        className="relative w-full md:max-w-xl bg-paper border-b border-rule md:border md:rounded-sm flex flex-col overflow-hidden h-dvh md:h-auto"
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          transform: animated ? 'scale(1)' : 'scale(0.98)',
+          transition: `transform ${dur} ${ease}`,
+        }}
       >
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-rule">
+        {/* Search row — mobile close button ≥44px; desktop esc hint */}
+        <div className="flex items-center gap-3 px-4 border-b border-rule flex-shrink-0" style={{ minHeight: '52px' }}>
           <Search size={16} className="text-slate flex-shrink-0" aria-hidden="true" />
           <input
             ref={inputRef}
@@ -104,17 +111,30 @@ function CommandPalette({
             className="flex-1 bg-transparent font-mono text-sm text-ink placeholder:text-slate/50 focus:outline-none"
             aria-label="Search commands" role="combobox" aria-expanded="true" aria-autocomplete="list"
           />
-          <kbd className="font-mono text-xs text-slate/50 border border-rule px-1.5 py-0.5 rounded-sm">esc</kbd>
+          {/* Mobile close button (≥44px tap target) */}
+          <button
+            onClick={onClose}
+            className="md:hidden flex items-center justify-center -mr-1 text-slate"
+            aria-label="Close"
+            style={{ minWidth: '44px', minHeight: '44px' }}
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
+          {/* Desktop keyboard hint */}
+          <kbd className="hidden md:inline font-mono text-xs text-slate/50 border border-rule px-1.5 py-0.5 rounded-sm">esc</kbd>
         </div>
-        <ul role="listbox" className="py-1 max-h-80 overflow-y-auto">
+
+        {/* Results list — scrollable, fills remaining height on mobile */}
+        <ul role="listbox" className="py-1 overflow-y-auto flex-1 md:max-h-80">
           {filtered.length === 0 && <li className="px-4 py-3 font-mono text-sm text-slate/50">No results</li>}
           {filtered.map((action, idx) => (
             <li
               key={action.id}
               role="option" aria-selected={idx === activeIdx}
               onMouseEnter={() => setActive(idx)} onClick={action.action}
-              className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${idx === activeIdx ? 'bg-mist' : 'hover:bg-mist/50'}`}
+              className={`flex items-center gap-3 px-4 cursor-pointer transition-colors ${idx === activeIdx ? 'bg-mist' : 'hover:bg-mist/50'}`}
               style={{
+                minHeight: '52px',
                 opacity: animated ? 1 : 0,
                 transform: animated ? 'translateY(0)' : 'translateY(4px)',
                 transition: animated
@@ -127,11 +147,13 @@ function CommandPalette({
                 <span className="font-mono text-sm text-ink block truncate">{action.label}</span>
                 <span className="font-mono text-xs text-slate/60 block truncate">{action.sub}</span>
               </span>
-              {idx === activeIdx && <kbd className="font-mono text-xs text-slate/40 border border-rule px-1.5 py-0.5 rounded-sm flex-shrink-0">↵</kbd>}
+              {idx === activeIdx && <kbd className="hidden md:inline font-mono text-xs text-slate/40 border border-rule px-1.5 py-0.5 rounded-sm flex-shrink-0">↵</kbd>}
             </li>
           ))}
         </ul>
-        <div className="px-4 py-2 border-t border-rule flex items-center gap-4 font-mono text-xs text-slate/50">
+
+        {/* Keyboard hints — desktop only */}
+        <div className="hidden md:flex px-4 py-2 border-t border-rule items-center gap-4 font-mono text-xs text-slate/50 flex-shrink-0">
           <span><kbd className="border border-rule px-1 rounded-sm">↑</kbd> <kbd className="border border-rule px-1 rounded-sm">↓</kbd> navigate</span>
           <span><kbd className="border border-rule px-1 rounded-sm">↵</kbd> select</span>
           <span><kbd className="border border-rule px-1 rounded-sm">esc</kbd> close</span>

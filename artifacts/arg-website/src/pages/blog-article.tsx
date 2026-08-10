@@ -169,7 +169,7 @@ export default function BlogArticlePage() {
         )}
 
         {/* Content */}
-        <div className="max-w-3xl mx-auto px-6 md:px-8">
+        <div className="max-w-3xl mx-auto px-5 md:px-8">
           {article.placeholder ? (
             <p className="text-2xl text-slate italic font-serif text-center py-16">
               Full article being migrated — check back soon.

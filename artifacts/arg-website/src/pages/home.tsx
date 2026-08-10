@@ -69,12 +69,12 @@ function SectionFolio({ n, total = 7 }: { n: number; total?: number }) {
 ───────────────────────────────────────────────────────── */
 const FILE_TYPES = ['MCA DEFAULT', 'EQUIPMENT LEASE', 'COMMERCIAL LOAN', 'JUDGMENT MATTER'];
 const LIFECYCLE_STEPS = [
-  { label: 'FILE PLACED',          middle: false, amount: false, day: 'DAY 01', final: false },
-  { label: 'SKIP TRACE COMPLETE',  middle: true,  amount: false, day: 'DAY 03', final: false },
-  { label: 'DEBTOR CONTACTED',     middle: true,  amount: false, day: 'DAY 09', final: false },
-  { label: 'PAYMENT PLAN SECURED', middle: true,  amount: false, day: 'DAY 21', final: false },
-  { label: 'AMOUNT RECOVERED',     middle: false, amount: true,  day: 'DAY 34', final: false },
-  { label: 'FILE RECOVERED \u2713', middle: false, amount: false, day: '',       final: true  },
+  { label: 'FILE PLACED',           mobileLabel: 'FILE PLACED',         middle: false, amount: false, day: 'DAY 01', final: false },
+  { label: 'SKIP TRACE COMPLETE',   mobileLabel: 'SKIP TRACE \u2713',   middle: true,  amount: false, day: 'DAY 03', final: false },
+  { label: 'DEBTOR CONTACTED',      mobileLabel: 'DEBTOR CONTACTED',    middle: true,  amount: false, day: 'DAY 09', final: false },
+  { label: 'PAYMENT PLAN SECURED',  mobileLabel: 'PLAN SECURED',        middle: true,  amount: false, day: 'DAY 21', final: false },
+  { label: 'AMOUNT RECOVERED',      mobileLabel: 'AMOUNT RECOVERED',    middle: false, amount: true,  day: 'DAY 34', final: false },
+  { label: 'FILE RECOVERED \u2713', mobileLabel: 'FILE RECOVERED \u2713', middle: false, amount: false, day: '', final: true },
 ];
 
 function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
@@ -142,23 +142,24 @@ function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
         {LIFECYCLE_STEPS.map((step, i) => (
           <div
             key={step.label}
-            className={`px-4 flex justify-between items-center min-h-[48px] ${step.final ? 'bg-recovered/[0.08]' : ''}`}
+            className={`px-4 flex justify-between items-center min-h-[44px] lg:min-h-[48px] ${step.final ? 'bg-recovered/[0.08]' : ''}`}
             style={{ opacity: i < visibleRows ? 1 : 0, transition: 'opacity 300ms ease' }}
           >
-            {/* Label */}
+            {/* Label — shortened on mobile for long labels */}
             <span className={
               step.final ? 'text-recovered font-medium' :
-              step.amount && isFinal ? 'text-recovered font-medium' :
+              (step.amount && isFinal) ? 'text-recovered font-medium' :
               'text-ink'
             }>
-              {step.label}
+              <span className="md:hidden">{step.mobileLabel}</span>
+              <span className="hidden md:inline">{step.label}</span>
             </span>
 
             {/* Right-side annotation */}
             {i < visibleRows && (
               step.amount ? (
                 <span className={`tabular-nums ${isFinal ? 'text-recovered font-medium' : 'text-slate/35'}`}>
-                  {isFinal ? '$ CONFIRMED' : '$\u00a0\u2014\u2014\u2014\u2014\u2014\u2014\u2014'}
+                  {isFinal ? '$ CONFIRMED' : <><span className="md:hidden">$ ————</span><span className="hidden md:inline">$ ———————</span></>}
                 </span>
               ) : step.final ? (
                 <span style={{ color: 'var(--color-recovered)' }}>●</span>
@@ -587,28 +588,32 @@ function HeroSection() {
   const borderColor   = lerpColor(Math.min(1, scrollY / 300));
 
   return (
-    <section
-      className="relative bg-paper border-b border-rule flex items-center overflow-hidden"
-      style={{ minHeight: 'min(92vh, 900px)' }}
-    >
+    /* Mobile: natural height (no forcing). Desktop: min(92vh, 900px) via hero-height CSS class */
+    <section className="relative bg-paper border-b border-rule overflow-hidden md:flex md:items-center hero-height">
+
       {/* ── Ledger-grid backdrop ── */}
+      {/* Horizontal baselines: always visible at 4% opacity */}
       <div
         className="absolute inset-0 pointer-events-none select-none"
         aria-hidden="true"
+        style={{ backgroundImage: 'repeating-linear-gradient(to bottom, transparent 0px, transparent 55px, rgba(0,0,0,0.04) 55px, rgba(0,0,0,0.04) 56px)' }}
+      />
+      {/* Vertical column rules: desktop only — clutter at narrow widths */}
+      <div
+        className="absolute inset-0 pointer-events-none select-none hidden md:block"
+        aria-hidden="true"
         style={{
-          backgroundImage: [
-            'repeating-linear-gradient(to bottom, transparent 0px, transparent 55px, rgba(0,0,0,0.05) 55px, rgba(0,0,0,0.05) 56px)',
+          backgroundImage:
             'linear-gradient(to right,' +
-              ' transparent 25%, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.05) calc(25% + 1px), transparent calc(25% + 1px),' +
-              ' transparent 50%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.05) calc(50% + 1px), transparent calc(50% + 1px),' +
-              ' transparent 75%, rgba(0,0,0,0.05) 75%, rgba(0,0,0,0.05) calc(75% + 1px), transparent calc(75% + 1px))',
-          ].join(', '),
+            ' transparent 25%, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.05) calc(25% + 1px), transparent calc(25% + 1px),' +
+            ' transparent 50%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.05) calc(50% + 1px), transparent calc(50% + 1px),' +
+            ' transparent 75%, rgba(0,0,0,0.05) 75%, rgba(0,0,0,0.05) calc(75% + 1px), transparent calc(75% + 1px))',
         }}
       />
 
       <SectionFolio n={1} />
 
-      {/* ── Marginalia spine — xl+ only ── */}
+      {/* ── Marginalia spine — xl+ only; no space reserved below xl ── */}
       <div
         className="absolute right-5 top-0 bottom-0 hidden xl:flex items-center justify-center"
         aria-hidden="true"
@@ -620,19 +625,23 @@ function HeroSection() {
       </div>
 
       <div className="w-full">
-        <div className="max-w-6xl 2xl:max-w-7xl mx-auto px-6 md:px-8 py-20 md:py-24 mt-16">
-          <div className="grid grid-cols-1 lg:grid-cols-[60fr_40fr] gap-16 lg:gap-20 items-center">
+        {/* Mobile: 48px top (mt-16 = header) + 40px bottom. Desktop: py-20/py-24 */}
+        <div className="max-w-6xl 2xl:max-w-7xl mx-auto px-6 md:px-8 pt-12 pb-10 md:py-20 lg:py-24 mt-16">
 
-            {/* Left 60% */}
+          {/* Three-slot grid: ①text ②card ③mobile-CTAs */}
+          <div className="grid grid-cols-1 lg:grid-cols-[60fr_40fr] gap-6 lg:gap-20">
+
+            {/* ① Eyebrow + headline + subhead (+ CTAs on desktop) */}
             <div>
               <p className="font-mono text-recovered tracking-widest text-xs font-semibold mb-6 uppercase">
                 Commercial Collections — Fairfield, NJ
               </p>
               <HeroHeadline />
-              <p className="text-lg md:text-xl text-slate font-sans max-w-prose leading-relaxed mb-10">
+              <p className="text-lg md:text-xl text-slate font-sans max-w-prose leading-relaxed">
                 Advanced Recovery Group specializes exclusively in B2B debt recovery. Operating on a strict contingency basis, we deploy professional, firm, and proven strategies to restore your cash flow.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              {/* Desktop-only CTAs — inline with text column */}
+              <div className="hidden lg:flex flex-row gap-4 mt-10 mb-6">
                 <MagneticWrapper>
                   <Link href="/contact-us/"
                     className="bg-ink text-paper px-8 py-4 text-sm font-medium rounded-sm hover:bg-ink/90 transition-colors text-center inline-block">
@@ -644,32 +653,51 @@ function HeroSection() {
                   See How It Works
                 </a>
               </div>
-              {/* Live status line */}
-              <div className="flex items-center gap-2 font-mono text-xs text-slate/55">
+              <div className="hidden lg:flex items-center gap-2 font-mono text-xs text-slate/55">
                 <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${heroStatus.open ? 'bg-recovered' : 'bg-slate/30'}`} />
                 {heroStatus.label}
               </div>
             </div>
 
-            {/* Right 40% — card deck */}
-            <div
-              className="mt-8 lg:mt-0"
-              style={{ transform: `translateY(${cardParallaxY}px)`, willChange: prefersReduced ? undefined : 'transform' }}
-            >
-              {/* Stack: two shadow cards behind the main card */}
-              <div className="relative pb-4 pr-4 lg:max-w-[460px] lg:ml-auto">
-                <div className="absolute bg-paper" style={{ inset: 0, transform: 'translate(16px,16px)', border: '1px solid var(--color-rule)', zIndex: 0 }} />
-                <div className="absolute bg-paper" style={{ inset: 0, transform: 'translate(8px,8px)',  border: '1px solid var(--color-rule)', zIndex: 1 }} />
+            {/* ② Card — full-width on mobile, 460px max on desktop */}
+            <div style={{ transform: `translateY(${cardParallaxY}px)`, willChange: prefersReduced ? undefined : 'transform' }}>
+              {/* Container: 4px shadow room on mobile, 16px on desktop */}
+              <div className="relative pb-[4px] pr-[4px] md:pb-4 md:pr-4 lg:max-w-[460px] lg:ml-auto">
+                {/* Mobile: single 4px offset */}
+                <div className="absolute bg-paper md:hidden"
+                  style={{ inset: 0, transform: 'translate(4px,4px)', border: '1px solid var(--color-rule)', zIndex: 0 }} />
+                {/* Desktop: two-layer stack */}
+                <div className="absolute bg-paper hidden md:block"
+                  style={{ inset: 0, transform: 'translate(16px,16px)', border: '1px solid var(--color-rule)', zIndex: 0 }} />
+                <div className="absolute bg-paper hidden md:block"
+                  style={{ inset: 0, transform: 'translate(8px,8px)', border: '1px solid var(--color-rule)', zIndex: 1 }} />
                 <div className="relative" style={{ zIndex: 2 }}>
                   <AnimatedLedgerCard borderColor={borderColor} />
                 </div>
               </div>
             </div>
+
+            {/* ③ Mobile-only CTAs — full-width stacked, 12px gap; hidden on desktop */}
+            <div className="lg:hidden flex flex-col gap-3">
+              <Link href="/contact-us/"
+                className="bg-ink text-paper px-8 py-4 text-sm font-medium rounded-sm hover:bg-ink/90 transition-colors text-center block w-full">
+                Get a Free Consultation
+              </Link>
+              <a href="#process"
+                className="link-draw border border-ink text-ink px-8 py-4 text-sm font-medium rounded-sm hover:bg-mist transition-colors text-center block w-full">
+                See How It Works
+              </a>
+              <div className="flex items-center gap-2 font-mono text-xs text-slate/55 pt-1">
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${heroStatus.open ? 'bg-recovered' : 'bg-slate/30'}`} />
+                {heroStatus.label}
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
 
-      {/* ── Scroll cue ── */}
+      {/* ── Scroll cue — hidden on mobile (thumbs know); fades out after 100px ── */}
       <div
         className="absolute bottom-8 left-8 hidden md:flex items-center gap-2 font-mono text-[10px] text-slate/30 uppercase tracking-widest select-none pointer-events-none"
         style={{ opacity: scrollCueVisible && !prefersReduced ? 1 : 0, transition: 'opacity 400ms ease' }}
