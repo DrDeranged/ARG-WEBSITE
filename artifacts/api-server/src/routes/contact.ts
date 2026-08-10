@@ -85,8 +85,19 @@ function getEtTimestamp(): string {
   });
 }
 
+// ── GET /api/contact/status ────────────────────────────────
+router.get("/contact/status", (_req, res) => {
+  res.json({ configured: Boolean(process.env["RESEND_API_KEY"]) });
+});
+
 // ── POST /api/contact ──────────────────────────────────────
 router.post("/contact", perMinute, perHour, async (req, res) => {
+  // Fail fast if email delivery isn't configured
+  if (!process.env["RESEND_API_KEY"]) {
+    res.status(503).json({ error: "not_configured" });
+    return;
+  }
+
   // Parse + validate
   const parsed = contactSchema.safeParse(req.body);
   if (!parsed.success) {

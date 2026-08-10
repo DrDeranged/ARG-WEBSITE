@@ -6,6 +6,9 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+// Trust Replit's reverse proxy so req.ip resolves the real client IP
+app.set("trust proxy", 1);
+
 // ── Security headers ───────────────────────────────────────
 app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
