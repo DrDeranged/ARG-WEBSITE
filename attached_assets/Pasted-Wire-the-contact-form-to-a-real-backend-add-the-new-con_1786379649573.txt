@@ -1,0 +1,72 @@
+Wire the contact form to a real backend, add the new contact page image,
+and harden the app to production quality. Work across the arg-website
+artifact and the api-server artifact.
+
+PART A — BACKEND (api-server artifact):
+1. Create POST /api/contact in the Express api-server. It accepts JSON:
+   { name, company, email, phone?, category, balance?, message,
+   website? } where "website" is a hidden honeypot field.
+2. Validate with zod: name/company/message required (message 10–5000
+   chars), email must be valid, category one of [MCA funder, Factor,
+   Equipment lessor, Lender, Law firm, Other]. Return 400 with
+   field-level error JSON on failure. If the honeypot field is filled,
+   return 200 success but silently discard.
+3. Rate limit: max 3 requests/minute and 10/hour per IP on this route;
+   return 429 with a friendly message.
+4. Send the email via the Resend HTTP API (POST
+   https://api.resend.com/emails with fetch — no SDK needed), using
+   process.env.RESEND_API_KEY. Never hardcode the key. From:
+   "ARG Website <onboarding@resend.dev>" for now (TODO comment: switch
+   to noreply@advancedrecoverygroup.com after domain verification).
+   To: collect@advancedrecoverygroup.com. Reply-To: the submitter's
+   email. Subject: "Website inquiry — {company}". Body: clean plain
+   text with all fields labeled, plus timestamp in ET and the
+   submitting IP.
+5. If RESEND_API_KEY is missing or Resend returns an error, log it
+   server-side and return 502 with { error: "delivery_failed" } — never
+   expose internals to the client.
+6. Add GET /api/health returning { status: "ok", uptime }.
+
+PART B — FRONTEND FORM (arg-website):
+1. Connect the contact form to POST /api/contact. States: idle,
+   submitting (button shows spinner + "Sending…", inputs disabled),
+   success (form replaced by a ledger-styled confirmation: green rule
+   line + "Received. A specialist will contact you within one business
+   day." in serif, with a mono timestamp), and error (inline banner:
+   "Something went wrong sending your message. Call us at (877)
+   464-8470 or email collect@advancedrecoverygroup.com directly." — the
+   phone and email as working tel:/mailto: links).
+2. Client-side validation mirrors the server rules with inline
+   per-field error messages; include the hidden honeypot field.
+3. Add the category select (the 6 options above) and optional balance
+   select (<$50k, $50k–$250k, $250k–$1M, $1M+) if not present.
+
+PART C — CONTACT PAGE IMAGE:
+Use /images/dog-support.jpg on the contact page, placed beside or above
+the contact details column: full-bleed within its column, 2px rule
+border, slight ink duotone treatment consistent with other photos.
+Caption in mono type underneath: "Our Director of First Impressions is
+standing by." Alt text: "ARG office dog wearing a customer support
+headset at a desk". Keep it tasteful — the caption is the only joke on
+the page.
+
+PART D — ENTERPRISE HARDENING (both artifacts):
+1. Per-page meta: install react-helmet-async; every page gets a unique
+   <title> and meta description. Homepage title: "Advanced Recovery
+   Group | Commercial Collections Agency". OG tags sitewide with
+   /images/team-2.jpg as the share image.
+2. Error boundaries around each route; a styled 404 already exists —
+   verify it renders for unknown paths.
+3. Accessibility pass: all images get real alt text, form inputs have
+   labels tied by htmlFor, focus states visible, color contrast AA,
+   the command palette is fully keyboard operable and traps focus.
+4. Performance: lazy-load below-fold images (loading="lazy"), add
+   width/height attributes to prevent layout shift, preload the hero
+   image, verify no console errors or warnings in the browser.
+5. Security headers on the server: X-Content-Type-Options nosniff,
+   X-Frame-Options DENY, Referrer-Policy strict-origin-when-cross-origin.
+   CORS on /api/contact restricted to the site's own origin.
+6. Add robots.txt and a static sitemap.xml listing /, /contact-us/,
+   /careers/, /blog/, and each blog article URL.
+Run a full build, fix all TypeScript errors, and confirm the contact
+form works end-to-end in preview (log the Resend response id).

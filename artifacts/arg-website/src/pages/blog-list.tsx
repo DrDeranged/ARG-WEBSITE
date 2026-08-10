@@ -1,6 +1,7 @@
 import { Shell } from '@/components/layout/Shell';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'wouter';
+import { Helmet } from 'react-helmet-async';
 
 export const articles = [
   {
@@ -14,18 +15,17 @@ export const articles = [
     title: "A Journey of Compassion: My Service Trip to the DR",
     date: "Aug 15, 2023",
     excerpt: "A personal account of ARG's mission trip to the Dominican Republic — feeding families, building connections, and living out our values."
-  },
-  {
-    slug: "revenue-based-financing-grow",
-    title: "Revenue-Based Financing: A Path to Growth",
-    date: "Nov 2, 2023",
-    excerpt: "Traditional loans aren't the only way to scale. Learn how revenue-based financing works for growing B2B businesses and when it makes sense to utilize it."
   }
 ];
 
 export default function BlogListPage() {
   return (
     <Shell>
+      <Helmet>
+        <title>Insights & Updates | Advanced Recovery Group</title>
+        <meta name="description" content="Expertise in commercial collections, corporate finance, and agency news from Advanced Recovery Group." />
+      </Helmet>
+
       <section className="pt-32 pb-24 md:pt-48 md:pb-24 bg-mist border-b border-rule">
         <div className="max-w-4xl mx-auto px-6 md:px-8">
           <h1 className="text-5xl md:text-7xl font-serif text-ink mb-6">Insights & Updates</h1>
@@ -49,7 +49,7 @@ export default function BlogListPage() {
                 <p className="text-lg text-slate mb-8 max-w-3xl leading-relaxed">
                   {article.excerpt}
                 </p>
-                <Link 
+                <Link
                   href={`/blog/${article.slug}/`}
                   className="font-mono text-sm text-ink group-hover:text-recovered flex items-center gap-2 w-fit"
                 >

@@ -2,48 +2,35 @@ import { Shell } from '@/components/layout/Shell';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'wouter';
 import { useEffect, useState, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
 
-function FeatureRow({ num, title, desc, index }: { num: string; title: string; desc: string; index: number }) {
-  const [count, setCount] = useState(0);
+function FeatureRow({ num, title, desc }: { num: string; title: string; desc: string }) {
+  const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  
+
   useEffect(() => {
-    let observer: IntersectionObserver;
-    if (ref.current) {
-      observer = new IntersectionObserver(
-        (entries) => {
-          if (entries[0].isIntersecting) {
-            // Animate from 0 to index
-            let start = 0;
-            const target = parseInt(num, 10);
-            const duration = 1000;
-            const stepTime = Math.abs(Math.floor(duration / target));
-            
-            const timer = setInterval(() => {
-              start += 1;
-              setCount(start);
-              if (start >= target) {
-                clearInterval(timer);
-                setCount(target);
-              }
-            }, stepTime);
-            
-            observer.disconnect();
-          }
-        },
-        { threshold: 0.5 }
-      );
-      observer.observe(ref.current);
-    }
-    return () => {
-      if (observer) observer.disconnect();
-    };
-  }, [num]);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div ref={ref} className="group border-t border-rule last:border-b py-8 md:py-12 flex flex-col md:flex-row md:items-start gap-4 md:gap-16 hover:bg-paper/50 transition-colors -mx-6 px-6 md:mx-0 md:px-0">
-      <span className="font-mono text-sm text-slate/50 group-hover:text-recovered transition-colors mt-1 tabular-nums">
-        {count.toString().padStart(2, '0')}
+    <div
+      ref={ref}
+      className="group border-t border-rule last:border-b py-8 md:py-12 flex flex-col md:flex-row md:items-start gap-4 md:gap-16 hover:bg-paper/50 transition-colors -mx-6 px-6 md:mx-0 md:px-0"
+    >
+      <span
+        className={`font-mono text-sm tabular-nums mt-1 transition-colors duration-300 ${visible ? 'text-recovered' : 'text-slate/40'}`}
+      >
+        {num}
       </span>
       <div className="flex-1 max-w-3xl">
         <h3 className="text-2xl font-serif text-ink mb-3">{title}</h3>
@@ -53,41 +40,312 @@ function FeatureRow({ num, title, desc, index }: { num: string; title: string; d
   );
 }
 
+/* ── Recovery Estimator ─────────────────────────────────── */
+type DScore = 'Strong' | 'Moderate' | 'Challenging';
+
+function computeOutlook(balance: number, months: number, status: string): {
+  score: DScore;
+  pct: number;
+  lines: string[];
+} {
+  let pts = 0;
+
+  // Balance (larger = harder)
+  if (balance < 100_000) pts += 3;
+  else if (balance < 500_000) pts += 2;
+  else if (balance < 1_500_000) pts += 1;
+
+  // Age (older = harder)
+  if (months <= 3) pts += 3;
+  else if (months <= 9) pts += 2;
+  else if (months <= 15) pts += 1;
+
+  // Status
+  if (status === 'operating') pts += 3;
+  else if (status === 'reduced') pts += 1;
+
+  const lines: string[] = [];
+
+  if (months <= 3) lines.push('Recent default — early intervention is the single biggest recovery advantage.');
+  else if (months <= 9) lines.push('Moderate age. Recovery prospects remain viable with professional escalation.');
+  else lines.push('Debt is aging. Each additional month narrows the window — prompt placement matters.');
+
+  if (status === 'operating') lines.push('An operating debtor has income to negotiate against. That meaningfully improves outcomes.');
+  else if (status === 'reduced') lines.push('A debtor with reduced operations may still be reachable; the picture becomes clearer in early contact.');
+  else lines.push('Unknown debtor status introduces uncertainty — our investigators establish operating condition on placement.');
+
+  if (balance >= 1_000_000) lines.push('At this balance, litigation-backed escalation through affiliated counsel may be the most effective path.');
+
+  // Map pts (0–9)
+  let score: DScore;
+  let pct: number;
+  if (pts >= 7) { score = 'Strong'; pct = 78; }
+  else if (pts >= 4) { score = 'Moderate'; pct = 50; }
+  else { score = 'Challenging'; pct = 24; }
+
+  return { score, pct, lines: lines.slice(0, 3) };
+}
+
+const BAND_COLORS: Record<DScore, string> = {
+  Strong: 'bg-recovered',
+  Moderate: 'bg-amber-600',
+  Challenging: 'bg-slate',
+};
+
+const BAND_TEXT: Record<DScore, string> = {
+  Strong: 'text-recovered',
+  Moderate: 'text-amber-700',
+  Challenging: 'text-slate',
+};
+
+function RecoveryEstimator() {
+  const [balance, setBalance] = useState(500_000);
+  const [months, setMonths] = useState(6);
+  const [status, setStatus] = useState('operating');
+  const [animPct, setAnimPct] = useState(0);
+
+  const { score, pct, lines } = computeOutlook(balance, months, status);
+
+  // Animate bar on change
+  const rafRef = useRef<number | null>(null);
+  useEffect(() => {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) { setAnimPct(pct); return; }
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    let start: number | null = null;
+    const from = animPct;
+    const to = pct;
+    const duration = 400;
+    const step = (ts: number) => {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / duration, 1);
+      setAnimPct(from + (to - from) * p);
+      if (p < 1) rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pct]);
+
+  const fmt = (v: number) =>
+    v >= 1_000_000
+      ? `$${(v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1)}M`
+      : `$${(v / 1_000).toFixed(0)}k`;
+
+  return (
+    <section className="bg-paper py-24 md:py-32 border-b border-rule">
+      <div className="max-w-6xl mx-auto px-6 md:px-8">
+        <div className="mb-12">
+          <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-4 uppercase">
+            Recovery Estimator
+          </p>
+          <h2 className="text-4xl md:text-5xl font-serif text-ink leading-tight mb-4">
+            What's still recoverable?
+          </h2>
+          <p className="text-slate max-w-xl">
+            Adjust the inputs to see a qualitative outlook. Every file is assessed individually by our team.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+          {/* Inputs */}
+          <div className="flex flex-col gap-10">
+            {/* Balance */}
+            <div>
+              <div className="flex justify-between items-baseline mb-3">
+                <label htmlFor="est-balance" className="font-mono text-xs uppercase tracking-widest text-slate">
+                  Outstanding Balance
+                </label>
+                <span className="font-mono text-2xl text-ink tabular-nums">{fmt(balance)}</span>
+              </div>
+              <input
+                id="est-balance"
+                type="range"
+                min={10_000}
+                max={5_000_000}
+                step={10_000}
+                value={balance}
+                onChange={(e) => setBalance(Number(e.target.value))}
+                className="w-full h-[2px] bg-rule accent-recovered cursor-pointer"
+              />
+              <div className="flex justify-between font-mono text-xs text-slate/50 mt-1">
+                <span>$10k</span><span>$5M</span>
+              </div>
+            </div>
+
+            {/* Months since default */}
+            <div>
+              <div className="flex justify-between items-baseline mb-3">
+                <label htmlFor="est-months" className="font-mono text-xs uppercase tracking-widest text-slate">
+                  Months Since Default
+                </label>
+                <span className="font-mono text-2xl text-ink tabular-nums">{months} mo</span>
+              </div>
+              <input
+                id="est-months"
+                type="range"
+                min={0}
+                max={24}
+                step={1}
+                value={months}
+                onChange={(e) => setMonths(Number(e.target.value))}
+                className="w-full h-[2px] bg-rule accent-recovered cursor-pointer"
+              />
+              <div className="flex justify-between font-mono text-xs text-slate/50 mt-1">
+                <span>0</span><span>24 mo</span>
+              </div>
+            </div>
+
+            {/* Debtor status */}
+            <div>
+              <label htmlFor="est-status" className="font-mono text-xs uppercase tracking-widest text-slate block mb-3">
+                Debtor Status
+              </label>
+              <select
+                id="est-status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full border border-rule bg-paper text-ink font-mono text-sm px-4 py-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered"
+              >
+                <option value="operating">Operating</option>
+                <option value="reduced">Reduced operations</option>
+                <option value="unknown">Unknown</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Output */}
+          <div className="border border-rule p-8 rounded-sm flex flex-col gap-8 bg-mist/40">
+            <div>
+              <p className="font-mono text-xs uppercase tracking-widest text-slate mb-2">Recoverability Outlook</p>
+              <p className={`text-3xl font-serif font-semibold ${BAND_TEXT[score]}`}>{score}</p>
+            </div>
+
+            {/* Ledger bar */}
+            <div>
+              <div className="h-3 w-full bg-rule rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${BAND_COLORS[score]}`}
+                  style={{ width: `${animPct}%` }}
+                />
+              </div>
+              <div className="flex justify-between font-mono text-xs text-slate/50 mt-1">
+                <span>Challenging</span><span>Strong</span>
+              </div>
+            </div>
+
+            {/* Dynamic sentences */}
+            <ul className="flex flex-col gap-3">
+              {lines.map((l, i) => (
+                <li key={i} className="text-sm text-slate leading-relaxed flex gap-3">
+                  <span className="w-4 h-[1px] bg-recovered block mt-[0.6em] flex-shrink-0" />
+                  {l}
+                </li>
+              ))}
+            </ul>
+
+            <div className="pt-4 border-t border-rule flex flex-col gap-4">
+              <p className="font-mono text-xs text-slate/50 italic">
+                Illustrative outlook, not a guarantee. Every file is assessed individually.
+              </p>
+              <Link
+                href="/contact-us/"
+                className="inline-flex items-center gap-2 bg-ink text-paper px-6 py-3 text-sm font-medium rounded-sm hover:bg-ink/90 transition-colors w-fit group"
+              >
+                Get a real assessment
+                <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── Hero headline stagger ──────────────────────────────── */
+const HERO_LINES = ["We Recover", "What You\u2019re Owed."];
+
+function HeroHeadline() {
+  const [revealed, setRevealed] = useState(false);
+  const prefersReduced = typeof window !== 'undefined'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false;
+
+  useEffect(() => {
+    const t = setTimeout(() => setRevealed(true), 50);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (prefersReduced) {
+    return (
+      <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-paper leading-[1.05] tracking-tight max-w-4xl mb-8">
+        {HERO_LINES.join('\n')}
+      </h1>
+    );
+  }
+
+  return (
+    <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-paper leading-[1.05] tracking-tight max-w-4xl mb-8 overflow-hidden">
+      {HERO_LINES.map((line, i) => (
+        <span key={i} className="block overflow-hidden">
+          <span
+            className="block transition-all duration-700 ease-out"
+            style={{
+              transform: revealed ? 'translateY(0)' : 'translateY(110%)',
+              opacity: revealed ? 1 : 0,
+              transitionDelay: `${i * 120 + 100}ms`,
+            }}
+          >
+            {line}
+          </span>
+        </span>
+      ))}
+    </h1>
+  );
+}
+
 export default function HomePage() {
   return (
     <Shell>
+      <Helmet>
+        <title>Advanced Recovery Group | Commercial Collections Agency</title>
+        <meta name="description" content="Advanced Recovery Group specializes exclusively in B2B commercial debt recovery. Operating on a strict contingency basis — no recovery, no fee." />
+      </Helmet>
+
       {/* HERO SECTION */}
       <section className="relative pt-32 pb-24 md:pt-48 md:pb-32 flex flex-col items-center justify-center min-h-[85vh] border-b border-rule overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img 
-            src="/images/hero-team.jpg" 
-            alt="ARG Team" 
+          <img
+            src="/images/hero-team.jpg"
+            alt="Advanced Recovery Group team"
             className="w-full h-full object-cover"
+            fetchPriority="high"
+            width="1920"
+            height="1080"
           />
           <div className="absolute inset-0 bg-ink/75 mix-blend-multiply"></div>
           <div className="absolute inset-0 bg-ink/40"></div>
         </div>
-        
+
         <div className="max-w-6xl w-full mx-auto px-6 md:px-8 relative z-10 flex flex-col items-start mt-8 md:mt-16">
           <p className="font-mono text-recovered tracking-widest text-sm font-medium mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             COMMERCIAL COLLECTIONS
           </p>
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-paper leading-[1.05] tracking-tight max-w-4xl mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150 fill-mode-both">
-            We Recover<br/>What You're Owed.
-          </h1>
-          <p className="text-lg md:text-xl text-paper/80 font-sans max-w-2xl leading-relaxed mb-10 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 fill-mode-both">
+          <HeroHeadline />
+          <p className="text-lg md:text-xl text-paper/80 font-sans max-w-2xl leading-relaxed mb-10 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500 fill-mode-both">
             Advanced Recovery Group specializes exclusively in B2B debt recovery. Operating on a strict contingency basis, we deploy professional, firm, and proven strategies to restore your cash flow.
           </p>
-          
-          <div className="flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500 fill-mode-both w-full sm:w-auto">
-            <Link 
-              href="/contact-us/" 
+
+          <div className="flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-700 fill-mode-both w-full sm:w-auto">
+            <Link
+              href="/contact-us/"
               className="bg-recovered text-paper px-8 py-4 text-sm font-medium rounded-sm hover:bg-recovered/90 transition-colors w-full sm:w-auto text-center"
             >
               Get a Free Consultation
             </Link>
-            <a 
-              href="#process" 
+            <a
+              href="#process"
               className="border border-paper/30 text-paper px-8 py-4 text-sm font-medium rounded-sm hover:bg-paper/10 transition-colors w-full sm:w-auto text-center"
             >
               Learn How It Works
@@ -101,16 +359,16 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6 md:px-8 py-10">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-rule">
             <div className="flex flex-col gap-2 pt-6 md:pt-0 md:pr-8 first:pt-0">
-              <span className="font-mono text-3xl text-recovered tabular-nums">25+</span>
-              <span className="text-slate text-sm font-medium">Years Experience</span>
+              <span className="font-mono text-3xl text-recovered">100%</span>
+              <span className="text-slate text-sm font-medium">Contingency — no recovery, no fee</span>
             </div>
             <div className="flex flex-col gap-2 pt-6 md:pt-0 md:px-8">
-              <span className="font-mono text-3xl text-recovered">100%</span>
-              <span className="text-slate text-sm font-medium">Contingency-Only — No Collection, No Fee</span>
+              <span className="font-mono text-3xl text-recovered">B2B</span>
+              <span className="text-slate text-sm font-medium">Commercial debt exclusively</span>
             </div>
             <div className="flex flex-col gap-2 pt-6 md:pt-0 md:pl-8">
-              <span className="font-mono text-3xl text-recovered tabular-nums">50</span>
-              <span className="text-slate text-sm font-medium">Licensed in All US States</span>
+              <span className="font-mono text-3xl text-recovered">24/7</span>
+              <span className="text-slate text-sm font-medium">Client portal with live claim status</span>
             </div>
           </div>
         </div>
@@ -142,16 +400,16 @@ export default function HomePage() {
               },
               {
                 num: "03",
-                title: "Licensed Nationwide",
-                desc: "Fully licensed, bonded, and compliant in all 50 states. We navigate federal and state regulations so you don't have to."
+                title: "Litigation-Ready",
+                desc: "When negotiation isn't enough, we escalate through affiliated counsel — liens, judgments, and enforcement, pursued properly."
               },
               {
                 num: "04",
                 title: "Relationship-Preserving",
                 desc: "We operate with a level of professionalism that protects your reputation and, when possible, preserves your client relationships."
               }
-            ].map((feature, idx) => (
-              <FeatureRow key={feature.num} num={feature.num} title={feature.title} desc={feature.desc} index={idx} />
+            ].map((feature) => (
+              <FeatureRow key={feature.num} num={feature.num} title={feature.title} desc={feature.desc} />
             ))}
           </div>
         </div>
@@ -171,9 +429,8 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
             <div className="flex flex-col gap-12 relative">
-              {/* Vertical line connecting steps on desktop */}
               <div className="hidden lg:block absolute left-[11px] top-4 bottom-12 w-[1px] bg-rule z-0" />
-              
+
               {[
                 {
                   step: "01",
@@ -190,7 +447,7 @@ export default function HomePage() {
                   title: "You Get Paid",
                   desc: "We remit collected funds directly to you. We only retain our contingency fee upon successful collection."
                 }
-              ].map((process, i) => (
+              ].map((process) => (
                 <div key={process.step} className="relative z-10 flex gap-6 md:gap-8">
                   <div className="bg-paper w-6 h-6 flex-shrink-0 mt-1 flex items-center justify-center">
                     <span className="font-mono text-sm text-ink font-bold tabular-nums">{process.step}</span>
@@ -202,15 +459,25 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-            
+
             <div className="relative aspect-[4/3] lg:aspect-auto lg:h-[500px] overflow-hidden rounded-sm bg-mist">
-              <img src="/images/collectors.jpg" alt="ARG Collections Process" className="w-full h-full object-cover grayscale mix-blend-multiply contrast-125 opacity-90" />
+              <img
+                src="/images/collectors.jpg"
+                alt="ARG collections team at work"
+                className="w-full h-full object-cover grayscale mix-blend-multiply contrast-125 opacity-90"
+                loading="lazy"
+                width="800"
+                height="600"
+              />
             </div>
           </div>
         </div>
       </section>
 
-      {/* INDUSTRIES & TRUST */}
+      {/* RECOVERY ESTIMATOR — between Process and Industries */}
+      <RecoveryEstimator />
+
+      {/* INDUSTRIES & PULL QUOTE */}
       <section className="bg-mist py-24 md:py-32 border-b border-rule">
         <div className="max-w-6xl mx-auto px-6 md:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
@@ -223,33 +490,25 @@ export default function HomePage() {
               </h2>
               <ul className="flex flex-col gap-4 font-mono text-sm text-slate">
                 {[
-                  "Healthcare & Medical Devices",
-                  "Financial Services & FinTech",
-                  "Distribution & Wholesale",
-                  "Manufacturing & Logistics",
-                  "Technology & SaaS",
-                  "Professional Services",
-                  "Commercial Real Estate",
-                  "Transportation & Freight"
+                  "Merchant Cash Advance",
+                  "Factoring",
+                  "Equipment Leasing",
+                  "Commercial Loans",
+                  "Fintech Lending",
+                  "Law Firms & Judgment Holders"
                 ].map((industry) => (
                   <li key={industry} className="flex items-center gap-4">
-                    <span className="w-4 h-[1px] bg-recovered block"></span>
+                    <span className="w-4 h-[1px] bg-recovered block flex-shrink-0"></span>
                     {industry}
                   </li>
                 ))}
               </ul>
             </div>
-            
+
             <div className="lg:col-span-7 flex flex-col justify-center border-t lg:border-t-0 lg:border-l border-rule pt-12 lg:pt-0 lg:pl-16">
-              <div className="relative">
-                <span className="absolute -top-12 -left-6 text-8xl font-serif text-rule/50 select-none">"</span>
-                <blockquote className="text-2xl md:text-3xl font-serif text-ink leading-snug mb-8 relative z-10">
-                  Advanced Recovery Group stepped in when our internal efforts stalled. Their team is firm but remarkably professional. They recovered funds from accounts we had completely written off, without damaging our industry reputation.
-                </blockquote>
-                <p className="font-mono text-sm text-slate uppercase tracking-widest">
-                  — Director of Finance, Healthcare Group
-                </p>
-              </div>
+              <blockquote className="text-2xl md:text-3xl font-serif text-ink leading-snug">
+                Effective collections keep credit flowing. We give creditors the confidence that when things go wrong, their losses can be recovered.
+              </blockquote>
             </div>
           </div>
         </div>
@@ -277,16 +536,35 @@ export default function HomePage() {
                   Read the Mission Story
                   <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <img src="/images/fmsc-logo.jpg" alt="Feed My Starving Children" className="h-12 w-auto mix-blend-screen opacity-80" />
+                <img
+                  src="/images/fmsc-logo.jpg"
+                  alt="Feed My Starving Children"
+                  className="h-12 w-auto mix-blend-screen opacity-80"
+                  loading="lazy"
+                />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="mt-12">
-                <img src="/images/manny-kids.jpg" alt="ARG Team with Children in DR" className="w-full aspect-square object-cover rounded-sm grayscale hover:grayscale-0 transition-all duration-500" />
+                <img
+                  src="/images/manny-kids.jpg"
+                  alt="ARG team member with children in the Dominican Republic"
+                  className="w-full aspect-square object-cover rounded-sm grayscale hover:grayscale-0 transition-all duration-500"
+                  loading="lazy"
+                  width="400"
+                  height="400"
+                />
               </div>
               <div>
-                <img src="/images/meals.jpg" alt="Packing Meals for FMSC" className="w-full aspect-square object-cover rounded-sm grayscale hover:grayscale-0 transition-all duration-500" />
+                <img
+                  src="/images/meals.jpg"
+                  alt="Packing FMSC meal packages at the warehouse"
+                  className="w-full aspect-square object-cover rounded-sm grayscale hover:grayscale-0 transition-all duration-500"
+                  loading="lazy"
+                  width="400"
+                  height="400"
+                />
               </div>
             </div>
           </div>
@@ -347,8 +625,8 @@ export default function HomePage() {
           <p className="text-lg md:text-xl text-paper/90 mb-10 font-sans">
             No upfront fees. Contingency-only. Get started today.
           </p>
-          <Link 
-            href="/contact-us/" 
+          <Link
+            href="/contact-us/"
             className="bg-paper text-ink px-10 py-4 text-sm font-medium rounded-sm hover:bg-paper/90 transition-colors inline-block"
           >
             Contact Us

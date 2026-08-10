@@ -1,0 +1,67 @@
+Fix critical accuracy issues, then add advanced interactive features. Work
+in the arg-website artifact only.
+
+PART A — REMOVE FALSE INFORMATION (highest priority):
+1. Stats strip: delete "25+ Years Experience" and "Licensed in All US
+   States". Replace the three stats with: "100%" / "Contingency — no
+   recovery, no fee" (keep), "B2B" / "Commercial debt exclusively", and
+   "24/7" / "Client portal with live claim status".
+2. Delete the entire testimonial blockquote and its attribution ("Director
+   of Finance, Healthcare Group") — it is fabricated. Replace that space
+   with a large serif pull-line: "Effective collections keep credit
+   flowing. We give creditors the confidence that when things go wrong,
+   their losses can be recovered."
+3. "Why ARG" item 03 "Licensed Nationwide": retitle to "Litigation-Ready"
+   with description "When negotiation isn't enough, we escalate through
+   affiliated counsel — liens, judgments, and enforcement, pursued
+   properly."
+4. Industries list: replace with ARG's real verticals: Merchant Cash
+   Advance, Factoring, Equipment Leasing, Commercial Loans, Fintech
+   Lending, Law Firms & Judgment Holders.
+5. Careers: keep ONLY "Collections Recovery Specialist" (Full-Time,
+   On-Site, Fairfield NJ). Delete Account Manager and Compliance &
+   Operations Associate.
+6. Blog: delete the "Revenue-Based Financing" article entirely (list
+   entry and article content — it was invented). Keep the collections-
+   firm article as is. For the DR article, keep the list entry but
+   replace the article body with a single italic line: "Full article
+   being migrated — check back soon." and use /images/dr-trip.jpg as its
+   cover.
+
+PART B — FIX THE FONTS (the design system is currently not rendering):
+In index.html, replace the Inter Google Fonts link with: Source Serif 4
+(600;700), Public Sans (400;500;600), IBM Plex Mono (400;500), all with
+display=swap. Ensure Tailwind maps font-serif → 'Source Serif 4',
+font-sans → 'Public Sans', font-mono → 'IBM Plex Mono'. Verify headings
+render in the serif everywhere.
+
+PART C — ADVANCED FEATURES (build all four):
+1. RECOVERY ESTIMATOR — an interactive tool as a new homepage section
+   between Process and the industries section, titled "What's still
+   recoverable?" Inputs: outstanding balance (slider $10k–$5M, mono
+   tabular display), months since default (slider 0–24), debtor status
+   (select: Operating / Reduced operations / Unknown). Output: an
+   animated horizontal ledger bar showing a recoverability outlook as a
+   qualitative band (Strong / Moderate / Challenging — never a fake
+   percentage), plus 2–3 dynamic sentences explaining why (older debt =
+   harder; operating debtor = better) and a CTA "Get a real assessment"
+   linking to /contact-us/. Logic stays qualitative and honest — display
+   the caption "Illustrative outlook, not a guarantee. Every file is
+   assessed individually."
+2. COMMAND PALETTE — Cmd+K / Ctrl+K opens a fast keyboard-navigable
+   palette (styled to the ledger system: paper bg, rule borders, mono
+   labels) with actions: navigate to each page, "Call (877) 464-8470",
+   "Email collect@advancedrecoverygroup.com", "Open Client Portal". Add
+   a subtle "⌘K" hint in the header on desktop.
+3. LIVE OFFICE STATUS — small mono indicator in the header (desktop) and
+   footer: a green/gray dot + "Open now — closes 5:00 PM ET" or "Closed —
+   opens Mon 9:00 AM ET", computed from America/New_York time with the
+   real hours (Mon–Thu 9–5, Fri 9–2).
+4. PAGE POLISH — 250ms fade/slide page transitions on route change; a
+   2px accent reading-progress bar on blog articles; hero headline gets
+   a one-time staggered line reveal. All respect
+   prefers-reduced-motion (render final state statically).
+
+Do not add particles, 3D, chatbots, or dark mode. Keep the ledger
+design system rules: 1px rule dividers, no shadows, no gradients,
+max 4px radii.

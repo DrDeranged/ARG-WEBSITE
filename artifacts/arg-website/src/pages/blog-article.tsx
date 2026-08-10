@@ -2,10 +2,20 @@ import { Shell } from '@/components/layout/Shell';
 import { ArrowLeft } from 'lucide-react';
 import { Link, useRoute } from 'wouter';
 import NotFound from '@/pages/not-found';
+import { useEffect, useRef, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 
-const articleData = {
+const articleData: Record<string, {
+  title: string;
+  description: string;
+  date: string;
+  coverImage: string;
+  content: string;
+  placeholder?: boolean;
+}> = {
   "when-is-the-right-time-to-partner-with-a-commercial-collections-firm": {
     title: "When Is the Right Time to Partner with a Commercial Collections Firm?",
+    description: "As defaults slip from 30 to 60 to 90 days overdue, the likelihood of collecting diminishes. Here's how to know when to bring in a commercial collections firm.",
     date: "November 9, 2023",
     coverImage: "/images/dr-cover.png",
     content: `
@@ -32,48 +42,67 @@ const articleData = {
   },
   "a-journey-of-compassion-my-service-trip-to-the-dr": {
     title: "A Journey of Compassion: My Service Trip to the DR",
+    description: "A personal account of ARG's mission trip to the Dominican Republic — feeding families, building connections, and living out our values.",
     date: "August 15, 2023",
     coverImage: "/images/dr-trip.jpg",
-    content: `
-      <p>At Advanced Recovery Group, our daily work is rooted in numbers, ledgers, and financial recovery. We spend our hours navigating negotiations and restoring cash flow for our clients. It is precise, demanding work. But true success in business must be tethered to a deeper purpose. For us, that purpose is community and connection. Recently, I had the profound privilege of stepping away from the desk and traveling to the Dominican Republic on a service trip.</p>
-
-      <p>Our team has long partnered with Feed My Starving Children (FMSC), an incredible organization dedicated to eradicating childhood hunger. We’ve spent many hours in local warehouses packing meals, but this trip allowed us to see the other end of that supply chain. We were going to distribute the very meals we had helped pack.</p>
-      
-      <img src="/images/meals.jpg" alt="FMSC Meals" class="my-10 w-full rounded-sm grayscale hover:grayscale-0 transition-all duration-500" />
-
-      <p>The contrast between the corporate environment in the US and the rural communities in the DR was stark, but the human connection was immediate. Over several days, we worked alongside local partners to deliver nutrient-dense FMSC meals to families who face daily food insecurity. Handing a box of food to a mother and seeing the relief in her eyes is an experience that defies words. It strips away the complexities of modern life and leaves only what is essential: empathy, care, and shared humanity.</p>
-
-      <p>One afternoon, we visited a local school. The children were vibrant, full of energy, and eager to interact. Despite the language barrier, we communicated through games, smiles, and laughter. Seeing the direct impact of sustained nutrition on their ability to learn and play was deeply moving. It reinforced why our firm commits a portion of our time and resources to these initiatives.</p>
-
-      <p>Returning to the office, the ledgers and spreadsheets looked the same, but my perspective had shifted. The work we do at ARG enables the good we want to see in the world. When we recover what our clients are owed, we sustain businesses; when we serve communities in need, we sustain hope. I am immensely grateful for this journey and for being part of a company that believes our greatest return on investment is the impact we make on others.</p>
-    `
-  },
-  "revenue-based-financing-grow": {
-    title: "Revenue-Based Financing: A Path to Growth",
-    date: "November 2, 2023",
-    coverImage: "/images/office.jpg",
-    content: `
-      <p>Traditional loans aren't the only way to scale. As B2B businesses navigate varying economic climates, alternative funding structures like revenue-based financing (RBF) have gained traction.</p>
-      <h2>What is Revenue-Based Financing?</h2>
-      <p>Revenue-based financing allows a company to raise capital based on its ongoing revenue. Instead of fixed monthly payments, investors receive a percentage of the company's gross revenues until a predetermined amount has been repaid. This aligns the repayment schedule directly with the company's cash flow.</p>
-      <h2>When to Consider It</h2>
-      <p>For growing companies with strong, recurring revenue streams but limited physical assets for collateral, RBF offers a flexible alternative. It avoids the dilution of equity while providing the runway needed for expansion. Understanding your financial leverage is key to knowing when to deploy such tools.</p>
-    `
+    placeholder: true,
+    content: ``
   }
 };
+
+function ReadingProgress() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) return;
+
+    const handleScroll = () => {
+      const article = document.querySelector('article');
+      if (!article) return;
+      const { top, height } = article.getBoundingClientRect();
+      const windowH = window.innerHeight;
+      const scrolled = Math.max(0, -top);
+      const total = height - windowH;
+      setProgress(total > 0 ? Math.min(100, (scrolled / total) * 100) : 0);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <div className="fixed top-0 left-0 right-0 z-[60] h-[2px] bg-rule/30">
+      <div
+        className="h-full bg-recovered transition-none"
+        style={{ width: `${progress}%` }}
+      />
+    </div>
+  );
+}
 
 export default function BlogArticlePage() {
   const [match, params] = useRoute('/blog/:slug');
   const slug = params?.slug;
 
-  if (!slug || !articleData[slug as keyof typeof articleData]) {
+  if (!slug || !articleData[slug]) {
     return <NotFound />;
   }
 
-  const article = articleData[slug as keyof typeof articleData];
+  const article = articleData[slug];
 
   return (
     <Shell>
+      <Helmet>
+        <title>{article.title} | Advanced Recovery Group</title>
+        <meta name="description" content={article.description} />
+        <meta property="og:title" content={article.title} />
+        <meta property="og:description" content={article.description} />
+        {article.coverImage && <meta property="og:image" content={article.coverImage} />}
+      </Helmet>
+
+      <ReadingProgress />
+
       <article className="pb-24">
         {/* Header */}
         <header className="pt-32 pb-16 md:pt-48 md:pb-24 bg-mist border-b border-rule">
@@ -93,30 +122,53 @@ export default function BlogArticlePage() {
         {/* Cover Image */}
         {article.coverImage && (
           <div className="max-w-5xl mx-auto px-6 md:px-8 -mt-8 md:-mt-12 relative z-10 mb-16 md:mb-24">
-            <div className="w-full aspect-video md:aspect-[21/9] bg-paper overflow-hidden rounded-sm border border-rule/50 shadow-sm">
-              <img src={article.coverImage} alt={article.title} className="w-full h-full object-cover" />
+            <div className="w-full aspect-video md:aspect-[21/9] bg-paper overflow-hidden rounded-sm border border-rule/50">
+              <img
+                src={article.coverImage}
+                alt={article.title}
+                className="w-full h-full object-cover"
+                width="1200"
+                height="514"
+              />
             </div>
           </div>
         )}
 
         {/* Content */}
         <div className="max-w-3xl mx-auto px-6 md:px-8">
-          <div 
-            className="prose prose-slate prose-lg max-w-none font-sans
-              prose-headings:font-serif prose-headings:text-ink prose-headings:font-normal
-              prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6 prose-h2:border-b prose-h2:border-rule prose-h2:pb-4
-              prose-p:text-slate prose-p:leading-relaxed prose-p:mb-6
-              prose-strong:text-ink prose-strong:font-medium
-              prose-img:rounded-sm prose-img:border prose-img:border-rule"
-            dangerouslySetInnerHTML={{ __html: article.content }}
-          />
-          
+          {article.placeholder ? (
+            <p className="text-2xl text-slate italic font-serif text-center py-16">
+              Full article being migrated — check back soon.
+            </p>
+          ) : (
+            <div
+              className="prose prose-slate prose-lg max-w-none font-sans
+                prose-headings:font-serif prose-headings:text-ink prose-headings:font-normal
+                prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6 prose-h2:border-b prose-h2:border-rule prose-h2:pb-4
+                prose-p:text-slate prose-p:leading-relaxed prose-p:mb-6
+                prose-strong:text-ink prose-strong:font-medium
+                prose-img:rounded-sm prose-img:border prose-img:border-rule"
+              dangerouslySetInnerHTML={{ __html: article.content }}
+            />
+          )}
+
           <div className="mt-16 pt-8 border-t border-rule flex justify-between items-center">
             <p className="font-mono text-xs text-slate uppercase tracking-widest">Share this article</p>
             <div className="flex gap-4">
-              <button className="text-slate hover:text-ink transition-colors font-mono text-xs">LinkedIn</button>
-              <button className="text-slate hover:text-ink transition-colors font-mono text-xs">Twitter</button>
-              <button className="text-slate hover:text-ink transition-colors font-mono text-xs">Email</button>
+              <a
+                href={`https://www.linkedin.com/shareArticle?url=https://advancedrecoverygroup.com/blog/${slug}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate hover:text-ink transition-colors font-mono text-xs"
+              >
+                LinkedIn
+              </a>
+              <a
+                href={`mailto:?subject=${encodeURIComponent(article.title)}&body=https://advancedrecoverygroup.com/blog/${slug}/`}
+                className="text-slate hover:text-ink transition-colors font-mono text-xs"
+              >
+                Email
+              </a>
             </div>
           </div>
         </div>
