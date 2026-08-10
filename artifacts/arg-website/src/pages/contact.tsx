@@ -45,51 +45,6 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
 
 const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') || '';
 
-/* ── Direct-contact card (shown when email isn't configured) ── */
-function DirectContactCard() {
-  return (
-    <div className="flex flex-col gap-10">
-      <div>
-        <h2 className="text-3xl font-serif text-ink mb-8">Reach us directly.</h2>
-        <div className="flex flex-col gap-6 font-mono text-base border-l-2 border-recovered pl-6 py-2">
-          <div className="flex flex-col gap-1">
-            <span className="text-slate text-xs uppercase tracking-widest">Phone</span>
-            <a href="tel:8774648470" className="text-ink hover:text-recovered transition-colors tabular-nums flex items-center min-h-[44px]">
-              (877) 464-8470
-            </a>
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-slate text-xs uppercase tracking-widest">Email</span>
-            <a href="mailto:collect@advancedrecoverygroup.com" className="text-ink hover:text-recovered transition-colors break-all flex items-center min-h-[44px]">
-              collect@advancedrecoverygroup.com
-            </a>
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-slate text-xs uppercase tracking-widest">Fax</span>
-            <span className="text-ink tabular-nums">(888) 881-8211</span>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="font-mono text-slate tracking-widest text-xs font-semibold mb-4 uppercase">
-          Business Hours
-        </h3>
-        <div className="font-mono text-sm space-y-2 text-ink">
-          <p className="flex justify-between max-w-xs">
-            <span>Monday – Thursday</span>
-            <span>9AM – 5PM</span>
-          </p>
-          <p className="flex justify-between max-w-xs">
-            <span>Friday</span>
-            <span>9AM – 4PM</span>
-          </p>
-          <p className="text-slate/60 text-xs pt-1">All times Eastern</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function ContactPage() {
   const [status, setStatus] = useState<Status>('idle');
@@ -179,9 +134,9 @@ export default function ContactPage() {
       );
     }
 
-    // Not configured, or 503 on submit → direct card
+    // Not configured, or 503 on submit → left column already has all contact info
     if (showDirectCard) {
-      return <DirectContactCard />;
+      return null;
     }
 
     // Success state
@@ -441,9 +396,9 @@ export default function ContactPage() {
         <div className="max-w-6xl mx-auto px-6 md:px-8">
           <h1 className="text-5xl md:text-7xl font-serif text-ink mb-16 md:mb-24">Let's Talk.</h1>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24">
+          <div className={`grid grid-cols-1 gap-16 lg:gap-24 ${!showDirectCard ? 'lg:grid-cols-12' : ''}`}>
             {/* Left column — contact info + dog photo */}
-            <div className="lg:col-span-5 flex flex-col gap-12">
+            <div className={`flex flex-col gap-12 ${!showDirectCard ? 'lg:col-span-5' : 'max-w-md'}`}>
               <div>
                 <h3 className="font-mono text-slate tracking-widest text-xs font-semibold mb-6 uppercase">
                   Contact Information
@@ -500,10 +455,12 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* Right column — form or direct-contact card */}
-            <div className="lg:col-span-7">
-              {renderFormColumn()}
-            </div>
+            {/* Right column — form only; hidden when email isn't configured */}
+            {!showDirectCard && (
+              <div className="lg:col-span-7">
+                {renderFormColumn()}
+              </div>
+            )}
           </div>
         </div>
       </section>
