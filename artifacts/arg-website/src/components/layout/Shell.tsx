@@ -10,12 +10,12 @@ function getOfficeStatus(): OfficeStatus {
   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
   const day = now.getDay();
   const totalMin = now.getHours() * 60 + now.getMinutes();
-  const OPEN = 9 * 60, CLOSE_WD = 17 * 60, CLOSE_FR = 14 * 60;
+  const OPEN = 9 * 60, CLOSE_WD = 17 * 60, CLOSE_FR = 16 * 60;
   const isWeekday = day >= 1 && day <= 4, isFriday = day === 5;
   if (isWeekday && totalMin >= OPEN && totalMin < CLOSE_WD)
     return { open: true, label: 'Open now — closes 5:00 PM ET' };
   if (isFriday && totalMin >= OPEN && totalMin < CLOSE_FR)
-    return { open: true, label: 'Open now — closes 2:00 PM ET' };
+    return { open: true, label: 'Open now — closes 4:00 PM ET' };
   let next = '';
   if (day === 0 || day === 6) next = 'Mon 9:00 AM ET';
   else if (isFriday && totalMin >= CLOSE_FR) next = 'Mon 9:00 AM ET';
@@ -347,7 +347,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 <p><span className="text-paper/40 mr-4">P</span><a href="tel:8774648470" className="link-draw hover:text-white transition-colors">(877) 464-8470</a></p>
                 <p><span className="text-paper/40 mr-4">F</span>(888) 881-8211</p>
                 <p><span className="text-paper/40 mr-4">E</span><a href="mailto:collect@advancedrecoverygroup.com" className="link-draw hover:text-white transition-colors">collect@advancedrecoverygroup.com</a></p>
-                <p className="pt-2 text-xs">Mon–Thu 9AM–5PM &nbsp;|&nbsp; Fri 9AM–2PM</p>
+                <p className="pt-2 text-xs">Mon–Thu 9AM–5PM &nbsp;|&nbsp; Fri 9AM–4PM</p>
               </div>
               <div className="mt-6">
                 <OfficeStatusIndicator dark />

@@ -82,7 +82,7 @@ function DirectContactCard() {
           </p>
           <p className="flex justify-between max-w-xs">
             <span>Friday</span>
-            <span>9AM – 2PM</span>
+            <span>9AM – 4PM</span>
           </p>
           <p className="text-slate/60 text-xs pt-1">All times Eastern</p>
         </div>
@@ -474,7 +474,7 @@ export default function ContactPage() {
                   </p>
                   <p className="flex justify-between max-w-xs">
                     <span>Friday</span>
-                    <span>9AM – 2PM</span>
+                    <span>9AM – 4PM</span>
                   </p>
                 </div>
               </div>
