@@ -1,0 +1,53 @@
+Motion pass on arg-website. All effects must respect
+prefers-reduced-motion (render final state statically), run at 60fps
+using only transform/opacity (no layout-property animation), and use
+the existing design tokens. Build these:
+
+1. PAGE TRANSITIONS: route changes get a "ledger turn" — the outgoing
+   page fades and slips up 8px while a 1px recovered-green rule sweeps
+   left-to-right across the top of the viewport (300ms total), then the
+   incoming page rises 8px into place. Subtle, fast, consistent.
+
+2. MAGNETIC CTAs: primary buttons (hero CTA, closing CTA, Client
+   Portal) gently attract toward the cursor within a 40px radius —
+   translate up to 3px toward it with a spring return on leave.
+   Desktop pointer devices only.
+
+3. NUMBER SCRAMBLE: anywhere a mono number appears on scroll-into-view
+   (section folios, estimator balance readout, the footer phone
+   number), it resolves via a brief 400ms scramble through random
+   digits before settling — slot-machine-precision, once only.
+
+4. SCROLL-LINKED HERO DEPTH: as the user scrolls past the hero, the
+   ledger card translates up at 0.85x scroll speed (a restrained 
+   parallax of ~15% differential) and its border color shifts rule →
+   recovered over the first 300px of scroll. The headline stays fixed
+   in flow — no text parallax.
+
+5. ESTIMATOR MICRO-PHYSICS: slider thumbs get a subtle scale(1.15) +
+   ring while dragging; the outlook band label crossfades through a
+   6-frame mono character shuffle when the band changes (Strong ⇄
+   Moderate ⇄ Challenging); the explanation sentences stagger-fade in
+   80ms apart when they change.
+
+6. LINK UNDERLINE SYSTEM: every text link sitewide gets a 1px
+   underline that draws left-to-right on hover and exits
+   right-to-left — one consistent behavior everywhere, 200ms.
+
+7. SECTION RULE DRAWS: each section's top ledger rule draws from 0 to
+   full width (600ms ease-out) as the section enters the viewport,
+   slightly BEFORE the content's fade-up begins (100ms stagger) — the
+   rule leads, content follows, like a line being ruled before the
+   entry is written.
+
+8. CAREERS + BLOG ROWS: list rows get a hover state where the row's
+   left edge grows a 2px recovered accent bar (scaleY from center,
+   150ms) and the title shifts right 6px.
+
+9. COMMAND PALETTE ENTRANCE: opens with a 150ms scale(0.98→1) + fade,
+   items stagger in 20ms apart; closing reverses at double speed.
+
+DO NOT add: cursor trails, particle systems, 3D tilts, scroll-jacking,
+horizontal scroll sections, or autoplay video. Cap total concurrent
+animations so the main thread stays clean; test on a throttled CPU in
+DevTools and confirm no jank.

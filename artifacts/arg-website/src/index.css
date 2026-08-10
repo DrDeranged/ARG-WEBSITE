@@ -274,7 +274,66 @@
   100% { transform: translateX(-50%); }
 }
 
+@keyframes fade-up-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@layer base {
+  /* Slider micro-physics — thumb scales on drag */
+  input[type='range']::-webkit-slider-thumb {
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
+  input[type='range']:active::-webkit-slider-thumb {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-recovered, #16a34a) 25%, transparent);
+  }
+  input[type='range']:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-recovered, #16a34a) 40%, transparent);
+  }
+}
+
 @layer utilities {
+  /* Link underline system: draws L→R on hover, retracts R→L on leave */
+  .link-draw {
+    background-image: linear-gradient(to right, currentColor 50%, transparent 50%);
+    background-size: 200% 1px;
+    background-position: 100% 100%;
+    background-repeat: no-repeat;
+    transition: background-position 200ms ease;
+    padding-bottom: 1px;
+  }
+  .link-draw:hover {
+    background-position: 0% 100%;
+  }
+
+  /* Careers + blog list row hover: left accent bar + title shift */
+  .list-row {
+    position: relative;
+  }
+  .list-row::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--color-recovered, #16a34a);
+    transform: scaleY(0);
+    transform-origin: center;
+    transition: transform 150ms ease;
+    pointer-events: none;
+  }
+  .list-row:hover::before {
+    transform: scaleY(1);
+  }
+  .row-title {
+    transition: transform 150ms ease;
+  }
+  .list-row:hover .row-title {
+    transform: translateX(6px);
+  }
+
   .text-h2 {
     font-size: clamp(2.25rem, 4vw, 3.5rem);
     line-height: 1.15;

@@ -41,11 +41,15 @@ export default function BlogListPage() {
         <div className="max-w-4xl mx-auto px-6 md:px-8">
           <div className="flex flex-col">
             {articles.map((article) => (
-              <div key={article.slug} className="group border-t border-rule py-12 md:py-16 first:border-t-0 first:pt-0">
+              /* list-row for left accent bar; group for title shift via row-title */
+              <div
+                key={article.slug}
+                className="list-row group relative border-t border-rule py-12 md:py-16 first:border-t-0 first:pt-0 pl-4 md:pl-6 hover:bg-mist/30 transition-colors"
+              >
                 <span className="font-mono text-sm text-slate tabular-nums block mb-4">{article.date}</span>
                 <Link href={`/blog/${article.slug}/`} className="block">
                   <h2
-                    className="font-serif text-ink mb-6 group-hover:text-recovered transition-colors leading-tight"
+                    className="row-title font-serif text-ink mb-6 group-hover:text-recovered transition-colors leading-tight"
                     style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', lineHeight: 1.2 }}
                   >
                     {article.title}
@@ -56,7 +60,7 @@ export default function BlogListPage() {
                 </p>
                 <Link
                   href={`/blog/${article.slug}/`}
-                  className="font-mono text-sm text-ink group-hover:text-recovered transition-colors"
+                  className="link-draw font-mono text-sm text-ink group-hover:text-recovered transition-colors"
                 >
                   Read More →
                 </Link>

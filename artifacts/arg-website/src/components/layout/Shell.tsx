@@ -1,36 +1,27 @@
-import { type ReactNode, useEffect, useRef, useState, useCallback } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Menu, X, Phone, Mail, ExternalLink, Search } from 'lucide-react';
+import { ScrambleText } from '@/components/ScrambleText';
 
 /* ── Office Status ──────────────────────────────────────── */
 type OfficeStatus = { open: boolean; label: string };
 
 function getOfficeStatus(): OfficeStatus {
-  const now = new Date(
-    new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })
-  );
+  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
   const day = now.getDay();
   const totalMin = now.getHours() * 60 + now.getMinutes();
-  const OPEN = 9 * 60;
-  const CLOSE_WD = 17 * 60;
-  const CLOSE_FR = 14 * 60;
-  const isWeekday = day >= 1 && day <= 4;
-  const isFriday  = day === 5;
-
+  const OPEN = 9 * 60, CLOSE_WD = 17 * 60, CLOSE_FR = 14 * 60;
+  const isWeekday = day >= 1 && day <= 4, isFriday = day === 5;
   if (isWeekday && totalMin >= OPEN && totalMin < CLOSE_WD)
     return { open: true, label: 'Open now — closes 5:00 PM ET' };
   if (isFriday && totalMin >= OPEN && totalMin < CLOSE_FR)
     return { open: true, label: 'Open now — closes 2:00 PM ET' };
-
-  let nextLabel = '';
-  if (day === 0 || day === 6) nextLabel = 'Mon 9:00 AM ET';
-  else if (isFriday && totalMin >= CLOSE_FR) nextLabel = 'Mon 9:00 AM ET';
-  else if (isWeekday && totalMin >= CLOSE_WD) {
-    const names = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-    nextLabel = `${names[day + 1] ?? 'Mon'} 9:00 AM ET`;
-  } else nextLabel = 'today 9:00 AM ET';
-
-  return { open: false, label: `Closed — opens ${nextLabel}` };
+  let next = '';
+  if (day === 0 || day === 6) next = 'Mon 9:00 AM ET';
+  else if (isFriday && totalMin >= CLOSE_FR) next = 'Mon 9:00 AM ET';
+  else if (isWeekday && totalMin >= CLOSE_WD) { const n = ['','Mon','Tue','Wed','Thu','Fri']; next = `${n[day+1]??'Mon'} 9:00 AM ET`; }
+  else next = 'today 9:00 AM ET';
+  return { open: false, label: `Closed — opens ${next}` };
 }
 
 function OfficeStatusIndicator({ dark = false }: { dark?: boolean }) {
@@ -48,31 +39,30 @@ function OfficeStatusIndicator({ dark = false }: { dark?: boolean }) {
 }
 
 /* ── Command Palette ────────────────────────────────────── */
-type PaletteAction = {
-  id: string; label: string; sub: string; icon: ReactNode; action: () => void;
-};
+type PaletteAction = { id: string; label: string; sub: string; icon: ReactNode; action: () => void };
 
-function CommandPalette({ onClose, navigate }: { onClose: () => void; navigate: (path: string) => void }) {
-  const [query, setQuery]       = useState('');
-  const [activeIdx, setActive]  = useState(0);
-  const inputRef  = useRef<HTMLInputElement>(null);
+function CommandPalette({
+  onClose, navigate, animated,
+}: {
+  onClose: () => void; navigate: (path: string) => void; animated: boolean;
+}) {
+  const [query, setQuery]      = useState('');
+  const [activeIdx, setActive] = useState(0);
+  const inputRef   = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   const allActions: PaletteAction[] = [
-    { id: 'home',    label: 'Home',        sub: 'Go to homepage',      icon: <Search size={14} />, action: () => { navigate('/'); onClose(); } },
-    { id: 'contact', label: 'Contact Us',  sub: 'Send an inquiry',     icon: <Search size={14} />, action: () => { navigate('/contact-us/'); onClose(); } },
-    { id: 'careers', label: 'Careers',     sub: 'View open positions', icon: <Search size={14} />, action: () => { navigate('/careers/'); onClose(); } },
-    { id: 'blog',    label: 'Blog',        sub: 'Insights & updates',  icon: <Search size={14} />, action: () => { navigate('/blog/'); onClose(); } },
-    { id: 'call',    label: 'Call (877) 464-8470',                        sub: 'Talk to a specialist',  icon: <Phone size={14} />,        action: () => { window.location.href = 'tel:8774648470'; onClose(); } },
-    { id: 'email',   label: 'Email collect@advancedrecoverygroup.com',    sub: 'Send us a message',     icon: <Mail size={14} />,         action: () => { window.location.href = 'mailto:collect@advancedrecoverygroup.com'; onClose(); } },
-    { id: 'portal',  label: 'Open Client Portal',                         sub: 'Log in to your account', icon: <ExternalLink size={14} />, action: () => { window.open('https://app.simplicitycollect.com/Login.aspx', '_blank', 'noopener'); onClose(); } },
+    { id: 'home',    label: 'Home',        sub: 'Go to homepage',       icon: <Search size={14} />, action: () => { navigate('/'); onClose(); } },
+    { id: 'contact', label: 'Contact Us',  sub: 'Send an inquiry',      icon: <Search size={14} />, action: () => { navigate('/contact-us/'); onClose(); } },
+    { id: 'careers', label: 'Careers',     sub: 'View open positions',  icon: <Search size={14} />, action: () => { navigate('/careers/'); onClose(); } },
+    { id: 'blog',    label: 'Blog',        sub: 'Insights & updates',   icon: <Search size={14} />, action: () => { navigate('/blog/'); onClose(); } },
+    { id: 'call',    label: 'Call (877) 464-8470',                       sub: 'Talk to a specialist',   icon: <Phone size={14} />,        action: () => { window.location.href = 'tel:8774648470'; onClose(); } },
+    { id: 'email',   label: 'Email collect@advancedrecoverygroup.com',   sub: 'Send us a message',      icon: <Mail size={14} />,         action: () => { window.location.href = 'mailto:collect@advancedrecoverygroup.com'; onClose(); } },
+    { id: 'portal',  label: 'Open Client Portal',                        sub: 'Log in to your account', icon: <ExternalLink size={14} />, action: () => { window.open('https://app.simplicitycollect.com/Login.aspx', '_blank', 'noopener'); onClose(); } },
   ];
 
   const filtered = query
-    ? allActions.filter(a =>
-        a.label.toLowerCase().includes(query.toLowerCase()) ||
-        a.sub.toLowerCase().includes(query.toLowerCase())
-      )
+    ? allActions.filter(a => a.label.toLowerCase().includes(query.toLowerCase()) || a.sub.toLowerCase().includes(query.toLowerCase()))
     : allActions;
 
   useEffect(() => { setActive(0); }, [query]);
@@ -85,29 +75,34 @@ function CommandPalette({ onClose, navigate }: { onClose: () => void; navigate: 
     else if (e.key === 'Escape')  { onClose(); }
   }, [filtered, activeIdx, onClose]);
 
+  // Spring easing for open, faster for close
+  const ease = animated ? 'cubic-bezier(.22,1,.36,1)' : 'ease';
+  const dur  = animated ? '150ms' : '75ms';
+
   return (
     <div
       ref={overlayRef}
       className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4"
       role="dialog" aria-modal="true" aria-label="Command palette"
       onClick={e => { if (e.target === overlayRef.current) onClose(); }}
+      style={{ opacity: animated ? 1 : 0, transition: `opacity ${dur} ease` }}
     >
-      <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-      <div className="relative w-full max-w-xl bg-paper border border-rule rounded-sm overflow-hidden">
+      <div
+        className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
+        onClick={onClose} aria-hidden="true"
+      />
+      <div
+        className="relative w-full max-w-xl bg-paper border border-rule rounded-sm overflow-hidden"
+        style={{ transform: animated ? 'scale(1)' : 'scale(0.98)', transition: `transform ${dur} ${ease}` }}
+      >
         <div className="flex items-center gap-3 px-4 py-3 border-b border-rule">
           <Search size={16} className="text-slate flex-shrink-0" aria-hidden="true" />
           <input
             ref={inputRef}
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            onKeyDown={handleKey}
+            type="text" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={handleKey}
             placeholder="Search or jump to…"
             className="flex-1 bg-transparent font-mono text-sm text-ink placeholder:text-slate/50 focus:outline-none"
-            aria-label="Search commands"
-            role="combobox"
-            aria-expanded="true"
-            aria-autocomplete="list"
+            aria-label="Search commands" role="combobox" aria-expanded="true" aria-autocomplete="list"
           />
           <kbd className="font-mono text-xs text-slate/50 border border-rule px-1.5 py-0.5 rounded-sm">esc</kbd>
         </div>
@@ -116,11 +111,16 @@ function CommandPalette({ onClose, navigate }: { onClose: () => void; navigate: 
           {filtered.map((action, idx) => (
             <li
               key={action.id}
-              role="option"
-              aria-selected={idx === activeIdx}
-              onMouseEnter={() => setActive(idx)}
-              onClick={action.action}
+              role="option" aria-selected={idx === activeIdx}
+              onMouseEnter={() => setActive(idx)} onClick={action.action}
               className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${idx === activeIdx ? 'bg-mist' : 'hover:bg-mist/50'}`}
+              style={{
+                opacity: animated ? 1 : 0,
+                transform: animated ? 'translateY(0)' : 'translateY(4px)',
+                transition: animated
+                  ? `opacity 150ms ease ${Math.min(idx, 10) * 20}ms, transform 150ms ease ${Math.min(idx, 10) * 20}ms`
+                  : 'opacity 75ms ease, transform 75ms ease',
+              }}
             >
               <span className="text-slate flex-shrink-0" aria-hidden="true">{action.icon}</span>
               <span className="flex-1 min-w-0">
@@ -143,11 +143,12 @@ function CommandPalette({ onClose, navigate }: { onClose: () => void; navigate: 
 
 /* ── Shell ──────────────────────────────────────────────── */
 export function Shell({ children }: { children: ReactNode }) {
-  const [isScrolled, setIsScrolled]     = useState(false);
-  const [mobileMenuOpen, setMobileMenu] = useState(false);
-  const [paletteOpen, setPalette]       = useState(false);
-  const [finaleRevealed, setFinale]     = useState(false);
-  const finaleRef = useRef<HTMLDivElement>(null);
+  const [isScrolled, setIsScrolled]       = useState(false);
+  const [mobileMenuOpen, setMobileMenu]   = useState(false);
+  const [paletteOpen, setPaletteOpen]     = useState(false);   // controls DOM mounting
+  const [paletteAnimated, setPaletteAnim] = useState(false);   // controls CSS state
+  const [finaleRevealed, setFinale]       = useState(false);
+  const finaleRef  = useRef<HTMLDivElement>(null);
   const [location, navigate] = useLocation();
 
   useEffect(() => {
@@ -160,11 +161,12 @@ export function Shell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setPalette(v => !v); }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); paletteOpen ? closePalette() : openPalette(); }
     };
     window.addEventListener('keydown', down);
     return () => window.removeEventListener('keydown', down);
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paletteOpen]);
 
   useEffect(() => {
     document.body.style.overflow = paletteOpen || mobileMenuOpen ? 'hidden' : '';
@@ -185,6 +187,16 @@ export function Shell({ children }: { children: ReactNode }) {
     return () => io.disconnect();
   }, []);
 
+  const openPalette = useCallback(() => {
+    setPaletteOpen(true);
+    requestAnimationFrame(() => requestAnimationFrame(() => setPaletteAnim(true)));
+  }, []);
+
+  const closePalette = useCallback(() => {
+    setPaletteAnim(false);
+    setTimeout(() => setPaletteOpen(false), 75);
+  }, []);
+
   return (
     <div className="min-h-[100dvh] flex flex-col bg-paper font-sans">
       {/* ── Header ────────────────────────────────────── */}
@@ -199,7 +211,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <nav className="hidden md:flex items-center gap-6" aria-label="Main navigation">
             {[['Home', '/'], ['Contact Us', '/contact-us/'], ['Careers', '/careers/'], ['Blog', '/blog/']].map(
               ([label, href]) => (
-                <Link key={href} href={href} className="text-sm font-medium text-slate hover:text-recovered transition-colors">
+                <Link key={href} href={href} className="link-draw text-sm font-medium text-slate hover:text-recovered transition-colors">
                   {label}
                 </Link>
               )
@@ -209,7 +221,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <div className="hidden md:flex items-center gap-4 flex-shrink-0">
             <OfficeStatusIndicator />
             <button
-              onClick={() => setPalette(true)}
+              onClick={openPalette}
               aria-label="Open command palette (⌘K)"
               className="flex items-center gap-1.5 text-slate/60 hover:text-ink transition-colors"
             >
@@ -254,7 +266,7 @@ export function Shell({ children }: { children: ReactNode }) {
               Client Portal
             </a>
             <button
-              onClick={() => { setMobileMenu(false); setPalette(true); }}
+              onClick={() => { setMobileMenu(false); openPalette(); }}
               className="flex items-center justify-center gap-2 border border-rule text-slate px-6 py-4 rounded-sm text-sm font-mono"
             >
               <Search size={14} aria-hidden="true" /> Quick Actions
@@ -273,27 +285,21 @@ export function Shell({ children }: { children: ReactNode }) {
           <div ref={finaleRef} className="pb-16 mb-16 border-b border-paper/10">
             <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-8">
               <div>
-                <h2
-                  className="font-serif text-paper leading-tight mb-4"
-                  style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', lineHeight: 1.05 }}
-                >
-                  Still owed?<br />Let\u2019s fix that.
+                <h2 className="font-serif text-paper leading-tight mb-4"
+                  style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', lineHeight: 1.05 }}>
+                  Still owed?<br />Let&rsquo;s fix that.
                 </h2>
-                {/* Underline rule draws in on scroll */}
-                <div
-                  className="h-[2px] bg-recovered"
-                  style={{
-                    width: finaleRevealed ? '100%' : '0%',
-                    transition: 'width 900ms cubic-bezier(.22,1,.36,1) 200ms',
-                  }}
+                {/* Underline draws in on scroll */}
+                <div className="h-[2px] bg-recovered"
+                  style={{ width: finaleRevealed ? '100%' : '0%', transition: 'width 900ms cubic-bezier(.22,1,.36,1) 200ms' }}
                 />
               </div>
               <a
                 href="tel:8774648470"
-                className="font-mono tabular-nums text-paper hover:text-recovered transition-colors"
+                className="font-mono tabular-nums text-paper hover:text-recovered transition-colors link-draw"
                 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)' }}
               >
-                (877) 464-8470
+                <ScrambleText text="(877) 464-8470" />
               </a>
             </div>
           </div>
@@ -315,7 +321,7 @@ export function Shell({ children }: { children: ReactNode }) {
               <nav className="flex flex-col gap-4" aria-label="Footer navigation">
                 {[['Home', '/'], ['Contact Us', '/contact-us/'], ['Careers', '/careers/'], ['Blog', '/blog/']].map(
                   ([label, href]) => (
-                    <Link key={href} href={href} className="text-sm hover:text-white transition-colors w-fit">
+                    <Link key={href} href={href} className="link-draw text-sm hover:text-white transition-colors w-fit">
                       {label}
                     </Link>
                   )
@@ -326,9 +332,9 @@ export function Shell({ children }: { children: ReactNode }) {
             <div className="lg:col-span-2">
               <h4 className="font-mono text-xs tracking-widest text-paper/50 mb-6 uppercase">Contact</h4>
               <div className="font-mono text-sm space-y-3 text-paper/80 tabular-nums">
-                <p><span className="text-paper/40 mr-4">P</span><a href="tel:8774648470" className="hover:text-white transition-colors">(877) 464-8470</a></p>
+                <p><span className="text-paper/40 mr-4">P</span><a href="tel:8774648470" className="link-draw hover:text-white transition-colors">(877) 464-8470</a></p>
                 <p><span className="text-paper/40 mr-4">F</span>(888) 881-8211</p>
-                <p><span className="text-paper/40 mr-4">E</span><a href="mailto:collect@advancedrecoverygroup.com" className="hover:text-white transition-colors">collect@advancedrecoverygroup.com</a></p>
+                <p><span className="text-paper/40 mr-4">E</span><a href="mailto:collect@advancedrecoverygroup.com" className="link-draw hover:text-white transition-colors">collect@advancedrecoverygroup.com</a></p>
                 <p className="pt-2 text-xs">Mon–Thu 9AM–5PM &nbsp;|&nbsp; Fri 9AM–2PM</p>
               </div>
               <div className="mt-6">
@@ -339,14 +345,16 @@ export function Shell({ children }: { children: ReactNode }) {
 
           <div className="pt-8 border-t border-paper/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-mono text-paper/40">
             <p>© {new Date().getFullYear()} Advanced Recovery Group. All rights reserved.</p>
-            <a href="https://www.linkedin.com/company/adrgroup/" target="_blank" rel="noopener" className="hover:text-paper/80 transition-colors">
+            <a href="https://www.linkedin.com/company/adrgroup/" target="_blank" rel="noopener" className="link-draw hover:text-paper/80 transition-colors">
               LinkedIn
             </a>
           </div>
         </div>
       </footer>
 
-      {paletteOpen && <CommandPalette onClose={() => setPalette(false)} navigate={navigate} />}
+      {paletteOpen && (
+        <CommandPalette onClose={closePalette} navigate={navigate} animated={paletteAnimated} />
+      )}
     </div>
   );
 }

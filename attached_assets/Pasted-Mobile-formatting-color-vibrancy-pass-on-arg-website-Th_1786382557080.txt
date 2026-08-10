@@ -1,0 +1,64 @@
+Mobile formatting + color vibrancy pass on arg-website. The ledger
+design system stays, but we're enriching it — the goal is vibrant,
+techy, corporate: color with discipline, not monochrome.
+
+PART A — COLOR ENRICHMENT:
+1. Photos: change <EditorialImage> from grayscale-by-default to
+   FULL COLOR by default, unified with a subtle ink duotone overlay
+   (ink at 12% multiply) + a barely-warm levels lift so all photos
+   read as one editorial set while keeping their life. On hover, the
+   overlay fades to 0. Keep the 2px rule border + mono captions.
+2. Formalize a fourth accent as a token: signal #D97D0E (amber) — 
+   already used in the estimator's Moderate band. Use it ONLY for:
+   Moderate states, the "URGENT"-style emphasis in the hero ledger
+   card's middle rows, and hover states on secondary buttons. Never
+   for body text.
+3. Give recovered green more presence: section folios ("03 / 07"),
+   all eyebrow labels on mist-background sections, the marquee ticker
+   separators (·), slider track fills, and the active nav link
+   indicator. Add a brighter interactive companion tone
+   recovered-bright #27A578 used exclusively for hover/active states
+   of green elements.
+4. Add depth rhythm to section backgrounds: alternate paper → mist →
+   paper, keep Giving Back on full ink, and give the Recovery
+   Estimator section a distinct treatment: mist background with a
+   very subtle ledger-grid pattern (1px rule-color lines at 48px
+   intervals, 4% opacity) so the interactive tool feels like its own
+   instrument panel.
+5. The hero ledger card: give the final "FILE RECOVERED ✓" row a soft
+   recovered-green background wash (recovered at 8%) so the payoff
+   moment lands in color.
+
+PART B — MOBILE FORMATTING AUDIT (fix everything at 375px and 390px):
+1. Hero: stack vertically — headline block first at clamp minimum
+   3rem, ledger card below at full width; card rows stay legible
+   (min 14px mono). Verify the headline never wraps mid-word.
+2. Touch targets: every tappable element ≥44x44px — nav links, footer
+   links, careers rows, slider thumbs (enlarge thumbs to 28px on
+   touch devices), command palette items.
+3. Forms: all inputs font-size ≥16px (prevents iOS auto-zoom),
+   selects native on mobile, error messages never overflow, the
+   direct-contact card's tel:/mailto: rows are full-width tap zones.
+4. Disable pointer-only effects on touch: magnetic CTAs off, hover
+   color-restore on images becomes tap-to-toggle or always-color on
+   touch (choose always-color), link underline animations still fine.
+5. Marquee ticker: verify it doesn't cause horizontal page scroll;
+   overflow-x hidden on its container; reduced-motion static fallback
+   centered and wrapped.
+6. Sticky header: compact 56px on mobile, safe-area-inset padding for
+   iPhone notch (env(safe-area-inset-top)), mobile menu overlay
+   scrollable if content exceeds viewport, body scroll locked while
+   open, ⌘K hint hidden on touch devices.
+7. Estimator on mobile: sliders full-width with the value readout
+   directly above each thumb, outlook bar full-width, explanation
+   text never jumps layout when sentences change (reserve min-height).
+8. Process section: the scroll-drawn rule works vertically on mobile;
+   step dots align to a consistent left gutter.
+9. Section folios: shrink to text-[10px] and tuck into the section
+   padding — never overlapping content.
+10. Footer: single column, finale headline scales down to 2rem, phone
+    number stays one line, columns stack in logical order (contact
+    info before nav links on mobile).
+11. Test the full flow at 375px in preview: no horizontal scroll
+    anywhere, no text truncation, no overlapping elements, all pages
+    including blog articles and the 404.
