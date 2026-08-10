@@ -1,0 +1,50 @@
+Reimagine the contact page as a designed two-column composition.
+Replace the current single-column layout entirely.
+
+STRUCTURE:
+1. PAGE HEADER (full container width): eyebrow "CONTACT — FAIRFIELD,
+   NJ", then headline "Let's talk." (sentence case, typographic
+   apostrophe ' — not the straight quote currently rendered), then
+   one line in slate: "Tell us what you're owed. A recovery
+   specialist responds within one business day." Under it, the live
+   office-status line (green/gray dot + open/closed + hours until).
+2. TWO-COLUMN GRID below (lg:grid-cols-5, gap 12):
+   LEFT (3 cols) — "THE DIRECT LINE":
+   - Contact methods as large tappable ledger rows (full-width,
+     1px rule top/bottom, 72px tall, hover: recovered accent bar on
+     left edge): PHONE (877) 464-8470 as tel:, EMAIL
+     collect@advancedrecoverygroup.com as mailto:, FAX (888)
+     881-8211. Mono labels left, values large right, chevron hint.
+   - BUSINESS HOURS as a small two-row ledger table (Mon–Thu 9AM–5PM,
+     Fri 9AM–4PM) with the currently-active row highlighted in
+     recovered green based on the live clock.
+   - A mono footnote: "Placements can also be initiated through the
+     Client Portal." with the portal link.
+   RIGHT (2 cols) — "THE OFFICE":
+   - The dog photo (/images/dog-support.jpg) in the EditorialImage
+     treatment, prominent, with its caption "Our Director of First
+     Impressions is standing by."
+   - Below it, "WHAT HAPPENS NEXT" — a compact 3-row mini-ledger:
+     01 We review your portfolio or file details · 02 A specialist
+     calls to scope strategy and terms · 03 Placement goes live —
+     recovery work begins. Each row: mono number, one line of text.
+3. FULL-WIDTH CLOSER BAND (ink background, spans the container,
+   sits above the footer): serif line "Have documents ready to
+   send?" + a recovered-green mailto button "Email the file to
+   collect@" and a ghost Client Portal button.
+
+FORM COMPATIBILITY: keep the email-configured branch intact — when
+RESEND_API_KEY exists, the form renders as the LEFT column content
+(with the contact ledger rows compressing into a compact block above
+the hours), and the RIGHT column stays as is. No duplicated contact
+info in any state — the ledger rows are the single source.
+
+SCALING:
+- The two-column grid must actually fill the container (max-w-6xl);
+  no dead right half at any width ≥1024px.
+- Mobile: header → contact rows → hours → dog → what-happens-next →
+  closer band, all full-width, rows ≥44px touch targets.
+- Continue the hero's ledger-grid backdrop (baselines at 4%) behind
+  the page header only, so the page opens with the same visual
+  language as home.
+Commit as "Contact page reimagined".
