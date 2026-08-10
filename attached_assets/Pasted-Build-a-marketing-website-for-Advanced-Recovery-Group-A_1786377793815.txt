@@ -1,0 +1,41 @@
+Build a marketing website for Advanced Recovery Group (ARG), a commercial
+collections agency, using Next.js App Router and Tailwind CSS.
+
+Design system — follow exactly, no substitutions:
+- Colors: ink #101F30 (headlines, footer, primary buttons), paper #FFFFFF
+  (page bg), mist #F3F6F9 (alternate section bg), slate #4A5A6E (body text),
+  recovered #1E7A5A (accent — used sparingly: CTAs, key numbers, link
+  hovers), rule #D8DFE6 (all borders and divider lines).
+- Fonts via next/font/google: Source Serif 4 (headings, weights 600/700),
+  Public Sans (body, weights 400/500), IBM Plex Mono (all numbers, stat
+  labels, eyebrow labels, form labels — always with tabular-nums).
+- Aesthetic: "financial ledger" — sections separated by fine 1px horizontal
+  rules in the rule color, generous whitespace, no card shadows, no
+  gradients, no rounded corners larger than 4px, no icons in feature grids
+  (mono text labels instead).
+- Layout: max-w-6xl centered container, 96px+ vertical section padding on
+  desktop, 56px on mobile.
+
+Build the shared shell first:
+1. Sticky header: logo placeholder left (I will upload /public/images/
+   logo-dark.png); nav links Home, Contact Us, Careers, Blog; plus a
+   "Client Portal" button styled as an outlined ink button linking to
+   https://app.simplicitycollect.com/Login.aspx opening in a new tab.
+   Mobile: clean hamburger menu, full-height overlay, same links.
+2. Footer in ink background with light text: logo (logo-light.png
+   placeholder), one-line description "Advanced Recovery Group is a
+   full-service commercial collections agency, providing successful
+   management solutions with professionalism and efficiency.", nav links,
+   and a contact block set in IBM Plex Mono: Phone (877) 464-8470,
+   Fax (888) 881-8211, collect@advancedrecoverygroup.com, Hours Mon–Thu
+   9AM–5PM / Fri 9AM–2PM. LinkedIn link:
+   https://www.linkedin.com/company/adrgroup/. Copyright line with
+   current year.
+3. Create routes for /, /contact-us/, /careers/, /blog/ — trailing
+   slashes preserved on all internal links. Each page can be a simple
+   placeholder with an h1 for now.
+
+Quality floor: fully responsive down to 375px, semantic HTML, visible
+keyboard focus states on all interactive elements, and respect
+prefers-reduced-motion globally. Do not add any content sections yet —
+the shell and design tokens are this step's entire scope.

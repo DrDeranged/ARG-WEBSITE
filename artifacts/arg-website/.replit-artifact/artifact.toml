@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Advanced Recovery Group Website"
+description = "Full marketing website for Advanced Recovery Group (ARG), a commercial collections agency. Multi-page site with homepage, contact, careers, and blog pages. Uses a 'financial ledger' aesthetic with custom typography and brand colors."
+version = "1.0.0"
+id = "artifacts/arg-website"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23126
+
+[services.development]
+run = "pnpm --filter @workspace/arg-website run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/arg-website", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/arg-website/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23126"
+BASE_PATH = "/"

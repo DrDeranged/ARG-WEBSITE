@@ -1,0 +1,42 @@
+First: I've uploaded a zip (arg-replit-asset-pack.zip). Extract it and move
+everything from its images/ folder into public/images/. Keep CONTENT-NOTES.md
+in the project root for later reference, but do NOT build anything based on
+it — follow only the instructions below.
+
+Build a marketing website for Advanced Recovery Group (ARG), a commercial
+collections agency, using Next.js App Router and Tailwind CSS.
+
+Design system — follow exactly, no substitutions:
+- Colors: ink #101F30 (headlines, footer, primary buttons), paper #FFFFFF
+  (page bg), mist #F3F6F9 (alternate section bg), slate #4A5A6E (body
+  text), recovered #1E7A5A (accent, used sparingly: CTAs, key numbers,
+  link hovers), rule #D8DFE6 (all borders and divider lines).
+- Fonts via next/font/google: Source Serif 4 (headings, 600/700), Public
+  Sans (body, 400/500), IBM Plex Mono (all numbers, stat labels, eyebrow
+  labels, form labels — always tabular-nums).
+- Aesthetic: "financial ledger" — sections separated by fine 1px
+  horizontal rules in the rule color, generous whitespace, no card
+  shadows, no gradients, no rounded corners over 4px, no icons in
+  feature grids (mono text labels instead).
+- Layout: max-w-6xl centered container, 96px+ vertical section padding
+  desktop, 56px mobile.
+
+Build only the shared shell in this step:
+1. Sticky header: logo left using /images/logo-dark.png; nav Home,
+   Contact Us, Careers, Blog; "Client Portal" outlined button linking to
+   https://app.simplicitycollect.com/Login.aspx in a new tab. Mobile:
+   hamburger with full-height overlay.
+2. Footer, ink background, light text: /images/logo-light.png, the line
+   "Advanced Recovery Group is a full-service commercial collections
+   agency, providing successful management solutions with professionalism
+   and efficiency.", nav links, contact block in IBM Plex Mono — Phone
+   (877) 464-8470, Fax (888) 881-8211,
+   collect@advancedrecoverygroup.com, Hours Mon–Thu 9AM–5PM / Fri
+   9AM–2PM — LinkedIn https://www.linkedin.com/company/adrgroup/, and a
+   copyright line.
+3. Routes for /, /contact-us/, /careers/, /blog/ with trailing slashes
+   preserved; placeholder h1 on each for now.
+
+Quality floor: responsive to 375px, semantic HTML, visible keyboard
+focus states, respect prefers-reduced-motion. No content sections yet —
+shell and design tokens only.
