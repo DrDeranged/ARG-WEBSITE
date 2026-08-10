@@ -58,7 +58,7 @@ function Reveal({
 function SectionFolio({ n, total = 7 }: { n: number; total?: number }) {
   const label = `${String(n).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
   return (
-    <span className="absolute top-6 right-6 md:top-8 md:right-8 font-mono text-xs text-slate/35 tabular-nums select-none pointer-events-none">
+    <span className="absolute top-4 right-4 md:top-8 md:right-8 font-mono text-[10px] text-recovered/50 tabular-nums select-none pointer-events-none">
       <ScrambleText text={label} />
     </span>
   );
@@ -69,11 +69,11 @@ function SectionFolio({ n, total = 7 }: { n: number; total?: number }) {
 ───────────────────────────────────────────────────────── */
 const FILE_TYPES = ['MCA DEFAULT', 'EQUIPMENT LEASE', 'COMMERCIAL LOAN', 'JUDGMENT MATTER'];
 const LIFECYCLE_STEPS = [
-  { label: 'FILE PLACED',          final: false },
-  { label: 'SKIP TRACE COMPLETE',  final: false },
-  { label: 'DEBTOR CONTACTED',     final: false },
-  { label: 'PAYMENT PLAN SECURED', final: false },
-  { label: 'FILE RECOVERED ✓',     final: true  },
+  { label: 'FILE PLACED',          final: false, middle: false },
+  { label: 'SKIP TRACE COMPLETE',  final: false, middle: true  },
+  { label: 'DEBTOR CONTACTED',     final: false, middle: true  },
+  { label: 'PAYMENT PLAN SECURED', final: false, middle: true  },
+  { label: 'FILE RECOVERED ✓',     final: true,  middle: false },
 ];
 
 function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
@@ -115,7 +115,7 @@ function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
 
   return (
     <div
-      className="bg-paper font-mono text-xs"
+      className="bg-paper font-mono text-sm md:text-xs"
       style={{
         border: `1px solid ${borderColor ?? 'var(--color-rule, #d5dae4)'}`,
         opacity: fading ? 0 : 1,
@@ -134,12 +134,21 @@ function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
         {LIFECYCLE_STEPS.map((step, i) => (
           <div
             key={step.label}
-            className="px-4 py-3 flex justify-between items-center"
+            className={`px-4 py-3 flex justify-between items-center ${step.final ? 'bg-recovered/[0.08]' : ''}`}
             style={{ opacity: i < visibleRows ? 1 : 0, transition: 'opacity 300ms ease' }}
           >
             <span className={step.final ? 'text-recovered font-medium' : 'text-ink'}>{step.label}</span>
             {i < visibleRows && (
-              <span className={`tabular-nums ${step.final ? 'text-recovered' : 'text-slate/50'}`}>
+              <span
+                className="tabular-nums"
+                style={{
+                  color: step.final
+                    ? 'var(--color-recovered)'
+                    : step.middle
+                    ? 'var(--color-signal)'
+                    : 'hsl(213 19.5% 36.1% / 0.5)',
+                }}
+              >
                 {step.final ? '●' : '○'}
               </span>
             )}
@@ -190,7 +199,23 @@ function HeroHeadline() {
 /* ─────────────────────────────────────────────────────────
    VERTICALS TICKER
 ───────────────────────────────────────────────────────── */
-const TICKER_TEXT = 'MERCHANT CASH ADVANCE · FACTORING · EQUIPMENT LEASING · COMMERCIAL LOANS · FINTECH LENDING · JUDGMENT ENFORCEMENT · ';
+const TICKER_PARTS = [
+  'MERCHANT CASH ADVANCE', 'FACTORING', 'EQUIPMENT LEASING',
+  'COMMERCIAL LOANS', 'FINTECH LENDING', 'JUDGMENT ENFORCEMENT',
+];
+
+function TickerSegment() {
+  return (
+    <span className="inline-flex items-center gap-0 font-mono text-xs text-slate/70 tracking-widest whitespace-nowrap shrink-0 pr-0">
+      {TICKER_PARTS.map((part, i) => (
+        <span key={i}>
+          {part}
+          &nbsp;<span className="text-recovered">·</span>&nbsp;
+        </span>
+      ))}
+    </span>
+  );
+}
 
 function VerticalsTicker() {
   const prefersReduced =
@@ -200,19 +225,19 @@ function VerticalsTicker() {
 
   if (prefersReduced) {
     return (
-      <div className="border-t border-b border-rule py-3 bg-paper">
-        <p className="font-mono text-xs text-slate tracking-widest text-center">
-          MERCHANT CASH ADVANCE · FACTORING · EQUIPMENT LEASING · COMMERCIAL LOANS · FINTECH LENDING · JUDGMENT ENFORCEMENT
+      <div className="border-t border-b border-rule py-3 bg-paper overflow-x-hidden">
+        <p className="font-mono text-xs text-slate tracking-widest text-center flex-wrap px-4">
+          {TICKER_PARTS.map((p, i) => (
+            <span key={i}>{p}{i < TICKER_PARTS.length - 1 && <span className="text-recovered mx-2">·</span>}</span>
+          ))}
         </p>
       </div>
     );
   }
-  const track = TICKER_TEXT + TICKER_TEXT;
   return (
-    <div className="border-t border-b border-rule py-3 bg-paper overflow-hidden">
+    <div className="border-t border-b border-rule py-3 bg-paper overflow-x-hidden">
       <div className="flex whitespace-nowrap ticker-animate" aria-hidden="true">
-        <span className="font-mono text-xs text-slate/70 tracking-widest">{track}</span>
-        <span className="font-mono text-xs text-slate/70 tracking-widest">{track}</span>
+        <TickerSegment /><TickerSegment /><TickerSegment /><TickerSegment />
       </div>
     </div>
   );
@@ -411,12 +436,12 @@ function RecoveryEstimator() {
     v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1)}M` : `$${(v / 1_000).toFixed(0)}k`;
 
   return (
-    <section className="relative bg-mist py-24 md:py-32 border-b border-rule">
+    <section className="relative bg-mist ledger-grid py-24 md:py-32 border-b border-rule">
       <SectionFolio n={4} />
       <div className="max-w-6xl mx-auto px-6 md:px-8">
         <SectionRule />
         <Reveal delay={100}>
-          <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-4 uppercase">Recovery Estimator</p>
+          <p className="font-mono text-recovered tracking-widest text-xs font-semibold mb-4 uppercase">Recovery Estimator</p>
           <h2 className="text-h2 font-serif text-ink mb-4">What's still recoverable?</h2>
           <p className="text-slate max-w-prose mb-12">Adjust the inputs to see a qualitative outlook. Every file is assessed individually.</p>
         </Reveal>
@@ -469,7 +494,7 @@ function RecoveryEstimator() {
               <div className="flex justify-between font-mono text-xs text-slate/50 mt-1"><span>Challenging</span><span>Strong</span></div>
             </div>
             {/* Sentences stagger in on change */}
-            <ul className="flex flex-col gap-3">
+            <ul className="flex flex-col gap-3 min-h-[160px]">
               {lines.map((l, i) => (
                 <li
                   key={`${lineKey}-${i}`}
@@ -555,9 +580,9 @@ function HeroSection() {
               </div>
             </div>
 
-            {/* Right 40% — animated ledger card with scroll-linked depth */}
+            {/* Right 40% — animated ledger card; visible on mobile (stacks below headline) */}
             <div
-              className="hidden lg:block"
+              className="mt-8 lg:mt-0"
               style={{
                 transform: `translateY(${cardParallaxY}px)`,
                 willChange: prefersReduced ? undefined : 'transform',
@@ -595,7 +620,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6 md:px-8">
           <SectionRule />
           <Reveal delay={100}>
-            <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-4 uppercase">Why Advanced Recovery Group</p>
+            <p className="font-mono text-recovered tracking-widest text-xs font-semibold mb-4 uppercase">Why Advanced Recovery Group</p>
             <h2 className="text-h2 font-serif text-ink mb-4">A precise, results-driven approach to commercial debt.</h2>
             <p className="font-mono text-xs text-slate/60 tracking-widest uppercase mb-16">
               100% Contingency &nbsp;·&nbsp; B2B Commercial Only &nbsp;·&nbsp; 24/7 Client Portal
@@ -695,7 +720,7 @@ export default function HomePage() {
           <Reveal>
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
               <div>
-                <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-4 uppercase">Insights</p>
+                <p className="font-mono text-recovered tracking-widest text-xs font-semibold mb-4 uppercase">Insights</p>
                 <h2 className="text-h2 font-serif text-ink">From the Blog</h2>
               </div>
               <Link href="/blog/" className="link-draw font-mono text-sm text-ink hover:text-recovered transition-colors">

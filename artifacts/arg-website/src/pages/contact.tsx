@@ -54,13 +54,13 @@ function DirectContactCard() {
         <div className="flex flex-col gap-6 font-mono text-base border-l-2 border-recovered pl-6 py-2">
           <div className="flex flex-col gap-1">
             <span className="text-slate text-xs uppercase tracking-widest">Phone</span>
-            <a href="tel:8774648470" className="text-ink hover:text-recovered transition-colors tabular-nums">
+            <a href="tel:8774648470" className="text-ink hover:text-recovered transition-colors tabular-nums flex items-center min-h-[44px]">
               (877) 464-8470
             </a>
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-slate text-xs uppercase tracking-widest">Email</span>
-            <a href="mailto:collect@advancedrecoverygroup.com" className="text-ink hover:text-recovered transition-colors break-all">
+            <a href="mailto:collect@advancedrecoverygroup.com" className="text-ink hover:text-recovered transition-colors break-all flex items-center min-h-[44px]">
               collect@advancedrecoverygroup.com
             </a>
           </div>
@@ -232,7 +232,7 @@ export default function ContactPage() {
                   <FormControl>
                     <Input
                       id="field-name"
-                      className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans"
+                      className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans text-base"
                       disabled={status === 'submitting'}
                       {...field}
                     />
@@ -250,7 +250,7 @@ export default function ContactPage() {
                   <FormControl>
                     <Input
                       id="field-company"
-                      className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans"
+                      className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans text-base"
                       disabled={status === 'submitting'}
                       {...field}
                     />
@@ -273,7 +273,7 @@ export default function ContactPage() {
                     <Input
                       id="field-email"
                       type="email"
-                      className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans"
+                      className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans text-base"
                       disabled={status === 'submitting'}
                       {...field}
                     />
@@ -292,7 +292,7 @@ export default function ContactPage() {
                     <Input
                       id="field-phone"
                       type="tel"
-                      className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans"
+                      className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans text-base"
                       disabled={status === 'submitting'}
                       {...field}
                     />
@@ -314,7 +314,7 @@ export default function ContactPage() {
                   <FormControl>
                     <select
                       id="field-category"
-                      className="w-full border border-rule bg-paper text-ink font-sans text-sm px-3 py-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered h-10"
+                      className="w-full border border-rule bg-paper text-ink font-sans text-base px-3 py-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered h-11"
                       disabled={status === 'submitting'}
                       {...field}
                     >
@@ -337,7 +337,7 @@ export default function ContactPage() {
                   <FormControl>
                     <select
                       id="field-balance"
-                      className="w-full border border-rule bg-paper text-ink font-sans text-sm px-3 py-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered h-10"
+                      className="w-full border border-rule bg-paper text-ink font-sans text-base px-3 py-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered h-11"
                       disabled={status === 'submitting'}
                       {...field}
                     >
@@ -364,7 +364,7 @@ export default function ContactPage() {
                   <Textarea
                     id="field-message"
                     rows={5}
-                    className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans resize-y min-h-[120px]"
+                    className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans resize-y min-h-[120px] text-base"
                     disabled={status === 'submitting'}
                     {...field}
                   />

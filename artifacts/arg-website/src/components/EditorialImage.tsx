@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface EditorialImageProps {
   src: string;
@@ -12,10 +12,11 @@ interface EditorialImageProps {
 }
 
 /**
- * Every photo on the site uses this component.
- * Default: greyscale + ink-tinted overlay + 2px rule border.
- * Hover: colour fades back in over 400ms.
- * Caption rendered in mono type below if provided.
+ * Unified editorial image treatment:
+ * - Default: full color with a 12% ink duotone overlay (multiply blend) for editorial consistency
+ * - Hover (pointer devices): overlay fades to 0 revealing full vibrancy
+ * - Touch devices: always full color, no overlay
+ * - 2px rule border + mono caption slot
  */
 export function EditorialImage({
   src,
@@ -28,13 +29,19 @@ export function EditorialImage({
   loading = 'lazy',
 }: EditorialImageProps) {
   const [hovered, setHovered] = useState(false);
+  // Detect touch: on coarse/no-hover devices, always show full color without overlay
+  const [isTouch, setIsTouch] = useState(false);
+
+  useEffect(() => {
+    setIsTouch(window.matchMedia('(hover: none) and (pointer: coarse)').matches);
+  }, []);
 
   return (
     <figure className={`flex flex-col gap-2 ${className}`}>
       <div
         className={`relative overflow-hidden border-2 border-rule ${aspectClassName}`}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onMouseEnter={() => !isTouch && setHovered(true)}
+        onMouseLeave={() => !isTouch && setHovered(false)}
       >
         <img
           src={src}
@@ -44,18 +51,20 @@ export function EditorialImage({
           loading={loading}
           className="w-full h-full object-cover"
           style={{
-            filter: hovered ? 'grayscale(0%) contrast(1.02)' : 'grayscale(100%) contrast(1.05)',
-            transition: 'filter 400ms ease',
+            // Subtle warmth/lift for editorial consistency across photos
+            filter: 'brightness(1.02) contrast(1.04) saturate(1.06)',
           }}
         />
-        {/* Ink-tinted overlay that dissolves on hover */}
-        <div
-          className="absolute inset-0 bg-ink mix-blend-multiply pointer-events-none"
-          style={{
-            opacity: hovered ? 0 : 0.15,
-            transition: 'opacity 400ms ease',
-          }}
-        />
+        {/* Ink duotone overlay — 12% multiply at rest, fades to 0 on hover, absent on touch */}
+        {!isTouch && (
+          <div
+            className="absolute inset-0 bg-ink mix-blend-multiply pointer-events-none"
+            style={{
+              opacity: hovered ? 0 : 0.12,
+              transition: 'opacity 400ms ease',
+            }}
+          />
+        )}
       </div>
       {caption && (
         <figcaption className="font-mono text-xs text-slate/60 uppercase tracking-widest">

@@ -66,6 +66,8 @@
   --color-mist: hsl(210 33.3% 96.5%);
   --color-slate: hsl(213 19.5% 36.1%);
   --color-recovered: hsl(159 60.4% 29.8%);
+  --color-recovered-bright: #27A578;   /* hover/active states of green elements */
+  --color-signal: #D97D0E;             /* amber — Moderate states ONLY */
   --color-rule: hsl(210 24.1% 87.8%);
 
   --radius-sm: calc(var(--radius) - 2px);
@@ -291,6 +293,24 @@
   input[type='range']:focus-visible::-webkit-slider-thumb {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-recovered, #16a34a) 40%, transparent);
   }
+  /* Touch devices: larger 28px thumb for easy tapping */
+  @media (hover: none) and (pointer: coarse) {
+    input[type='range']::-webkit-slider-thumb {
+      width: 28px;
+      height: 28px;
+    }
+    input[type='range']::-webkit-slider-runnable-track {
+      height: 4px;
+    }
+  }
+  /* Prevent iOS auto-zoom on form inputs (font-size must be ≥16px) */
+  @media (max-width: 768px) {
+    input:not([type='range']),
+    select,
+    textarea {
+      font-size: max(16px, 1em) !important;
+    }
+  }
 }
 
 @layer utilities {
@@ -332,6 +352,28 @@
   }
   .list-row:hover .row-title {
     transform: translateX(6px);
+  }
+
+  /* New design tokens */
+  .text-signal         { color: var(--color-signal); }
+  .bg-signal           { background-color: var(--color-signal); }
+  .text-recovered-bright { color: var(--color-recovered-bright); }
+
+  /* Estimator instrument-panel grid (1px lines at 48px intervals, 4% opacity) */
+  .ledger-grid {
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent, transparent 47px,
+        hsl(210 24.1% 87.8% / 0.04) 47px,
+        hsl(210 24.1% 87.8% / 0.04) 48px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        transparent, transparent 47px,
+        hsl(210 24.1% 87.8% / 0.04) 47px,
+        hsl(210 24.1% 87.8% / 0.04) 48px
+      );
   }
 
   .text-h2 {

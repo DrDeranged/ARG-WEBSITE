@@ -150,6 +150,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const [finaleRevealed, setFinale]       = useState(false);
   const finaleRef  = useRef<HTMLDivElement>(null);
   const [location, navigate] = useLocation();
+  const isActive = (href: string) =>
+    href === '/' ? (location === '/' || location === '') : location.startsWith(href.replace(/\/$/, ''));
 
   useEffect(() => {
     const h = () => setIsScrolled(window.scrollY > 20);
@@ -200,9 +202,12 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-[100dvh] flex flex-col bg-paper font-sans">
       {/* ── Header ────────────────────────────────────── */}
-      <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-paper/95 backdrop-blur-md border-b border-rule py-3' : 'bg-paper py-5'
-      }`}>
+      <header
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+          isScrolled ? 'bg-paper/95 backdrop-blur-md border-b border-rule py-3' : 'bg-paper py-4 md:py-5'
+        }`}
+      >
         <div className="max-w-6xl mx-auto px-6 md:px-8 flex items-center justify-between gap-6">
           <Link href="/" className="flex items-center gap-3 relative z-50 flex-shrink-0">
             <img src="/images/logo-dark.png" alt="Advanced Recovery Group" className="h-8 w-auto object-contain" />
@@ -211,7 +216,11 @@ export function Shell({ children }: { children: ReactNode }) {
           <nav className="hidden md:flex items-center gap-6" aria-label="Main navigation">
             {[['Home', '/'], ['Contact Us', '/contact-us/'], ['Careers', '/careers/'], ['Blog', '/blog/']].map(
               ([label, href]) => (
-                <Link key={href} href={href} className="link-draw text-sm font-medium text-slate hover:text-recovered transition-colors">
+                <Link
+                  key={href}
+                  href={href}
+                  className={`link-draw text-sm font-medium transition-colors ${isActive(href) ? 'text-recovered' : 'text-slate hover:text-recovered'}`}
+                >
                   {label}
                 </Link>
               )
@@ -250,7 +259,9 @@ export function Shell({ children }: { children: ReactNode }) {
 
       {/* ── Mobile Menu ───────────────────────────────── */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-paper flex flex-col pt-24 px-6 pb-6 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-40 bg-paper flex flex-col pt-24 px-6 pb-6 animate-in fade-in duration-200 overflow-y-auto"
+          style={{ paddingTop: 'max(6rem, calc(env(safe-area-inset-top, 0px) + 4rem))' }}
+        >
           <nav className="flex flex-col gap-6 text-2xl font-serif" aria-label="Mobile navigation">
             {[['Home', '/'], ['Contact Us', '/contact-us/'], ['Careers', '/careers/'], ['Blog', '/blog/']].map(
               ([label, href]) => (
@@ -286,7 +297,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-8">
               <div>
                 <h2 className="font-serif text-paper leading-tight mb-4"
-                  style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', lineHeight: 1.05 }}>
+                  style={{ fontSize: 'clamp(2rem, 6vw, 5rem)', lineHeight: 1.05 }}>
                   Still owed?<br />Let&rsquo;s fix that.
                 </h2>
                 {/* Underline draws in on scroll */}
@@ -316,7 +327,7 @@ export function Shell({ children }: { children: ReactNode }) {
               </div>
             </div>
 
-            <div>
+            <div className="order-3 md:order-none">
               <h4 className="font-mono text-xs tracking-widest text-paper/50 mb-6 uppercase">Navigation</h4>
               <nav className="flex flex-col gap-4" aria-label="Footer navigation">
                 {[['Home', '/'], ['Contact Us', '/contact-us/'], ['Careers', '/careers/'], ['Blog', '/blog/']].map(
@@ -329,7 +340,7 @@ export function Shell({ children }: { children: ReactNode }) {
               </nav>
             </div>
 
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 order-2 md:order-none">
               <h4 className="font-mono text-xs tracking-widest text-paper/50 mb-6 uppercase">Contact</h4>
               <div className="font-mono text-sm space-y-3 text-paper/80 tabular-nums">
                 <p><span className="text-paper/40 mr-4">P</span><a href="tel:8774648470" className="link-draw hover:text-white transition-colors">(877) 464-8470</a></p>

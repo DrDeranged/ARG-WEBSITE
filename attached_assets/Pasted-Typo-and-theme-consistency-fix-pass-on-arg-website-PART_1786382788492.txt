@@ -1,0 +1,54 @@
+Typo and theme-consistency fix pass on arg-website.
+
+PART A — STRING ESCAPE BUGS (visible broken text on the live site):
+Fix all four literal "\u2019" escape sequences by replacing them with
+a real apostrophe character (') in:
+1. home.tsx line ~159: HERO_LINES — should read "what you're owed."
+2. home.tsx line ~608: "isn't enough" in the Litigation-Ready item
+3. home.tsx line ~709: "ARG's mission trip" in the blog excerpt
+4. home.tsx line ~729: the closing CTA h2
+Then search the ENTIRE workspace for any remaining "\u" escape
+sequences inside JSX text or string literals and fix them the same way.
+Use proper typographic apostrophes (') consistently in all body copy.
+
+PART B — HEADLINE CASE CONSISTENCY:
+Our voice is sentence case for marketing headlines ("Still owed?
+Let's fix that.", "What's still recoverable?"). Fix the outliers:
+1. Closing CTA h2 → "Ready to recover what you're owed?"
+2. "Feeding Hope, Building Community" → "Feeding hope, building
+   community"
+3. "Industries We Serve" → "Industries we serve"
+4. "From Placement to Recovery" → "From placement to recovery"
+5. "From the Blog" → "From the blog"
+Leave blog ARTICLE titles and their internal H2s in Title Case as
+published (they're editorial content, not marketing copy).
+
+PART C — CLOSING CTA THEME DRIFT (the flat green section):
+The solid recovered-green band with a white button is off-system —
+recovered is an accent, never a field. Rebuild section 07: ink
+background (matching the footer it sits above, so the page ends in one
+continuous dark finale), the h2 in paper, the subline in paper/80, and
+the CTA as a recovered-green solid button ("Start a recovery") with
+recovered-bright hover. Add a 1px recovered rule at the section's top
+edge as the transition line from the light page into the dark finale.
+Also add a second, ghost CTA beside it: "Call (877) 464-8470" as an
+outlined paper/30 button with tel: link.
+
+PART D — SMALL FAULTS FROM VISUAL REVIEW:
+1. The subline "No upfront fees. Contingency-only. Get started
+   today." — keep, but this claim set must match the hero: verify
+   "contingency" phrasing is identical everywhere it appears (hero,
+   stats area, closing CTA) — one canonical phrase: "Contingency-based
+   — no recovery, no fee."
+2. The BBB seal in the footer: wrap it in a link to ARG's BBB profile
+   only if a profile URL is provided; for now make it a plain image
+   with alt text, and add an HTML comment: <!-- CONFIRM: BBB
+   accreditation active — remove seal if not -->
+3. Check the vertical rhythm right above section 07: the preview
+   shows an oversized empty band before the CTA section — inspect the
+   last content section's bottom padding + any min-height on it and
+   normalize to the standard section padding scale.
+4. Sweep every page (careers, blog list, both articles, contact, 404)
+   for the same three fault classes: escape sequences, Title Case
+   marketing headlines, and accent-color-as-background misuse. Fix
+   anything found and list what you changed.
