@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Menu, X, Phone, Mail, ExternalLink, Search } from 'lucide-react';
+import { Menu, X, Phone, Mail, ExternalLink, Search, Dog } from 'lucide-react';
 import { ScrambleText } from '@/components/ScrambleText';
 
 /* ── Office Status ──────────────────────────────────────── */
@@ -59,6 +59,7 @@ function CommandPalette({
     { id: 'call',    label: 'Call (877) 464-8470',                       sub: 'Talk to a specialist',   icon: <Phone size={14} />,        action: () => { window.location.href = 'tel:8774648470'; onClose(); } },
     { id: 'email',   label: 'Email collect@advancedrecoverygroup.com',   sub: 'Send us a message',      icon: <Mail size={14} />,         action: () => { window.location.href = 'mailto:collect@advancedrecoverygroup.com'; onClose(); } },
     { id: 'portal',  label: 'Open Client Portal',                        sub: 'Log in to your account', icon: <ExternalLink size={14} />, action: () => { window.open('https://app.simplicitycollect.com/Login.aspx', '_blank', 'noopener'); onClose(); } },
+    { id: 'director', label: 'Meet the Director of First Impressions',   sub: 'A key member of the team', icon: <Dog size={14} />, action: () => { navigate('/contact-us/'); onClose(); setTimeout(() => window.dispatchEvent(new CustomEvent('arg:director')), 350); } },
   ];
 
   const filtered = query

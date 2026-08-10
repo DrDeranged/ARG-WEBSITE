@@ -73,13 +73,21 @@ const articleData: Record<string, {
   }
 };
 
+/* ── Reading time ───────────────────────────────────────── */
+function calcReadingTime(html: string): string {
+  const text  = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const words = text.split(' ').filter(Boolean).length;
+  const mins  = Math.max(1, Math.ceil(words / 200));
+  return `${mins} min read`;
+}
+
+/* ── Reading progress bar ───────────────────────────────── */
 function ReadingProgress() {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReduced) return;
-
     const handleScroll = () => {
       const article = document.querySelector('article');
       if (!article) return;
@@ -89,23 +97,81 @@ function ReadingProgress() {
       const total = height - windowH;
       setProgress(total > 0 ? Math.min(100, (scrolled / total) * 100) : 0);
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[60] h-[2px] bg-rule/30">
-      <div
-        className="h-full bg-recovered transition-none"
-        style={{ width: `${progress}%` }}
-      />
+    <div className="fixed top-0 left-0 right-0 z-[60] h-[2px] bg-rule/30 print:hidden">
+      <div className="h-full bg-recovered transition-none" style={{ width: `${progress}%` }} />
     </div>
   );
 }
 
+/* ── Share row ──────────────────────────────────────────── */
+function ShareRow({ slug, title }: { slug: string; title: string }) {
+  const [copied, setCopied] = useState(false);
+  const url = `https://advancedrecoverygroup.com/blog/${slug}/`;
+
+  const handleWebShare = async () => {
+    try {
+      await navigator.share({ title, url });
+    } catch { /* cancelled or not supported */ }
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {
+      // Clipboard API unavailable; silently ignore
+    });
+  };
+
+  const hasWebShare = typeof navigator !== 'undefined' && 'share' in navigator;
+
+  return (
+    <div className="mt-16 pt-8 border-t border-rule print:hidden">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <span className="font-mono text-xs text-slate/50 uppercase tracking-widest">Share —</span>
+        <a
+          href={`https://www.linkedin.com/shareArticle?url=${encodeURIComponent(url)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-mono text-xs text-slate hover:text-ink transition-colors underline-offset-2 hover:underline"
+        >
+          LinkedIn
+        </a>
+        <a
+          href={`https://x.com/intent/post?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-mono text-xs text-slate hover:text-ink transition-colors underline-offset-2 hover:underline"
+        >
+          X
+        </a>
+        {hasWebShare && (
+          <button
+            onClick={handleWebShare}
+            className="font-mono text-xs text-slate hover:text-ink transition-colors"
+          >
+            Share…
+          </button>
+        )}
+        <button
+          onClick={handleCopy}
+          className={`font-mono text-xs transition-colors ${copied ? 'text-recovered' : 'text-slate hover:text-ink'}`}
+        >
+          {copied ? 'Copied ✓' : 'Copy link'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Page ───────────────────────────────────────────────── */
 export default function BlogArticlePage() {
-  const [match, params] = useRoute('/blog/:slug');
+  const [, params] = useRoute('/blog/:slug');
   const slug = params?.slug;
 
   if (!slug || !articleData[slug]) {
@@ -113,6 +179,7 @@ export default function BlogArticlePage() {
   }
 
   const article = articleData[slug];
+  const readTime = calcReadingTime(article.content);
 
   return (
     <Shell>
@@ -122,12 +189,8 @@ export default function BlogArticlePage() {
         <meta property="og:title" content={article.title} />
         <meta property="og:description" content={article.description} />
         <meta property="og:url" content={`https://advancedrecoverygroup.com/blog/${slug}/`} />
-        {article.coverImage && (
-          <meta property="og:image" content={`https://advancedrecoverygroup.com${article.coverImage}`} />
-        )}
-        {article.coverImage && (
-          <meta name="twitter:image" content={`https://advancedrecoverygroup.com${article.coverImage}`} />
-        )}
+        {article.coverImage && <meta property="og:image" content={`https://advancedrecoverygroup.com${article.coverImage}`} />}
+        {article.coverImage && <meta name="twitter:image" content={`https://advancedrecoverygroup.com${article.coverImage}`} />}
         <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
 
@@ -143,9 +206,12 @@ export default function BlogArticlePage() {
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif text-ink mb-8 leading-tight">
               {article.title}
             </h1>
-            <time className="font-mono text-sm text-slate tabular-nums block">
-              {article.date}
-            </time>
+            {/* Date + reading time badge */}
+            <div className="flex items-center justify-center gap-3 font-mono text-sm text-slate">
+              <time className="tabular-nums">{article.date}</time>
+              <span className="text-slate/30" aria-hidden="true">·</span>
+              <span className="text-slate/60 uppercase tracking-widest text-xs">{readTime}</span>
+            </div>
             {article.author && (
               <p className="font-mono text-xs text-slate/60 mt-2 uppercase tracking-widest">
                 By {article.author}
@@ -154,7 +220,7 @@ export default function BlogArticlePage() {
           </div>
         </header>
 
-        {/* Cover Image */}
+        {/* Cover image */}
         {article.coverImage && (
           <div className="max-w-5xl mx-auto px-6 md:px-8 -mt-8 md:-mt-12 relative z-10 mb-16 md:mb-24">
             <EditorialImage
@@ -168,7 +234,7 @@ export default function BlogArticlePage() {
           </div>
         )}
 
-        {/* Content */}
+        {/* Body */}
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           {article.placeholder ? (
             <p className="text-2xl text-slate italic font-serif text-center py-16">
@@ -186,25 +252,7 @@ export default function BlogArticlePage() {
             />
           )}
 
-          <div className="mt-16 pt-8 border-t border-rule flex justify-between items-center">
-            <p className="font-mono text-xs text-slate uppercase tracking-widest">Share this article</p>
-            <div className="flex gap-4">
-              <a
-                href={`https://www.linkedin.com/shareArticle?url=https://advancedrecoverygroup.com/blog/${slug}/`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-slate hover:text-ink transition-colors font-mono text-xs"
-              >
-                LinkedIn
-              </a>
-              <a
-                href={`mailto:?subject=${encodeURIComponent(article.title)}&body=https://advancedrecoverygroup.com/blog/${slug}/`}
-                className="text-slate hover:text-ink transition-colors font-mono text-xs"
-              >
-                Email
-              </a>
-            </div>
-          </div>
+          <ShareRow slug={slug} title={article.title} />
         </div>
       </article>
     </Shell>

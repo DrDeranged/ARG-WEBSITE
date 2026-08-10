@@ -1,0 +1,44 @@
+Feature addition pass — five additions, all in the ledger system:
+
+1. FAQ SECTION + RICH RESULTS: new section on the contact page (below
+   the two-column grid, above the closer band) titled "Common
+   questions" — ledger-style accordion rows (mono question, 1px
+   rules, chevron rotates, one open at a time, smooth height
+   animation). Seed with exactly these Q&As:
+   - "What does it cost?" → "We work on contingency. If we don't
+     recover, you don't pay. Fee structure is agreed before placement."
+   - "What do you need to open a file?" → "The contract or agreement,
+     payment history, outstanding balance, and any debtor contact or
+     banking details you have. Partial information is fine — our skip
+     tracing fills gaps."
+   - "How fast can a placement go live?" → "Typically within one
+     business day of receiving your documents."
+   - "Do you handle litigation?" → "When negotiation isn't enough, we
+     escalate through affiliated counsel — liens, judgments, and
+     enforcement."
+   - "What industries do you serve?" → "Commercial creditors:
+     merchant cash advance, factoring, equipment leasing, commercial
+     loans, fintech lending, and law firms holding judgments."
+   Emit FAQPage JSON-LD via Helmet with these exact Q&A pairs so
+   Google can show rich results.
+2. VCARD DOWNLOAD: in the contact page's direct-line column, add a
+   ledger row "SAVE OUR CONTACT ↓" that downloads a generated .vcf
+   (Advanced Recovery Group, ORG, TEL +18774648470, EMAIL
+   collect@advancedrecoverygroup.com, URL) — build the vCard string
+   client-side as a Blob, no server needed.
+3. BLOG POLISH: each article gets a mono reading-time badge
+   (calculated from word count, "6 MIN READ") next to the date, and a
+   share row at the article's end: "Share —" with LinkedIn share
+   link, X share link, and a "Copy link" button that uses
+   navigator.clipboard with a brief "Copied ✓" mono confirmation.
+   Use the Web Share API on mobile when available.
+4. PRINT STYLESHEET: @media print for blog articles and the contact
+   page — hide header/nav/ticker/palette, black text on white,
+   ledger rules stay, URLs printed after links in mono, page margins
+   1in. The ledger aesthetic should print like an actual document.
+5. EASTER EGG (subtle): add a hidden command to the ⌘K palette,
+   listed last, small: "Meet the Director of First Impressions" —
+   selecting it navigates to /contact-us/ and smooth-scrolls to the
+   dog photo, briefly (1.5s) swapping its caption to "You rang?".
+   No other easter eggs.
+Commit as "FAQ, vCard, blog polish, print styles".

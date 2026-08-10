@@ -478,3 +478,44 @@ html, body {
 .ticker-animate {
   touch-action: pan-y;
 }
+
+/* ── Print styles — blog articles & contact page ─────────── */
+@media print {
+  @page { margin: 1in; }
+
+  /* Hide navigation chrome, interactive chrome, and fixed overlays */
+  header,
+  .ticker-animate,
+  [role="dialog"],
+  .print\:hidden { display: none !important; }
+
+  /* Reset colors: black on white */
+  body {
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  /* Ledger rules: keep border colors (they print as gray in B&W) */
+  /* No override needed — borders degrade naturally */
+
+  /* Show full URLs after external links, in mono */
+  a[href^="http"]::after,
+  a[href^="https"]::after {
+    content: " (" attr(href) ")";
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7em;
+    color: #555;
+    word-break: break-all;
+  }
+
+  /* Internal anchors: no URL suffix */
+  a[href^="/"]::after,
+  a[href^="#"]::after { content: none; }
+
+  /* Remove shadows, backdrops */
+  * { box-shadow: none !important; text-shadow: none !important; }
+
+  /* Prevent orphaned headings */
+  h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
+  p, li { orphans: 3; widows: 3; }
+}

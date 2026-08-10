@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ChevronDown } from 'lucide-react';
 import {
   Form,
   FormControl,
@@ -47,6 +47,123 @@ function useOfficeStatus() {
   return st;
 }
 
+/* ── FAQ ────────────────────────────────────────────────── */
+const FAQ_ITEMS = [
+  {
+    q: "What does it cost?",
+    a: "We work on contingency. If we don't recover, you don't pay. Fee structure is agreed before placement.",
+  },
+  {
+    q: "What do you need to open a file?",
+    a: "The contract or agreement, payment history, outstanding balance, and any debtor contact or banking details you have. Partial information is fine — our skip tracing fills gaps.",
+  },
+  {
+    q: "How fast can a placement go live?",
+    a: "Typically within one business day of receiving your documents.",
+  },
+  {
+    q: "Do you handle litigation?",
+    a: "When negotiation isn't enough, we escalate through affiliated counsel — liens, judgments, and enforcement.",
+  },
+  {
+    q: "What industries do you serve?",
+    a: "Commercial creditors: merchant cash advance, factoring, equipment leasing, commercial loans, fintech lending, and law firms holding judgments.",
+  },
+];
+
+const FAQ_JSON_LD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ_ITEMS.map(item => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: { "@type": "Answer", text: item.a },
+  })),
+});
+
+function FaqAccordion() {
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  return (
+    <div className="border-t border-rule">
+      {FAQ_ITEMS.map((item, i) => (
+        <div key={i} className="border-b border-rule">
+          <button
+            onClick={() => setOpenIdx(openIdx === i ? null : i)}
+            className="w-full flex items-center justify-between py-4 text-left group min-h-[52px]"
+            aria-expanded={openIdx === i}
+          >
+            <span className="font-mono text-sm text-ink pr-6 leading-snug">{item.q}</span>
+            <ChevronDown
+              size={14}
+              className="flex-shrink-0 text-slate/50 group-hover:text-recovered transition-all"
+              style={{
+                transform: openIdx === i ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 250ms ease, color 150ms ease',
+              }}
+              aria-hidden="true"
+            />
+          </button>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateRows: openIdx === i ? '1fr' : '0fr',
+              transition: 'grid-template-rows 250ms ease',
+            }}
+          >
+            <div style={{ overflow: 'hidden' }}>
+              <p className="font-sans text-sm text-slate leading-relaxed pb-5 pr-6 max-w-prose">
+                {item.a}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── vCard download ─────────────────────────────────────── */
+function downloadVCard() {
+  const vcf = [
+    'BEGIN:VCARD',
+    'VERSION:3.0',
+    'FN:Advanced Recovery Group',
+    'ORG:Advanced Recovery Group',
+    'TEL;TYPE=WORK,VOICE:+18774648470',
+    'EMAIL:collect@advancedrecoverygroup.com',
+    'URL:https://advancedrecoverygroup.com',
+    'END:VCARD',
+  ].join('\r\n');
+  const blob = new Blob([vcf], { type: 'text/vcard;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'advanced-recovery-group.vcf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function VCardRow() {
+  return (
+    <button
+      onClick={downloadVCard}
+      className="group relative flex items-center justify-between w-full min-h-[72px] px-0 border-b border-rule transition-colors hover:bg-mist cursor-pointer"
+    >
+      <span
+        className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r-sm bg-recovered opacity-0 group-hover:opacity-100"
+        style={{ transition: 'opacity 150ms ease' }}
+        aria-hidden="true"
+      />
+      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate select-none">Save Contact</span>
+      <span className="flex items-center gap-2 font-mono text-sm text-ink group-hover:text-recovered transition-colors tabular-nums">
+        Save our contact ↓
+      </span>
+    </button>
+  );
+}
+
 /* ── Form schema ────────────────────────────────────────── */
 const CATEGORIES = [
   'MCA funder', 'Factor', 'Equipment lessor', 'Lender', 'Law firm', 'Other',
@@ -61,7 +178,7 @@ const formSchema = z.object({
   category: z.enum(CATEGORIES, { required_error: 'Please select a category.' }),
   balance:  z.string().optional(),
   message:  z.string().min(10, 'Message must be at least 10 characters.').max(5000, 'Message cannot exceed 5000 characters.'),
-  website:  z.string().optional(), // honeypot
+  website:  z.string().optional(),
 });
 type FormValues = z.infer<typeof formSchema>;
 type Status = 'idle' | 'submitting' | 'success' | 'error';
@@ -69,19 +186,11 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
 const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') || '';
 
 /* ── Shared sub-components ──────────────────────────────── */
-
-/** Single tappable ledger contact row */
 function ContactRow({
   label, value, href, type,
 }: { label: string; value: string; href?: string; type: 'phone' | 'email' | 'fax' }) {
   const inner = (
     <span className="group relative flex items-center justify-between min-h-[72px] px-0 border-b border-rule transition-colors hover:bg-mist cursor-pointer">
-      {/* left accent bar */}
-      <span
-        className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r-sm bg-recovered transition-transform origin-left"
-        style={{ transform: 'scaleX(0)', transition: 'transform 200ms ease' }}
-        aria-hidden="true"
-      />
       <span
         className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r-sm bg-recovered opacity-0 group-hover:opacity-100"
         style={{ transition: 'opacity 150ms ease' }}
@@ -93,22 +202,15 @@ function ContactRow({
           {value}
         </span>
         {href && (
-          <ChevronRight
-            size={13}
-            className="text-slate/30 group-hover:text-recovered flex-shrink-0"
-            style={{ transition: 'color 150ms ease, transform 150ms ease' }}
-            aria-hidden="true"
-          />
+          <ChevronRight size={13} className="text-slate/30 group-hover:text-recovered flex-shrink-0" style={{ transition: 'color 150ms ease' }} aria-hidden="true" />
         )}
       </span>
     </span>
   );
-
   if (!href) return <div>{inner}</div>;
   return <a href={href}>{inner}</a>;
 }
 
-/** Business hours mini-ledger with live active-row highlight */
 function HoursLedger({ activeRow }: { activeRow: ActiveRow }) {
   const rows: { id: ActiveRow; label: string; time: string }[] = [
     { id: 'weekday', label: 'Monday – Thursday', time: '9AM – 5PM' },
@@ -135,7 +237,6 @@ function HoursLedger({ activeRow }: { activeRow: ActiveRow }) {
   );
 }
 
-/** "WHAT HAPPENS NEXT" 3-row mini-ledger */
 function WhatHappensNext() {
   const steps = [
     { n: '01', text: 'We review your portfolio or file details' },
@@ -157,11 +258,8 @@ function WhatHappensNext() {
   );
 }
 
-/** Section eyebrow label */
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate mb-5">{children}</p>
-  );
+  return <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate mb-5">{children}</p>;
 }
 
 /* ── Main page ──────────────────────────────────────────── */
@@ -170,6 +268,7 @@ export default function ContactPage() {
   const [successTime, setSuccessTime]     = useState('');
   const [emailConfigured, setEmailConfigured] = useState<boolean | null>(null);
   const [showDirectCard, setShowDirectCard]   = useState(false);
+  const [dogCaption, setDogCaption]           = useState<string | null>(null);
   const officeStatus = useOfficeStatus();
 
   useEffect(() => {
@@ -180,6 +279,19 @@ export default function ContactPage() {
         if (!data.configured) setShowDirectCard(true);
       })
       .catch(() => { setEmailConfigured(false); setShowDirectCard(true); });
+  }, []);
+
+  /* Easter egg: ⌘K palette dispatches 'arg:director' → scroll + caption swap */
+  useEffect(() => {
+    const handler = () => {
+      const el = document.getElementById('arg-dog-photo');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setDogCaption('You rang?');
+      const t = setTimeout(() => setDogCaption(null), 1500);
+      return () => clearTimeout(t);
+    };
+    window.addEventListener('arg:director', handler);
+    return () => window.removeEventListener('arg:director', handler);
   }, []);
 
   const form = useForm<FormValues>({
@@ -197,11 +309,9 @@ export default function ContactPage() {
       });
       if (res.ok) {
         setSuccessTime(new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }));
-        setStatus('success');
-        form.reset();
-      } else if (res.status === 503) {
-        setShowDirectCard(true); setStatus('idle');
-      } else if (res.status === 429) {
+        setStatus('success'); form.reset();
+      } else if (res.status === 503) { setShowDirectCard(true); setStatus('idle'); }
+      else if (res.status === 429) {
         const data = await res.json().catch(() => ({}));
         form.setError('root', { message: data.error || 'Too many requests. Please wait a moment and try again.' });
         setStatus('idle');
@@ -214,43 +324,40 @@ export default function ContactPage() {
     <div className="flex flex-col gap-8">
       <div>
         <SectionLabel>The Office</SectionLabel>
-        <EditorialImage
-          src="/images/dog-support.jpg"
-          alt="ARG office dog wearing a customer support headset at a desk"
-          caption="Our Director of First Impressions is standing by."
-          aspectClassName="aspect-[4/5]"
-          width={800}
-          height={1000}
-        />
+        <div id="arg-dog-photo">
+          <EditorialImage
+            src="/images/dog-support.jpg"
+            alt="ARG office dog wearing a customer support headset at a desk"
+            caption={dogCaption ?? 'Our Director of First Impressions is standing by.'}
+            aspectClassName="aspect-[4/5]"
+            width={800}
+            height={1000}
+          />
+        </div>
       </div>
       <WhatHappensNext />
     </div>
   );
 
-  /* ── LEFT column — contact rows OR form ────────────────── */
+  /* ── Shared contact rows block ─────────────────────────── */
   const contactRowsBlock = (
     <div className="flex flex-col gap-0 border-t border-rule">
-      <ContactRow label="Phone" value="(877) 464-8470"                  href="tel:8774648470"                              type="phone" />
+      <ContactRow label="Phone" value="(877) 464-8470"                   href="tel:8774648470"                             type="phone" />
       <ContactRow label="Email" value="collect@advancedrecoverygroup.com" href="mailto:collect@advancedrecoverygroup.com"  type="email" />
       <ContactRow label="Fax"   value="(888) 881-8211"                                                                     type="fax"   />
+      <VCardRow />
     </div>
   );
 
   const footerNote = (
     <p className="font-mono text-xs text-slate/55 leading-relaxed">
       Placements can also be initiated through the{' '}
-      <a
-        href="https://portal.advancedrecoverygroup.com"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-ink underline underline-offset-2 hover:text-recovered transition-colors"
-      >
+      <a href="https://portal.advancedrecoverygroup.com" target="_blank" rel="noopener noreferrer" className="text-ink underline underline-offset-2 hover:text-recovered transition-colors">
         Client Portal
       </a>.
     </p>
   );
 
-  /* Loading state */
   if (emailConfigured === null) {
     return (
       <Shell>
@@ -264,38 +371,31 @@ export default function ContactPage() {
     );
   }
 
-  /* ── Form (email configured) left column content ─────── */
+  /* ── Form left column (email configured) ────────────────── */
   const formLeftContent = (
     <div className="flex flex-col gap-10">
-      {/* Compact contact block above the form */}
       <div className="flex flex-col gap-4">
         <SectionLabel>The Direct Line</SectionLabel>
         {contactRowsBlock}
         <HoursLedger activeRow={officeStatus.activeRow} />
       </div>
 
-      {/* Success state */}
       {status === 'success' ? (
         <div className="border-t-2 border-recovered pt-8 flex flex-col gap-6">
           <h2 className="text-3xl font-serif text-ink">Received.</h2>
           <p className="text-slate text-lg leading-relaxed">A specialist will contact you within one business day.</p>
           {successTime && <p className="font-mono text-xs text-slate/60">Submitted at {successTime}</p>}
-          <button
-            onClick={() => setStatus('idle')}
-            className="w-fit font-mono text-sm text-slate border border-rule px-4 py-2 hover:bg-mist transition-colors rounded-sm mt-2"
-          >
+          <button onClick={() => setStatus('idle')} className="w-fit font-mono text-sm text-slate border border-rule px-4 py-2 hover:bg-mist transition-colors rounded-sm mt-2">
             Submit another inquiry
           </button>
         </div>
       ) : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" noValidate>
-            {/* Honeypot */}
             <div className="hidden" aria-hidden="true">
               <label htmlFor="website">Website</label>
               <input id="website" type="text" tabIndex={-1} autoComplete="off" {...form.register('website')} />
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem>
@@ -312,7 +412,6 @@ export default function ContactPage() {
                 </FormItem>
               )} />
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <FormField control={form.control} name="email" render={({ field }) => (
                 <FormItem>
@@ -329,7 +428,6 @@ export default function ContactPage() {
                 </FormItem>
               )} />
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <FormField control={form.control} name="category" render={({ field }) => (
                 <FormItem>
@@ -356,7 +454,6 @@ export default function ContactPage() {
                 </FormItem>
               )} />
             </div>
-
             <FormField control={form.control} name="message" render={({ field }) => (
               <FormItem>
                 <FormLabel className="font-mono text-xs uppercase tracking-wider text-slate" htmlFor="field-message">Message *</FormLabel>
@@ -364,38 +461,23 @@ export default function ContactPage() {
                 <FormMessage />
               </FormItem>
             )} />
-
-            {form.formState.errors.root && (
-              <p className="font-mono text-xs text-destructive">{form.formState.errors.root.message}</p>
-            )}
-
+            {form.formState.errors.root && <p className="font-mono text-xs text-destructive">{form.formState.errors.root.message}</p>}
             {status === 'error' && (
               <div className="border border-rule bg-mist px-5 py-4 rounded-sm text-sm text-slate leading-relaxed">
-                Something went wrong. Call{' '}
-                <a href="tel:8774648470" className="text-ink font-medium hover:text-recovered transition-colors">(877) 464-8470</a>
-                {' '}or email{' '}
-                <a href="mailto:collect@advancedrecoverygroup.com" className="text-ink font-medium hover:text-recovered transition-colors">collect@advancedrecoverygroup.com</a>.
+                Something went wrong. Call <a href="tel:8774648470" className="text-ink font-medium hover:text-recovered transition-colors">(877) 464-8470</a> or email <a href="mailto:collect@advancedrecoverygroup.com" className="text-ink font-medium hover:text-recovered transition-colors">collect@advancedrecoverygroup.com</a>.
               </div>
             )}
-
             <div className="flex items-center gap-4">
-              <button
-                type="submit"
-                disabled={status === 'submitting'}
-                className="bg-ink text-paper hover:bg-ink/90 disabled:opacity-60 disabled:cursor-not-allowed rounded-sm px-10 py-4 h-auto text-sm font-medium transition-colors inline-flex items-center gap-2"
-              >
+              <button type="submit" disabled={status === 'submitting'} className="bg-ink text-paper hover:bg-ink/90 disabled:opacity-60 disabled:cursor-not-allowed rounded-sm px-10 py-4 h-auto text-sm font-medium transition-colors inline-flex items-center gap-2">
                 {status === 'submitting' ? (
                   <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>Sending…</>
                 ) : 'Submit Inquiry'}
               </button>
-              {status === 'error' && (
-                <button type="button" onClick={() => setStatus('idle')} className="text-sm font-mono text-slate hover:text-ink transition-colors">Try again</button>
-              )}
+              {status === 'error' && <button type="button" onClick={() => setStatus('idle')} className="text-sm font-mono text-slate hover:text-ink transition-colors">Try again</button>}
             </div>
           </form>
         </Form>
       )}
-
       {footerNote}
     </div>
   );
@@ -423,30 +505,22 @@ export default function ContactPage() {
         <meta property="og:title" content="Contact Us | Advanced Recovery Group" />
         <meta property="og:description" content="Place an account or request a consultation with Advanced Recovery Group, a commercial collections agency serving MCA funders, factors, lessors, and lenders." />
         <meta property="og:url" content="https://advancedrecoverygroup.com/contact-us/" />
+        <script type="application/ld+json">{FAQ_JSON_LD}</script>
       </Helmet>
 
-      {/* ── PAGE HEADER — with ledger-grid backdrop ──────── */}
-      <section className="relative bg-paper border-b border-rule overflow-hidden pt-32 pb-14 md:pt-44 md:pb-20 mt-0">
-        {/* Ledger baselines at 4% — same visual language as home hero */}
+      {/* ── PAGE HEADER ──────────────────────────────────── */}
+      <section className="relative bg-paper border-b border-rule overflow-hidden pt-32 pb-14 md:pt-44 md:pb-20">
         <div
           className="absolute inset-0 pointer-events-none select-none"
           aria-hidden="true"
           style={{ backgroundImage: 'repeating-linear-gradient(to bottom, transparent 0px, transparent 55px, rgba(0,0,0,0.04) 55px, rgba(0,0,0,0.04) 56px)' }}
         />
         <div className="relative max-w-6xl mx-auto px-6 md:px-8">
-          {/* Eyebrow */}
-          <p className="font-mono text-recovered tracking-widest text-xs font-semibold mb-5 uppercase">
-            Contact — Fairfield, NJ
-          </p>
-          {/* Headline — typographic apostrophe, not straight quote */}
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-ink tracking-tight mb-6 leading-none">
-            Let&rsquo;s talk.
-          </h1>
-          {/* Subhead */}
+          <p className="font-mono text-recovered tracking-widest text-xs font-semibold mb-5 uppercase">Contact — Fairfield, NJ</p>
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-ink tracking-tight mb-6 leading-none">Let&rsquo;s talk.</h1>
           <p className="text-lg md:text-xl text-slate font-sans max-w-2xl leading-relaxed mb-6">
             Tell us what you&rsquo;re owed. A recovery specialist responds within one business day.
           </p>
-          {/* Live status */}
           <div className="flex items-center gap-2 font-mono text-xs text-slate/60">
             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${officeStatus.open ? 'bg-recovered' : 'bg-slate/30'}`} />
             {officeStatus.label}
@@ -458,11 +532,9 @@ export default function ContactPage() {
       <section className="bg-paper py-16 md:py-20 border-b border-rule">
         <div className="max-w-6xl mx-auto px-6 md:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 lg:gap-16">
-            {/* LEFT — 3/5 */}
             <div className="lg:col-span-3">
               {showDirectCard ? directLeftContent : formLeftContent}
             </div>
-            {/* RIGHT — 2/5 */}
             <div className="lg:col-span-2">
               {rightColumn}
             </div>
@@ -470,25 +542,28 @@ export default function ContactPage() {
         </div>
       </section>
 
+      {/* ── FAQ ──────────────────────────────────────────── */}
+      <section className="bg-mist py-16 md:py-20 border-b border-rule">
+        <div className="max-w-6xl mx-auto px-6 md:px-8">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate mb-3">Common Questions</p>
+          <h2 className="font-serif text-2xl md:text-3xl text-ink mb-10">
+            Everything you need to place an account.
+          </h2>
+          <div className="max-w-3xl">
+            <FaqAccordion />
+          </div>
+        </div>
+      </section>
+
       {/* ── CLOSER BAND ─────────────────────────────────── */}
       <section className="bg-ink py-14 md:py-16">
         <div className="max-w-6xl mx-auto px-6 md:px-8 flex flex-col md:flex-row md:items-center md:justify-between gap-8">
-          <h2 className="text-2xl md:text-3xl font-serif text-paper leading-snug">
-            Have documents ready to send?
-          </h2>
+          <h2 className="text-2xl md:text-3xl font-serif text-paper leading-snug">Have documents ready to send?</h2>
           <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-            <a
-              href="mailto:collect@advancedrecoverygroup.com"
-              className="inline-flex items-center justify-center gap-2 bg-recovered text-paper font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-sm hover:bg-recovered/90 transition-colors min-h-[44px]"
-            >
+            <a href="mailto:collect@advancedrecoverygroup.com" className="inline-flex items-center justify-center gap-2 bg-recovered text-paper font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-sm hover:bg-recovered/90 transition-colors min-h-[44px]">
               Email the file to collect@
             </a>
-            <a
-              href="https://portal.advancedrecoverygroup.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-sm border border-paper/30 text-paper hover:bg-paper/10 transition-colors min-h-[44px]"
-            >
+            <a href="https://portal.advancedrecoverygroup.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-sm border border-paper/30 text-paper hover:bg-paper/10 transition-colors min-h-[44px]">
               Client Portal
             </a>
           </div>
