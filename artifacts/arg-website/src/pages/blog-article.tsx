@@ -1,5 +1,5 @@
 import { Shell } from '@/components/layout/Shell';
-import { ArrowLeft } from 'lucide-react';
+import { EditorialImage } from '@/components/EditorialImage';
 import { Link, useRoute } from 'wouter';
 import NotFound from '@/pages/not-found';
 import { useEffect, useRef, useState } from 'react';
@@ -108,7 +108,7 @@ export default function BlogArticlePage() {
         <header className="pt-32 pb-16 md:pt-48 md:pb-24 bg-mist border-b border-rule">
           <div className="max-w-3xl mx-auto px-6 md:px-8 text-center">
             <Link href="/blog/" className="inline-flex items-center gap-2 font-mono text-sm text-slate hover:text-recovered transition-colors mb-8 group uppercase tracking-widest">
-              <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Insights
+              ← Back to Insights
             </Link>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif text-ink mb-8 leading-tight">
               {article.title}
@@ -122,15 +122,14 @@ export default function BlogArticlePage() {
         {/* Cover Image */}
         {article.coverImage && (
           <div className="max-w-5xl mx-auto px-6 md:px-8 -mt-8 md:-mt-12 relative z-10 mb-16 md:mb-24">
-            <div className="w-full aspect-video md:aspect-[21/9] bg-paper overflow-hidden rounded-sm border border-rule/50">
-              <img
-                src={article.coverImage}
-                alt={article.title}
-                className="w-full h-full object-cover"
-                width="1200"
-                height="514"
-              />
-            </div>
+            <EditorialImage
+              src={article.coverImage}
+              alt={article.title}
+              aspectClassName="aspect-video md:aspect-[21/9]"
+              width={1200}
+              height={514}
+              loading="eager"
+            />
           </div>
         )}
 

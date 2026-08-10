@@ -1,0 +1,53 @@
+Design elevation pass on arg-website. The design system (colors, fonts,
+rules, no shadows/gradients) stays exactly as is — this pass is about
+composition, motion, and craft. Take these in order:
+
+1. REBUILD THE HERO as "the ledger" — the site's signature. Remove the
+   full-bleed photo and dark overlays entirely. New hero: paper
+   background, ledger rules top and bottom. Left 60%: mono eyebrow
+   "COMMERCIAL COLLECTIONS — FAIRFIELD, NJ", then the headline "We
+   recover what you're owed." in Source Serif at clamp(3.5rem, 8vw,
+   7rem), tight leading, ink; subhead and the two CTAs below. Right
+   40%: an animated ledger card — a bordered (1px rule) table that
+   cycles a file through its real lifecycle, one row appearing every
+   1.2s in IBM Plex Mono: "FILE PLACED" → "SKIP TRACE COMPLETE" →
+   "DEBTOR CONTACTED" → "PAYMENT PLAN SECURED" → "FILE RECOVERED ✓"
+   (final row in recovered green), then it holds 3s, fades, and
+   restarts with a different file label (e.g. "MCA DEFAULT",
+   "EQUIPMENT LEASE", "COMMERCIAL LOAN"). Small mono caption under the
+   card: "Representative recovery lifecycle." No dollar amounts
+   anywhere in it. Static final-state render under
+   prefers-reduced-motion.
+2. SECTION FOLIOS: every homepage section gets a small mono marker in
+   its top-right corner — "01 / 07", "02 / 07" etc — like ledger page
+   numbers. Reorder the homepage to: Hero → Why ARG → Process →
+   Recovery Estimator → Industries + pull-line → Giving Back → Closing
+   CTA, and fold the three stats into the Why ARG section header area
+   as a single mono line rather than a separate strip.
+3. SCROLL ORCHESTRATION: replace all load-time animate-in utilities
+   with scroll-triggered reveals (IntersectionObserver, once, 500ms,
+   12px rise). In the Process section, make the connecting vertical
+   rule DRAW downward tied to scroll progress through the section, and
+   have each step's number ink from rule-gray to ink as its dot passes.
+4. UNIFIED IMAGE TREATMENT: create an <EditorialImage> component used
+   for every photo: grayscale(100%) with a subtle ink-tinted overlay,
+   2px rule border, and a small mono caption slot below (e.g. "THE ARG
+   TEAM — FAIRFIELD, NJ", "MEAL PROGRAM — FMSC PARTNERSHIP"). On
+   hover, color fades back in over 400ms. Apply everywhere including
+   the dog photo and blog covers.
+5. VERTICALS TICKER: directly under the hero, a single thin band
+   between two rules: a slow continuous mono marquee — "MERCHANT CASH
+   ADVANCE · FACTORING · EQUIPMENT LEASING · COMMERCIAL LOANS ·
+   FINTECH LENDING · JUDGMENT ENFORCEMENT ·" — 40s loop, pauses on
+   hover, hidden under prefers-reduced-motion (show static centered
+   text instead).
+6. FOOTER FINALE: above the existing footer columns, add an oversized
+   serif line "Still owed? Let's fix that." with a recovered-green
+   underline rule that draws in on scroll, next to a large mono
+   (877) 464-8470 as a tel: link.
+7. TYPE DISCIPLINE: audit every heading — h2s at clamp(2.25rem, 4vw,
+   3.5rem), consistent eyebrow style (mono, xs, tracking-widest,
+   uppercase, slate) on every section, body copy max-w-prose. Kill any
+   remaining lucide icons in content sections; the system is
+   typographic.
+Keep Lighthouse ≥95 and reduced-motion compliant throughout.

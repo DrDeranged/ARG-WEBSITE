@@ -1,5 +1,4 @@
 import { Shell } from '@/components/layout/Shell';
-import { ArrowRight } from 'lucide-react';
 import { Link } from 'wouter';
 import { Helmet } from 'react-helmet-async';
 
@@ -28,8 +27,11 @@ export default function BlogListPage() {
 
       <section className="pt-32 pb-24 md:pt-48 md:pb-24 bg-mist border-b border-rule">
         <div className="max-w-4xl mx-auto px-6 md:px-8">
-          <h1 className="text-5xl md:text-7xl font-serif text-ink mb-6">Insights & Updates</h1>
-          <p className="text-xl text-slate">
+          <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-4 uppercase">Insights</p>
+          <h1 className="font-serif text-ink mb-6" style={{ fontSize: 'clamp(3rem, 7vw, 5rem)', lineHeight: 1.05 }}>
+            Insights &amp; Updates
+          </h1>
+          <p className="text-xl text-slate max-w-prose">
             Expertise in commercial collections, corporate finance, and agency news.
           </p>
         </div>
@@ -42,18 +44,21 @@ export default function BlogListPage() {
               <div key={article.slug} className="group border-t border-rule py-12 md:py-16 first:border-t-0 first:pt-0">
                 <span className="font-mono text-sm text-slate tabular-nums block mb-4">{article.date}</span>
                 <Link href={`/blog/${article.slug}/`} className="block">
-                  <h2 className="text-3xl md:text-4xl font-serif text-ink mb-6 group-hover:text-recovered transition-colors leading-tight">
+                  <h2
+                    className="font-serif text-ink mb-6 group-hover:text-recovered transition-colors leading-tight"
+                    style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', lineHeight: 1.2 }}
+                  >
                     {article.title}
                   </h2>
                 </Link>
-                <p className="text-lg text-slate mb-8 max-w-3xl leading-relaxed">
+                <p className="text-lg text-slate mb-8 max-w-prose leading-relaxed">
                   {article.excerpt}
                 </p>
                 <Link
                   href={`/blog/${article.slug}/`}
-                  className="font-mono text-sm text-ink group-hover:text-recovered flex items-center gap-2 w-fit"
+                  className="font-mono text-sm text-ink group-hover:text-recovered transition-colors"
                 >
-                  Read More <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                  Read More →
                 </Link>
               </div>
             ))}
