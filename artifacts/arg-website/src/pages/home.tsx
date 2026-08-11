@@ -1,9 +1,7 @@
 import { Shell } from '@/components/layout/Shell';
 import { AmbientVideo } from '@/components/AmbientVideo';
 import { EditorialImage } from '@/components/EditorialImage';
-import { ScrambleText } from '@/components/ScrambleText';
 import { SectionRule } from '@/components/SectionRule';
-import { MagneticWrapper } from '@/components/MagneticWrapper';
 import { Link } from 'wouter';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -57,13 +55,12 @@ function Reveal({
 }
 
 /* ─────────────────────────────────────────────────────────
-   SECTION FOLIO with scramble
+   SECTION FOLIO — static
 ───────────────────────────────────────────────────────── */
 function SectionFolio({ n, total = 7 }: { n: number; total?: number }) {
-  const label = `${String(n).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
   return (
     <span className="absolute top-4 right-4 md:top-8 md:right-8 font-mono text-[10px] text-recovered/50 tabular-nums select-none pointer-events-none">
-      <ScrambleText text={label} />
+      {String(n).padStart(2, '0')} / {String(total).padStart(2, '0')}
     </span>
   );
 }
@@ -227,27 +224,6 @@ function VerticalsTicker() {
 }
 
 /* ─────────────────────────────────────────────────────────
-   DOM SCRAMBLE HELPER
-───────────────────────────────────────────────────────── */
-const SCRAMBLE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
-function scrambleDOMText(el: HTMLElement, finalText: string, totalMs = 380) {
-  const frameMs = 40;
-  const frames = Math.round(totalMs / frameMs);
-  let f = 0;
-  const tick = () => {
-    f++;
-    if (f >= frames) { el.textContent = finalText; return; }
-    el.textContent = Array.from({ length: finalText.length }, (_, i) =>
-      f / frames > i / finalText.length
-        ? finalText[i]
-        : (finalText[i] === ' ' || finalText[i] === '/') ? finalText[i] : SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)]
-    ).join('');
-    setTimeout(tick, frameMs);
-  };
-  tick();
-}
-
-/* ─────────────────────────────────────────────────────────
    SCENE 1: WHY ARG — "entries write themselves"
    Pin: 120vh desktop. 4 ledger rows draw in sequentially
    tied to scrub: rule line scaleX, mono label fades, desc fades.
@@ -264,94 +240,36 @@ const WHY_FEATURES = [
 function WhyArgSection() {
   const { reducedMotion, ready } = useMotion();
   const sectionRef = useRef<HTMLElement>(null);
-  const folioRef   = useRef<HTMLSpanElement>(null);
   const ruleRefs   = useRef<(HTMLDivElement | null)[]>([]);
   const numRefs    = useRef<(HTMLSpanElement | null)[]>([]);
   const titleRefs  = useRef<(HTMLHeadingElement | null)[]>([]);
   const descRefs   = useRef<(HTMLParagraphElement | null)[]>([]);
 
+  // SCENE 2 — plain choreographed reveal (no pin). All viewports.
+  // Rule draws, then the row's num/title/desc stagger-fade in sequence.
   useLayoutEffect(() => {
     if (reducedMotion || !ready) return;
     const ctx = gsap.context(() => {
-      const isMobile = window.innerWidth < 1024;
-
       ruleRefs.current.forEach(el => el && gsap.set(el, { scaleX: 0, transformOrigin: 'left' }));
       numRefs.current.forEach(el => el && gsap.set(el, { opacity: 0 }));
       titleRefs.current.forEach(el => el && gsap.set(el, { opacity: 0, y: 6 }));
       descRefs.current.forEach(el => el && gsap.set(el, { opacity: 0 }));
 
-      if (isMobile) {
-        WHY_FEATURES.forEach((_, i) => {
-          const row = ruleRefs.current[i]?.parentElement?.parentElement;
-          if (!row) return;
-          ScrollTrigger.create({
-            trigger: row,
-            start: 'top 82%',
-            once: true,
-            onEnter: () => {
-              gsap.timeline()
-                .to(ruleRefs.current[i],  { scaleX: 1, duration: 0.35, ease: 'power2.out' })
-                .to(numRefs.current[i],   { opacity: 1, duration: 0.2 }, '>-0.1')
-                .to(titleRefs.current[i], { opacity: 1, y: 0, duration: 0.3 }, '>-0.05')
-                .to(descRefs.current[i],  { opacity: 1, duration: 0.35 }, '>-0.05');
-            },
-          });
-        });
-        // Folio: scramble on section enter
-        ScrollTrigger.create({
-          trigger: sectionRef.current,
-          start: 'top 80%',
-          once: true,
-          onEnter: () => { if (folioRef.current) scrambleDOMText(folioRef.current, '02 / 07'); },
-        });
-        return;
-      }
-
-      // Desktop: folio scrambles when section approaches
-      ScrollTrigger.create({
-        trigger: sectionRef.current,
-        start: 'top 80%',
-        once: true,
-        onEnter: () => { if (folioRef.current) scrambleDOMText(folioRef.current, '02 / 07'); },
-      });
-
-      // Pin 120vh, scrub-drive all 4 rows
-      // Each row occupies 0.22 time units; rows start at i*0.22
-      // Total timeline: 0 → 1.0 (padded with empty tween)
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          pin: true,
-          scrub: 0.8,
-          pinSpacing: true,
-          invalidateOnRefresh: true,
-          start: 'top top',
-          end: '+=120%',
-          anticipatePin: 1,
-          onEnter: () => {
-            if (sectionRef.current) sectionRef.current.style.willChange = 'transform';
-          },
-          onLeave: () => {
-            if (sectionRef.current) sectionRef.current.style.willChange = '';
-          },
-          onLeaveBack: () => {
-            if (sectionRef.current) sectionRef.current.style.willChange = '';
-          },
-        },
-      });
-
-      tl.to({}, { duration: 1.0 }, 0); // anchor total to 1.0s
-
       WHY_FEATURES.forEach((_, i) => {
-        const base = i * 0.22;
-        if (ruleRefs.current[i])
-          tl.to(ruleRefs.current[i],  { scaleX: 1, duration: 0.06, ease: 'power2.out' }, base);
-        if (numRefs.current[i])
-          tl.to(numRefs.current[i],   { opacity: 1, duration: 0.05 }, base + 0.07);
-        if (titleRefs.current[i])
-          tl.to(titleRefs.current[i], { opacity: 1, y: 0, duration: 0.07 }, base + 0.10);
-        if (descRefs.current[i])
-          tl.to(descRefs.current[i],  { opacity: 1, duration: 0.09 }, base + 0.15);
+        const row = ruleRefs.current[i]?.parentElement?.parentElement;
+        if (!row) return;
+        ScrollTrigger.create({
+          trigger: row,
+          start: 'top 82%',
+          once: true,
+          onEnter: () => {
+            gsap.timeline()
+              .to(ruleRefs.current[i],  { scaleX: 1, duration: 0.4, ease: 'power2.out' })
+              .to(numRefs.current[i],   { opacity: 1, duration: 0.2 }, '>-0.1')
+              .to(titleRefs.current[i], { opacity: 1, y: 0, duration: 0.3 }, '>-0.05')
+              .to(descRefs.current[i],  { opacity: 1, duration: 0.3 }, '>-0.05');
+          },
+        });
       });
     }, sectionRef);
     return () => ctx.revert();
@@ -359,13 +277,7 @@ function WhyArgSection() {
 
   return (
     <section ref={sectionRef} data-folio-n={2} className="relative bg-mist py-24 md:py-32 border-b border-rule">
-      {/* Folio — scrambles 01→02 on enter */}
-      <span
-        ref={folioRef}
-        className="absolute top-4 right-4 md:top-8 md:right-8 font-mono text-[10px] text-recovered/50 tabular-nums select-none pointer-events-none"
-      >
-        {reducedMotion ? '02 / 07' : '01 / 07'}
-      </span>
+      <SectionFolio n={2} />
 
       <div className="max-w-6xl mx-auto px-6 md:px-8">
         <SectionRule />
@@ -473,141 +385,43 @@ function ProcessSection() {
         if (el) el.style.opacity = '0';
       });
 
-      if (isMobile) {
-        // Mobile: IO-based activation per step; chip snaps
-        PROCESS_STEPS.forEach((_, i) => {
-          const el = stepRefs.current[i];
-          if (!el) return;
-          ScrollTrigger.create({
-            trigger: el,
-            start: 'top 75%',
-            once: true,
-            onEnter: () => {
-              // Ink the dot + number
-              if (dotRefs.current[i]) dotRefs.current[i]!.style.backgroundColor = 'hsl(212 50% 12.5%)';
-              if (numRefs.current[i]) numRefs.current[i]!.style.color = 'hsl(246 100% 98%)';
-              // Reveal body copy
-              gsap.to(bodyRefs.current[i], { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' });
-              // Check previous step + update mobile chip
-              if (i > 0 && checkRefs.current[i - 1]) {
-                checkRefs.current[i - 1]!.style.opacity = '1';
-              }
-              if (mobileChipRef.current) {
-                mobileChipRef.current.textContent = CHIP_STATUSES[i];
-              }
-            },
-          });
-        });
-        return;
-      }
-
-      // Desktop: pin 180vh
-      let ruleH = 1;               // rule total height for scaleY animation
-      let s0 = 0, s1 = 0, s2 = 0; // step dot centers relative to timeline container top
-
-      gsap.set(chipRef.current, { y: -36 });
-      // Rule: fixed height measured from container, animated via scaleY (no layout thrash)
-      if (ruleInkRef.current && timelineRef.current) {
-        ruleH = Math.max(1, (timelineRef.current.offsetHeight ?? 400) - 24);
-        ruleInkRef.current.style.height = `${ruleH}px`;
-        ruleInkRef.current.style.transform = 'scaleY(0)';
-        ruleInkRef.current.style.transformOrigin = 'top';
-      }
+      // V2: IO-based activation for ALL viewports (no pin)
       gsap.set(imgColRef.current, { opacity: 0, x: 16 });
+      if (ruleInkRef.current) {
+        gsap.set(ruleInkRef.current, { scaleY: 0, transformOrigin: 'top' });
+      }
 
-      // Imperative scrub: onUpdate drives chip position, rule height, step states
-      const prevRevealed = [false, false, false];
-
+      // Section enter: draw rule + slide image in
       ScrollTrigger.create({
         trigger: sectionRef.current,
-        pin: true,
-        scrub: 0.8,
-        pinSpacing: true,
-        invalidateOnRefresh: true,
-        start: 'top top',
-        end: '+=180%',
-        anticipatePin: 1,
+        start: 'top 70%',
+        once: true,
         onEnter: () => {
-          if (sectionRef.current) sectionRef.current.style.willChange = 'transform';
-          // Compute step positions once
-          const container = timelineRef.current;
-          if (!container) return;
-          s0 = (stepRefs.current[0]?.offsetTop ?? 0) + 12;
-          s1 = (stepRefs.current[1]?.offsetTop ?? 160) + 12;
-          s2 = (stepRefs.current[2]?.offsetTop ?? 320) + 12;
-          // Image slides in
-          gsap.to(imgColRef.current, { opacity: 1, x: 0, duration: 0.7, ease: 'power2.out' });
+          gsap.to(ruleInkRef.current, { scaleY: 1, duration: 1.2, ease: 'power2.inOut' });
+          gsap.to(imgColRef.current,  { opacity: 1, x: 0, duration: 0.7, ease: 'power2.out' });
         },
-        onLeave: () => {
-          if (sectionRef.current) sectionRef.current.style.willChange = '';
-        },
-        onLeaveBack: () => {
-          if (sectionRef.current) sectionRef.current.style.willChange = '';
-          // Reset revealed flags when scrolling back to top of pin
-          prevRevealed[0] = prevRevealed[1] = prevRevealed[2] = false;
-          bodyRefs.current.forEach(el => el && gsap.set(el, { opacity: 0, y: 10 }));
-        },
-        onUpdate: (self) => {
-          const p = self.progress;
+      });
 
-          // ── Chip y-position ──────────────────────────────────────────
-          let chipY: number;
-          if (p <= 0.32)      chipY = -36 + (p / 0.32) * (s0 + 36);
-          else if (p <= 0.65) chipY = s0 + ((p - 0.32) / 0.33) * (s1 - s0);
-          else                chipY = s1 + ((p - 0.65) / 0.35) * (s2 - s1);
-          if (chipRef.current) chipRef.current.style.transform = `translateY(${chipY}px)`;
-
-          // ── Rule ink: scaleY from top, draws ahead of chip (+40px lead) ──
-          const leadH = Math.max(0, chipY + 48);
-          if (ruleInkRef.current && ruleH > 1) {
-            ruleInkRef.current.style.transform = `scaleY(${Math.min(1, leadH / ruleH)})`;
-          }
-
-          // ── Chip status label ─────────────────────────────────────────
-          if (chipLabelRef.current) {
-            const status =
-              p < 0.35 ? CHIP_STATUSES[0] :
-              p < 0.67 ? CHIP_STATUSES[1] :
-              p < 0.96 ? CHIP_STATUSES[2] : CHIP_STATUSES[3];
-            if (chipLabelRef.current.textContent !== status)
-              chipLabelRef.current.textContent = status;
-          }
-
-          // ── Step dot/number ink states ────────────────────────────────
-          const activeIdx = p < 0.33 ? -1 : p < 0.66 ? 0 : p < 0.96 ? 1 : 2;
-          PROCESS_STEPS.forEach((_, i) => {
-            const active = i <= activeIdx;
-            const dot = dotRefs.current[i];
-            const num = numRefs.current[i];
-            if (dot) dot.style.backgroundColor = active ? 'hsl(212 50% 12.5%)' : 'hsl(210 24.1% 87.8%)';
-            if (num) num.style.color = active ? 'hsl(246 100% 98%)' : 'hsl(210 24.1% 87.8%)';
-          });
-
-          // ── Check marks on completed steps ───────────────────────────
-          if (checkRefs.current[0])
-            checkRefs.current[0].style.opacity = p >= 0.62 ? '1' : '0';
-          if (checkRefs.current[1])
-            checkRefs.current[1].style.opacity = p >= 0.94 ? '1' : '0';
-
-          // ── Body reveals: CSS transition for smooth reveal ────────────
-          const THRESHOLDS = [0.34, 0.66, 0.93];
-          THRESHOLDS.forEach((threshold, i) => {
-            const el = bodyRefs.current[i];
-            if (!el) return;
-            const shouldShow = p >= threshold;
-            if (shouldShow && !prevRevealed[i]) {
-              prevRevealed[i] = true;
-              el.style.transition = 'opacity 0.45s ease, transform 0.45s ease';
-              el.style.opacity = '1';
-              el.style.transform = 'translateY(0)';
-            } else if (!shouldShow && prevRevealed[i]) {
-              prevRevealed[i] = false;
-              el.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-              el.style.opacity = '0';
-              el.style.transform = 'translateY(10px)';
+      // Per-step reveals: dot/number ink, body copy, check marks, chip labels
+      PROCESS_STEPS.forEach((_, i) => {
+        const el = stepRefs.current[i];
+        if (!el) return;
+        ScrollTrigger.create({
+          trigger: el,
+          start: 'top 78%',
+          once: true,
+          onEnter: () => {
+            if (dotRefs.current[i]) dotRefs.current[i]!.style.backgroundColor = 'hsl(212 50% 12.5%)';
+            if (numRefs.current[i]) numRefs.current[i]!.style.color = 'hsl(246 100% 98%)';
+            gsap.to(bodyRefs.current[i], { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' });
+            if (i > 0 && checkRefs.current[i - 1]) {
+              checkRefs.current[i - 1]!.style.opacity = '1';
             }
-          });
-        },
+            const status = CHIP_STATUSES[i];
+            if (mobileChipRef.current)  mobileChipRef.current.textContent  = status;
+            if (chipLabelRef.current)   chipLabelRef.current.textContent   = status;
+          },
+        });
       });
     }, sectionRef);
     return () => ctx.revert();
@@ -965,12 +779,10 @@ function RecoveryEstimator() {
               </ul>
               <div className="pt-4 border-t border-rule flex flex-col gap-4">
                 <p className="font-mono text-xs text-slate/50 italic">Illustrative outlook, not a guarantee. Every file is assessed individually.</p>
-                <MagneticWrapper>
-                  <Link href="/contact-us/"
-                    className="inline-flex items-center gap-2 bg-ink text-paper px-6 py-3 text-sm font-medium rounded-sm hover:bg-ink/90 transition-colors w-fit">
-                    Get a real assessment →
-                  </Link>
-                </MagneticWrapper>
+                <Link href="/contact-us/"
+                  className="inline-flex items-center gap-2 bg-ink text-paper px-6 py-3 text-sm font-medium rounded-sm hover:bg-ink/90 transition-colors w-fit">
+                  Get a real assessment →
+                </Link>
               </div>
             </div>
           </div>
@@ -1302,7 +1114,6 @@ function GivingBackSection() {
                 aspectClassName="aspect-square"
                 width={400}
                 height={400}
-                depth
               />
               {/* Saturation overlay: opacity 1→0 = grayscale→color, no filter animation */}
               <div
@@ -1323,7 +1134,6 @@ function GivingBackSection() {
                 aspectClassName="aspect-square"
                 width={400}
                 height={400}
-                depth
               />
               <div
                 ref={overlay2Ref}
@@ -1502,12 +1312,10 @@ function ClosingCTA() {
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <MagneticWrapper>
-            <Link href="/contact-us/"
-              className="inline-block bg-recovered hover:bg-recovered-bright text-paper px-10 py-4 text-sm font-medium rounded-sm transition-colors">
-              Start a recovery
-            </Link>
-          </MagneticWrapper>
+          <Link href="/contact-us/"
+            className="inline-block bg-recovered hover:bg-recovered-bright text-paper px-10 py-4 text-sm font-medium rounded-sm transition-colors">
+            Start a recovery
+          </Link>
           <Link href="/contact-us/"
             className="inline-block border border-paper/30 text-paper/70 hover:text-paper hover:border-paper/50 px-10 py-4 text-sm font-medium rounded-sm transition-colors">
             Contact us
@@ -1571,29 +1379,13 @@ function HeroSection() {
 
   const lines = useSplitLines(headlineRef);
 
+  // Trio auto-rotates on all viewports at 2.5s cadence (V2: desktop no longer scroll-linked)
   const [trioIdx, setTrioIdx] = useState<number>(reducedMotion ? 2 : 0);
   useEffect(() => {
-    if (!isMobile || reducedMotion) return;
-    const id = setInterval(() => setTrioIdx(i => (i < 2 ? i + 1 : 2)), 2000);
-    return () => clearInterval(id);
-  }, [isMobile, reducedMotion]);
-
-  const [eyebrowText, setEyebrowText] = useState<string>(reducedMotion ? EYEBROW_TEXT : '');
-  useEffect(() => {
     if (reducedMotion) return;
-    let idx = 0;
-    const msPerChar = (isMobile ? 400 * 0.6 : 400) / EYEBROW_TEXT.length;
-    const startDelay = isMobile ? 190 : 320;
-    const t = setTimeout(() => {
-      const id = setInterval(() => {
-        idx++;
-        setEyebrowText(EYEBROW_TEXT.slice(0, idx));
-        if (idx >= EYEBROW_TEXT.length) clearInterval(id);
-      }, msPerChar);
-      return () => clearInterval(id);
-    }, startDelay);
-    return () => clearTimeout(t);
-  }, [reducedMotion, isMobile]);
+    const id = setInterval(() => setTrioIdx(i => (i < 2 ? i + 1 : 2)), 2500);
+    return () => clearInterval(id);
+  }, [reducedMotion]);
 
   const [scrollCueVisible, setScrollCueVisible] = useState(true);
   useEffect(() => {
@@ -1687,14 +1479,6 @@ function HeroSection() {
           x: -20,
           y: -32,
           opacity: 0.82,
-          ease: 'power1.inOut',
-          duration: 0.8,
-        }, 0);
-      }
-
-      if (trioInnerRef.current) {
-        scrubTl.to(trioInnerRef.current, {
-          y: '-66.67%',
           ease: 'power1.inOut',
           duration: 0.8,
         }, 0);
@@ -1892,10 +1676,7 @@ function HeroSection() {
                 ref={eyebrowRef}
                 className="font-mono text-recovered tracking-widest text-xs font-semibold mb-3 uppercase h-4 flex items-center gap-0.5"
               >
-                {eyebrowText}
-                {!reducedMotion && eyebrowText.length < EYEBROW_TEXT.length && (
-                  <span className="animate-pulse text-recovered/60 leading-none">|</span>
-                )}
+                {EYEBROW_TEXT}
               </p>
 
               {reducedMotion ? (
@@ -1950,14 +1731,12 @@ function HeroSection() {
 
               <div ref={desktopCtasRef} className="hidden lg:block mt-10">
                 <div className="flex flex-row gap-4 mb-5">
-                  <MagneticWrapper>
-                    <Link
-                      href="/contact-us/"
-                      className="bg-ink text-paper px-8 py-4 text-sm font-medium rounded-sm hover:bg-ink/90 transition-colors text-center inline-block"
-                    >
-                      Get a Free Consultation
-                    </Link>
-                  </MagneticWrapper>
+                  <Link
+                    href="/contact-us/"
+                    className="bg-ink text-paper px-8 py-4 text-sm font-medium rounded-sm hover:bg-ink/90 transition-colors text-center inline-block"
+                  >
+                    Get a Free Consultation
+                  </Link>
                   <a
                     href="#process"
                     className="link-draw border border-ink text-ink px-8 py-4 text-sm font-medium rounded-sm hover:bg-mist transition-colors text-center"

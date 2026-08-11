@@ -178,6 +178,7 @@ export function ArgAssist({ open, onClose }: { open: boolean; onClose: () => voi
       setMounted(true);
       // Double RAF: ensure DOM is present before slide-in begins
       requestAnimationFrame(() => requestAnimationFrame(() => setAnim(true)));
+      return;
     } else {
       setAnim(false);
       const timer = setTimeout(() => setMounted(false), 320);

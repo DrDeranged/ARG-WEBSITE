@@ -115,8 +115,11 @@ export function MotionProvider({ children }: { children: ReactNode }) {
     if (!ready || reducedMotion) return;
 
     const l = new Lenis({
-      duration: 1.1,
-      easing: (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
+      lerp: 0.14,
+      wheelMultiplier: 1,
+      smoothWheel: true,
+      syncTouch: false,
+      touchMultiplier: 1.5,
     });
 
     const tick = (time: number) => l.raf(time * 1000);
