@@ -4,11 +4,14 @@ import { ScrambleText } from '@/components/ScrambleText';
 import { SectionRule } from '@/components/SectionRule';
 import { MagneticWrapper } from '@/components/MagneticWrapper';
 import { Link } from 'wouter';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Helmet } from 'react-helmet-async';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useMotion, useSplitLines } from '@/motion';
 
 /* ─────────────────────────────────────────────────────────
-   SCROLL-REVEAL HOOK
+   SCROLL-REVEAL HOOK  (unchanged — used by non-hero sections)
 ───────────────────────────────────────────────────────── */
 function useScrollReveal(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
@@ -69,15 +72,15 @@ function SectionFolio({ n, total = 7 }: { n: number; total?: number }) {
 ───────────────────────────────────────────────────────── */
 const FILE_TYPES = ['MCA DEFAULT', 'EQUIPMENT LEASE', 'COMMERCIAL LOAN', 'JUDGMENT MATTER'];
 const LIFECYCLE_STEPS = [
-  { label: 'FILE PLACED',           mobileLabel: 'FILE PLACED',         middle: false, amount: false, day: 'DAY 01', final: false },
-  { label: 'SKIP TRACE COMPLETE',   mobileLabel: 'SKIP TRACE \u2713',   middle: true,  amount: false, day: 'DAY 03', final: false },
-  { label: 'DEBTOR CONTACTED',      mobileLabel: 'DEBTOR CONTACTED',    middle: true,  amount: false, day: 'DAY 09', final: false },
-  { label: 'PAYMENT PLAN SECURED',  mobileLabel: 'PLAN SECURED',        middle: true,  amount: false, day: 'DAY 21', final: false },
-  { label: 'AMOUNT RECOVERED',      mobileLabel: 'AMOUNT RECOVERED',    middle: false, amount: true,  day: 'DAY 34', final: false },
-  { label: 'FILE RECOVERED \u2713', mobileLabel: 'FILE RECOVERED \u2713', middle: false, amount: false, day: '', final: true },
+  { label: 'FILE PLACED',           mobileLabel: 'FILE PLACED',           middle: false, amount: false, day: 'DAY 01', final: false },
+  { label: 'SKIP TRACE COMPLETE',   mobileLabel: 'SKIP TRACE \u2713',     middle: true,  amount: false, day: 'DAY 03', final: false },
+  { label: 'DEBTOR CONTACTED',      mobileLabel: 'DEBTOR CONTACTED',      middle: true,  amount: false, day: 'DAY 09', final: false },
+  { label: 'PAYMENT PLAN SECURED',  mobileLabel: 'PLAN SECURED',          middle: true,  amount: false, day: 'DAY 21', final: false },
+  { label: 'AMOUNT RECOVERED',      mobileLabel: 'AMOUNT RECOVERED',      middle: false, amount: true,  day: 'DAY 34', final: false },
+  { label: 'FILE RECOVERED \u2713', mobileLabel: 'FILE RECOVERED \u2713', middle: false, amount: false, day: '',       final: true  },
 ];
 
-function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
+function AnimatedLedgerCard() {
   const prefersReduced =
     typeof window !== 'undefined'
       ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -121,18 +124,18 @@ function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
     <div
       className="bg-paper font-mono text-[11px]"
       style={{
-        border: `1px solid ${borderColor ?? 'var(--color-rule, #d5dae4)'}`,
+        border: '1px solid var(--color-rule)',
         opacity: fading ? 0 : 1,
-        transition: `opacity 600ms ease, border-color 200ms ease`,
+        transition: 'opacity 600ms ease',
       }}
       aria-hidden="true"
     >
-      {/* Header — strong ink contrast */}
+      {/* Header */}
       <div className="border-b border-rule px-4 py-3 flex justify-between items-center bg-ink">
         <span className="text-paper/70 tracking-widest uppercase text-[9px]">Recovery File</span>
         <span className="text-paper/40 tabular-nums text-[9px]">{dateStr}</span>
       </div>
-      {/* File type + randomized file number */}
+      {/* File type + file number */}
       <div className="border-b border-rule px-4 py-3 flex justify-between items-center bg-mist">
         <span className="text-ink font-medium tracking-wider">{FILE_TYPES[fileIdx]}</span>
         <span className="text-slate/40 tabular-nums text-[9px]">FILE № 2026-{fileNumber}</span>
@@ -145,7 +148,6 @@ function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
             className={`px-4 flex justify-between items-center min-h-[44px] lg:min-h-[48px] ${step.final ? 'bg-recovered/[0.08]' : ''}`}
             style={{ opacity: i < visibleRows ? 1 : 0, transition: 'opacity 300ms ease' }}
           >
-            {/* Label — shortened on mobile for long labels */}
             <span className={
               step.final ? 'text-recovered font-medium' :
               (step.amount && isFinal) ? 'text-recovered font-medium' :
@@ -155,7 +157,6 @@ function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
               <span className="hidden md:inline">{step.label}</span>
             </span>
 
-            {/* Right-side annotation */}
             {i < visibleRows && (
               step.amount ? (
                 <span className={`tabular-nums ${isFinal ? 'text-recovered font-medium' : 'text-slate/35'}`}>
@@ -166,7 +167,8 @@ function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
               ) : (
                 <span className="flex items-center gap-3 text-[9px]">
                   <span style={{ color: step.middle ? 'var(--color-signal)' : 'hsl(213 19.5% 36.1% / 0.4)' }}>○</span>
-                  <span className="text-slate/40 tabular-nums">{step.day}</span>
+                  {/* data-day-stamp: GSAP targets these during scrub to highlight reviewed rows */}
+                  <span data-day-stamp className="text-slate/40 tabular-nums">{step.day}</span>
                 </span>
               )
             )}
@@ -181,41 +183,7 @@ function AnimatedLedgerCard({ borderColor }: { borderColor?: string }) {
 }
 
 /* ─────────────────────────────────────────────────────────
-   HERO HEADLINE stagger
-───────────────────────────────────────────────────────── */
-const HERO_LINES = ['We recover', "what you\u2019re owed."];
-
-function HeroHeadline() {
-  const prefersReduced =
-    typeof window !== 'undefined'
-      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      : false;
-  const [revealed, setRevealed] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setRevealed(true), 50); return () => clearTimeout(t); }, []);
-
-  if (prefersReduced) {
-    return <h1 className="text-hero font-serif text-ink tracking-tight mb-8">{HERO_LINES.join(' ')}</h1>;
-  }
-  return (
-    <h1 className="text-hero font-serif text-ink tracking-tight mb-8 overflow-hidden">
-      {HERO_LINES.map((line, i) => (
-        <span key={i} className="block overflow-hidden">
-          <span
-            className="block"
-            style={{
-              transform: revealed ? 'translateY(0)' : 'translateY(110%)',
-              opacity: revealed ? 1 : 0,
-              transition: `transform 700ms cubic-bezier(.22,1,.36,1) ${i * 130 + 80}ms, opacity 700ms ease ${i * 130 + 80}ms`,
-            }}
-          >{line}</span>
-        </span>
-      ))}
-    </h1>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────
-   VERTICALS TICKER
+   VERTICALS TICKER  (unchanged)
 ───────────────────────────────────────────────────────── */
 const TICKER_PARTS = [
   'MERCHANT CASH ADVANCE', 'FACTORING', 'EQUIPMENT LEASING',
@@ -262,7 +230,7 @@ function VerticalsTicker() {
 }
 
 /* ─────────────────────────────────────────────────────────
-   FEATURE ROW (Why ARG)
+   FEATURE ROW (unchanged)
 ───────────────────────────────────────────────────────── */
 function FeatureRow({ num, title, desc }: { num: string; title: string; desc: string }) {
   const { ref, revealed } = useScrollReveal(0.2);
@@ -282,7 +250,7 @@ function FeatureRow({ num, title, desc }: { num: string; title: string; desc: st
 }
 
 /* ─────────────────────────────────────────────────────────
-   PROCESS SECTION
+   PROCESS SECTION (unchanged)
 ───────────────────────────────────────────────────────── */
 const PROCESS_STEPS = [
   { step: '01', title: 'Submit Placement', desc: 'Provide account details, invoices, and supporting documentation through our secure client portal.' },
@@ -294,7 +262,7 @@ function ProcessSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const prefersReduced = typeof window !== 'undefined'
     ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : true;
-  const [ruleH, setRuleH]     = useState(prefersReduced ? 100 : 0);
+  const [ruleH, setRuleH]       = useState(prefersReduced ? 100 : 0);
   const [stepActive, setActive] = useState(prefersReduced ? [true, true, true] : [false, false, false]);
 
   useEffect(() => {
@@ -355,7 +323,7 @@ function ProcessSection() {
 }
 
 /* ─────────────────────────────────────────────────────────
-   RECOVERY ESTIMATOR with micro-physics
+   RECOVERY ESTIMATOR  (unchanged)
 ───────────────────────────────────────────────────────── */
 type DScore = 'Strong' | 'Moderate' | 'Challenging';
 
@@ -400,7 +368,6 @@ function RecoveryEstimator() {
 
   const { score, pct, lines } = computeOutlook(balance, months, status);
 
-  // ── Band label scramble ──
   const [displayScore, setDisplayScore] = useState<string>(score);
   const prevScore = useRef(score);
   useEffect(() => {
@@ -421,7 +388,6 @@ function RecoveryEstimator() {
     tick();
   }, [score]);
 
-  // ── Sentence stagger ──
   const linesStr = lines.join('|');
   const prevLinesStr = useRef(linesStr);
   const [lineKey, setLineKey] = useState(0);
@@ -432,7 +398,6 @@ function RecoveryEstimator() {
     }
   }, [linesStr]);
 
-  // ── Bar animation ──
   useEffect(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReduced) { setAnimPct(pct); return; }
@@ -460,7 +425,7 @@ function RecoveryEstimator() {
         <SectionRule />
         <Reveal delay={100}>
           <p className="font-mono text-recovered tracking-widest text-xs font-semibold mb-4 uppercase">Recovery Estimator</p>
-          <h2 className="text-h2 font-serif text-ink mb-4">What's still recoverable?</h2>
+          <h2 className="text-h2 font-serif text-ink mb-4">What&rsquo;s still recoverable?</h2>
           <p className="text-slate max-w-prose mb-12">Adjust the inputs to see a qualitative outlook. Every file is assessed individually.</p>
         </Reveal>
 
@@ -500,7 +465,6 @@ function RecoveryEstimator() {
           <div className="border border-rule p-8 rounded-sm flex flex-col gap-8 bg-paper">
             <div>
               <p className="font-mono text-xs uppercase tracking-widest text-slate mb-2">Recoverability Outlook</p>
-              {/* Band label scramble */}
               <p className={`text-3xl font-serif font-semibold font-mono tracking-wider ${BAND_TEXT[score]}`}>
                 {displayScore}
               </p>
@@ -511,7 +475,6 @@ function RecoveryEstimator() {
               </div>
               <div className="flex justify-between font-mono text-xs text-slate/50 mt-1"><span>Challenging</span><span>Strong</span></div>
             </div>
-            {/* Sentences stagger in on change */}
             <ul className="flex flex-col gap-3 min-h-[160px]">
               {lines.map((l, i) => (
                 <li
@@ -541,7 +504,7 @@ function RecoveryEstimator() {
 }
 
 /* ─────────────────────────────────────────────────────────
-   HERO — office status for live line
+   HERO — office status clock
 ───────────────────────────────────────────────────────── */
 function getHeroStatus(): { open: boolean; label: string } {
   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
@@ -560,60 +523,305 @@ function useHeroStatus() {
 }
 
 /* ─────────────────────────────────────────────────────────
-   HERO — with scroll-linked ledger card depth
+   HERO — constants
 ───────────────────────────────────────────────────────── */
-function lerpColor(t: number): string {
-  // rule ≈ rgb(213,218,228) → recovered ≈ rgb(22,163,74)
-  const r = Math.round(213 + (22  - 213) * t);
-  const g = Math.round(218 + (163 - 218) * t);
-  const b = Math.round(228 + (74  - 228) * t);
-  return `rgb(${r},${g},${b})`;
-}
+const N_BASELINES  = 20;   // number of horizontal ledger lines to render
+const BASELINE_GAP = 56;   // px between lines
+const EYEBROW_TEXT = 'COMMERCIAL COLLECTIONS — FAIRFIELD, NJ';
+const TRIO_WORDS   = ['PLACE.', 'PURSUE.', 'RECOVER.'] as const;
 
+/* ─────────────────────────────────────────────────────────
+   HERO — main section
+───────────────────────────────────────────────────────── */
 function HeroSection() {
-  const prefersReduced = typeof window !== 'undefined'
-    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : true;
-  const [scrollY, setScrollY] = useState(0);
-  const [scrollCueVisible, setScrollCueVisible] = useState(true);
+  const { reducedMotion } = useMotion();
   const heroStatus = useHeroStatus();
 
+  /* Detect mobile once on mount (no SSR penalty — SPA only) */
+  const [isMobile] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
+  );
+
+  /* ── Refs ─────────────────────────────────────────────── */
+  const sectionRef     = useRef<HTMLElement>(null);
+  const baselineRefs   = useRef<(HTMLDivElement | null)[]>([]);
+  const eyebrowRef     = useRef<HTMLParagraphElement>(null);
+  const headlineRef    = useRef<HTMLHeadingElement>(null);
+  const trioOuterRef   = useRef<HTMLDivElement>(null);
+  const trioInnerRef   = useRef<HTMLDivElement>(null);
+  const subheadRef     = useRef<HTMLParagraphElement>(null);
+  const desktopCtasRef = useRef<HTMLDivElement>(null);
+  const cardWrapperRef = useRef<HTMLDivElement>(null);
+  const mobileCtasRef  = useRef<HTMLDivElement>(null);
+  const tickerDockRef  = useRef<HTMLDivElement>(null);
+  const scrollCueRef   = useRef<HTMLDivElement>(null);
+
+  /* useSplitLines MUST be declared before the entrance useLayoutEffect
+     so its own useLayoutEffect runs first and lines.current is populated. */
+  const lines = useSplitLines(headlineRef);
+
+  /* ── Kinetic trio: mobile 2-second auto-advance ─────── */
+  const [trioIdx, setTrioIdx] = useState<number>(reducedMotion ? 2 : 0);
   useEffect(() => {
-    if (prefersReduced) return;
-    const onScroll = () => { const y = window.scrollY; setScrollY(y); setScrollCueVisible(y < 100); };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [prefersReduced]);
+    if (!isMobile || reducedMotion) return;
+    const id = setInterval(() => setTrioIdx(i => (i < 2 ? i + 1 : 2)), 2000);
+    return () => clearInterval(id);
+  }, [isMobile, reducedMotion]);
 
-  const cardParallaxY = prefersReduced ? 0 : scrollY * 0.15;
-  const borderColor   = lerpColor(Math.min(1, scrollY / 300));
+  /* ── Eyebrow typewriter ─────────────────────────────── */
+  const [eyebrowText, setEyebrowText] = useState<string>(reducedMotion ? EYEBROW_TEXT : '');
+  useEffect(() => {
+    if (reducedMotion) return;
+    let idx = 0;
+    const msPerChar = (isMobile ? 400 * 0.6 : 400) / EYEBROW_TEXT.length;
+    /* Start slightly after baseline draw begins */
+    const startDelay = isMobile ? 190 : 320;
+    const t = setTimeout(() => {
+      const id = setInterval(() => {
+        idx++;
+        setEyebrowText(EYEBROW_TEXT.slice(0, idx));
+        if (idx >= EYEBROW_TEXT.length) clearInterval(id);
+      }, msPerChar);
+      return () => clearInterval(id);
+    }, startDelay);
+    return () => clearTimeout(t);
+  }, [reducedMotion, isMobile]);
 
+  /* ── Mobile scroll-cue (desktop handled by GSAP) ───── */
+  const [scrollCueVisible, setScrollCueVisible] = useState(true);
+  useEffect(() => {
+    if (!isMobile || reducedMotion) return;
+    const h = () => setScrollCueVisible(window.scrollY < 100);
+    window.addEventListener('scroll', h, { passive: true });
+    return () => window.removeEventListener('scroll', h);
+  }, [isMobile, reducedMotion]);
+
+  /* ── GSAP: entrance + desktop scrub ─────────────────── */
+  useLayoutEffect(() => {
+    /* Reduced-motion: every element is already in its final visible state.
+       useSplitLines still ran, but no animation is needed. */
+    if (reducedMotion) return;
+
+    const speed    = isMobile ? 0.6 : 1.0;
+    const baselines = baselineRefs.current.filter(Boolean) as HTMLDivElement[];
+    const lineEls   = lines.current; // populated by useSplitLines's useLayoutEffect
+
+    /* ── 1. Set initial hidden states before first paint ── */
+    if (baselines.length) gsap.set(baselines, { scaleX: 0, transformOrigin: 'left' });
+    if (lineEls.length)   gsap.set(lineEls, { y: '110%', opacity: 0 });
+    if (eyebrowRef.current)     gsap.set(eyebrowRef.current, { opacity: 0 });
+    if (trioOuterRef.current)   gsap.set(trioOuterRef.current, { opacity: 0 });
+    if (subheadRef.current)     gsap.set(subheadRef.current, { opacity: 0, y: 12 });
+    if (desktopCtasRef.current) gsap.set(desktopCtasRef.current, { opacity: 0, y: 8 });
+    if (cardWrapperRef.current) gsap.set(cardWrapperRef.current, { x: 24, opacity: 0 });
+    if (mobileCtasRef.current)  gsap.set(mobileCtasRef.current, { opacity: 0, y: 8 });
+    if (tickerDockRef.current)  gsap.set(tickerDockRef.current, { y: 40, opacity: 0 });
+
+    /* ── 2. Entrance timeline (plays once on load) ── */
+    const entrance = gsap.timeline();
+
+    /* Baselines draw left→right, staggered across 800ms */
+    entrance.to(baselines, {
+      scaleX: 1,
+      duration: 0.8 * speed,
+      stagger: 0.04 * speed,
+      ease: 'power2.out',
+    }, 0);
+
+    /* Eyebrow container fades in (text filled by React typewriter in parallel) */
+    if (eyebrowRef.current) {
+      entrance.to(eyebrowRef.current, { opacity: 1, duration: 0.25 * speed }, 0.28 * speed);
+    }
+
+    /* Headline lines rise from 110% (clipped by overflow:hidden wrappers) */
+    if (lineEls.length) {
+      entrance.to(lineEls, {
+        y: '0%',
+        opacity: 1,
+        duration: 0.7 * speed,
+        stagger: 0.13 * speed,
+        ease: 'power2.out',
+      }, 0.82 * speed);
+    }
+
+    /* Kinetic trio appears */
+    if (trioOuterRef.current) {
+      entrance.to(trioOuterRef.current, { opacity: 1, duration: 0.3 * speed }, 0.85 * speed);
+    }
+
+    /* Subhead */
+    if (subheadRef.current) {
+      entrance.to(subheadRef.current, { opacity: 1, y: 0, duration: 0.5 * speed }, 1.15 * speed);
+    }
+
+    /* Desktop CTAs */
+    if (desktopCtasRef.current) {
+      entrance.to(desktopCtasRef.current, { opacity: 1, y: 0, duration: 0.4 * speed }, '>-0.15');
+    }
+
+    /* Card slides from x:24 */
+    if (cardWrapperRef.current) {
+      entrance.to(cardWrapperRef.current, {
+        x: 0, opacity: 1,
+        duration: 0.6 * speed,
+        ease: 'power2.out',
+      }, 1.1 * speed);
+    }
+
+    /* Mobile CTAs */
+    if (mobileCtasRef.current) {
+      entrance.to(mobileCtasRef.current, { opacity: 1, y: 0, duration: 0.4 * speed }, 1.2 * speed);
+    }
+
+    /* Mobile: no scrub — done */
+    if (isMobile) {
+      return () => { entrance.kill(); };
+    }
+
+    /* ── 3. Desktop scrub (hero pinned for 150vh of scroll) ── */
+    const scrubTl = gsap.timeline({
+      scrollTrigger: {
+        trigger: sectionRef.current,
+        pin: true,
+        scrub: 1.2,
+        start: 'top top',
+        end: '+=150%',
+        anticipatePin: 1,
+        onEnter: () => {
+          if (sectionRef.current) sectionRef.current.style.willChange = 'transform, opacity';
+        },
+        onLeaveBack: () => {
+          if (sectionRef.current) sectionRef.current.style.willChange = '';
+        },
+        onLeave: () => {
+          if (sectionRef.current) sectionRef.current.style.willChange = '';
+        },
+        /* Day-stamp column highlights sequentially as user scrolls */
+        onUpdate: (self) => {
+          if (!cardWrapperRef.current) return;
+          const p = self.progress;
+          /* 6 rows across first 80% of scrub: each row gets 80/6 ≈ 13.3% */
+          const hi = p < 0.8 ? Math.min(4, Math.floor((p / 0.8) * 5)) : 4;
+          cardWrapperRef.current
+            .querySelectorAll<HTMLElement>('[data-day-stamp]')
+            .forEach((el, i) => {
+              el.style.color      = i <= hi ? 'var(--color-recovered)' : '';
+              el.style.fontWeight = i === hi ? '600' : '';
+            });
+        },
+      },
+    });
+
+    /* Headline lines: staggered Y-up + fade (0 → 0.55 of scrub) */
+    if (lineEls.length) {
+      scrubTl.to(lineEls, {
+        y: -88,
+        opacity: 0,
+        stagger: { amount: 0.12 },
+        ease: 'power2.in',
+        duration: 0.55,
+      }, 0);
+    }
+
+    /* Baselines: un-rule themselves bottom-first (0 → 0.65) */
+    const basesDn = [...baselines].reverse();
+    scrubTl.to(basesDn, {
+      opacity: 0,
+      stagger: 0.022,
+      duration: 0.65,
+    }, 0);
+
+    /* Card: scale + drift toward top-left (0 → 0.8) */
+    if (cardWrapperRef.current) {
+      scrubTl.to(cardWrapperRef.current, {
+        scale: 0.92,
+        x: -20,
+        y: -32,
+        opacity: 0.82,
+        ease: 'power1.inOut',
+        duration: 0.8,
+      }, 0);
+    }
+
+    /* Kinetic trio: continuous vertical roll through all three words (0 → 0.8) */
+    if (trioInnerRef.current) {
+      /* -66.67% of the inner div's height moves it up by 2 of the 3 word-heights,
+         revealing PURSUE. at ~33% and RECOVER. at ~67% of the roll. */
+      scrubTl.to(trioInnerRef.current, {
+        y: '-66.67%',
+        ease: 'power1.inOut',
+        duration: 0.8,
+      }, 0);
+    }
+
+    /* Scroll cue: fades immediately as scrub begins */
+    if (scrollCueRef.current) {
+      scrubTl.to(scrollCueRef.current, { opacity: 0, duration: 0.08 }, 0);
+    }
+
+    /* Subhead + desktop CTAs: fade at 60–85% of scrub */
+    const fadeGroup = [subheadRef.current, desktopCtasRef.current].filter(Boolean);
+    if (fadeGroup.length) {
+      scrubTl.to(fadeGroup, {
+        opacity: 0,
+        y: -14,
+        stagger: 0.05,
+        duration: 0.25,
+      }, 0.6);
+    }
+
+    /* Ticker: slides up from y:40 and docks under the fixed header at 80% */
+    if (tickerDockRef.current) {
+      scrubTl.to(tickerDockRef.current, {
+        y: 0,
+        opacity: 1,
+        ease: 'power2.out',
+        duration: 0.2,
+      }, 0.8);
+    }
+
+    return () => {
+      entrance.kill();
+      scrubTl.kill();
+    };
+  }, [reducedMotion, isMobile]); // lines.current is stable across this component's lifetime
+
+  /* ── JSX ─────────────────────────────────────────────── */
   return (
-    /* Mobile: natural height (no forcing). Desktop: min(92vh, 900px) via hero-height CSS class */
-    <section className="relative bg-paper border-b border-rule overflow-hidden md:flex md:items-center hero-height">
-
-      {/* ── Ledger-grid backdrop ── */}
-      {/* Horizontal baselines: always visible at 4% opacity */}
-      <div
-        className="absolute inset-0 pointer-events-none select-none"
-        aria-hidden="true"
-        style={{ backgroundImage: 'repeating-linear-gradient(to bottom, transparent 0px, transparent 55px, rgba(0,0,0,0.04) 55px, rgba(0,0,0,0.04) 56px)' }}
-      />
-      {/* Vertical column rules: desktop only — clutter at narrow widths */}
-      <div
-        className="absolute inset-0 pointer-events-none select-none hidden md:block"
-        aria-hidden="true"
-        style={{
-          backgroundImage:
-            'linear-gradient(to right,' +
-            ' transparent 25%, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.05) calc(25% + 1px), transparent calc(25% + 1px),' +
-            ' transparent 50%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.05) calc(50% + 1px), transparent calc(50% + 1px),' +
-            ' transparent 75%, rgba(0,0,0,0.05) 75%, rgba(0,0,0,0.05) calc(75% + 1px), transparent calc(75% + 1px))',
-        }}
-      />
+    <section
+      ref={sectionRef}
+      className="relative bg-paper border-b border-rule overflow-hidden md:flex md:items-center hero-height"
+    >
+      {/* ── Ledger-grid backdrop: individual divs for GSAP stagger ── */}
+      <div className="absolute inset-0 pointer-events-none select-none" aria-hidden="true">
+        {Array.from({ length: N_BASELINES }, (_, i) => (
+          <div
+            key={i}
+            ref={el => { baselineRefs.current[i] = el; }}
+            className="absolute left-0 right-0"
+            style={{
+              top: `${(i + 1) * BASELINE_GAP}px`,
+              height: '1px',
+              backgroundColor: 'rgba(0,0,0,0.04)',
+            }}
+          />
+        ))}
+        {/* Vertical column rules: desktop only, static */}
+        <div
+          className="absolute inset-0 hidden md:block"
+          style={{
+            backgroundImage:
+              'linear-gradient(to right,' +
+              ' transparent 25%, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.05) calc(25% + 1px), transparent calc(25% + 1px),' +
+              ' transparent 50%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.05) calc(50% + 1px), transparent calc(50% + 1px),' +
+              ' transparent 75%, rgba(0,0,0,0.05) 75%, rgba(0,0,0,0.05) calc(75% + 1px), transparent calc(75% + 1px))',
+          }}
+        />
+      </div>
 
       <SectionFolio n={1} />
 
-      {/* ── Marginalia spine — xl+ only; no space reserved below xl ── */}
+      {/* Marginalia spine — xl+ only */}
       <div
         className="absolute right-5 top-0 bottom-0 hidden xl:flex items-center justify-center"
         aria-hidden="true"
@@ -624,67 +832,133 @@ function HeroSection() {
         </span>
       </div>
 
+      {/* ── Main content ── */}
       <div className="w-full">
-        {/* Mobile: 48px top (mt-16 = header) + 40px bottom. Desktop: py-20/py-24 */}
         <div className="max-w-6xl 2xl:max-w-7xl mx-auto px-6 md:px-8 pt-12 pb-10 md:py-20 lg:py-24 mt-16">
-
-          {/* Three-slot grid: ①text ②card ③mobile-CTAs */}
           <div className="grid grid-cols-1 lg:grid-cols-[60fr_40fr] gap-6 lg:gap-20">
 
-            {/* ① Eyebrow + headline + subhead (+ CTAs on desktop) */}
+            {/* ① Left column */}
             <div>
-              <p className="font-mono text-recovered tracking-widest text-xs font-semibold mb-6 uppercase">
-                Commercial Collections — Fairfield, NJ
+              {/* Eyebrow: typed on character-by-character */}
+              <p
+                ref={eyebrowRef}
+                className="font-mono text-recovered tracking-widest text-xs font-semibold mb-3 uppercase h-4 flex items-center gap-0.5"
+              >
+                {eyebrowText}
+                {!reducedMotion && eyebrowText.length < EYEBROW_TEXT.length && (
+                  <span className="animate-pulse text-recovered/60 leading-none">|</span>
+                )}
               </p>
-              <HeroHeadline />
-              <p className="text-lg md:text-xl text-slate font-sans max-w-prose leading-relaxed">
-                Advanced Recovery Group specializes exclusively in B2B debt recovery. Operating on a strict contingency basis, we deploy professional, firm, and proven strategies to restore your cash flow.
+
+              {/* Kinetic trio: PLACE. → PURSUE. → RECOVER.
+                  Desktop: inner div driven by GSAP scrub via trioInnerRef.
+                  Mobile:  CSS transition driven by trioIdx state. */}
+              {reducedMotion ? (
+                <p className="font-mono text-xs tracking-widest uppercase mb-3 font-semibold text-recovered">
+                  RECOVER.
+                </p>
+              ) : (
+                <div
+                  ref={trioOuterRef}
+                  className="overflow-hidden mb-3"
+                  style={{ height: '1.05rem' }}
+                  aria-hidden="true"
+                >
+                  <div
+                    ref={trioInnerRef}
+                    style={isMobile ? {
+                      transform: `translateY(${-trioIdx * 33.33}%)`,
+                      transition: 'transform 320ms cubic-bezier(.22,1,.36,1)',
+                    } : undefined}
+                  >
+                    {TRIO_WORDS.map((word, i) => (
+                      <div
+                        key={word}
+                        className="font-mono text-xs tracking-widest font-semibold uppercase flex items-center"
+                        style={{
+                          height: '1.05rem',
+                          color: i === 2 ? 'var(--color-recovered)' : 'hsl(210 24.1% 55%)',
+                        }}
+                      >
+                        {word}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Headline — useSplitLines targets this element */}
+              <h1
+                ref={headlineRef}
+                className="text-hero font-serif text-ink tracking-tight mb-8"
+              >
+                We recover what you&rsquo;re owed.
+              </h1>
+
+              {/* Subhead */}
+              <p
+                ref={subheadRef}
+                className="text-lg md:text-xl text-slate font-sans max-w-prose leading-relaxed"
+              >
+                Advanced Recovery Group specializes exclusively in B2B debt recovery.
+                Operating on a strict contingency basis, we deploy professional, firm,
+                and proven strategies to restore your cash flow.
               </p>
-              {/* Desktop-only CTAs — inline with text column */}
-              <div className="hidden lg:flex flex-row gap-4 mt-10 mb-6">
-                <MagneticWrapper>
-                  <Link href="/contact-us/"
-                    className="bg-ink text-paper px-8 py-4 text-sm font-medium rounded-sm hover:bg-ink/90 transition-colors text-center inline-block">
-                    Get a Free Consultation
-                  </Link>
-                </MagneticWrapper>
-                <a href="#process"
-                  className="link-draw border border-ink text-ink px-8 py-4 text-sm font-medium rounded-sm hover:bg-mist transition-colors text-center">
-                  See How It Works
-                </a>
-              </div>
-              <div className="hidden lg:flex items-center gap-2 font-mono text-xs text-slate/55">
-                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${heroStatus.open ? 'bg-recovered' : 'bg-slate/30'}`} />
-                {heroStatus.label}
+
+              {/* Desktop-only CTAs + status (single ref for scrub fade) */}
+              <div ref={desktopCtasRef} className="hidden lg:block mt-10">
+                <div className="flex flex-row gap-4 mb-5">
+                  <MagneticWrapper>
+                    <Link
+                      href="/contact-us/"
+                      className="bg-ink text-paper px-8 py-4 text-sm font-medium rounded-sm hover:bg-ink/90 transition-colors text-center inline-block"
+                    >
+                      Get a Free Consultation
+                    </Link>
+                  </MagneticWrapper>
+                  <a
+                    href="#process"
+                    className="link-draw border border-ink text-ink px-8 py-4 text-sm font-medium rounded-sm hover:bg-mist transition-colors text-center"
+                  >
+                    See How It Works
+                  </a>
+                </div>
+                <div className="flex items-center gap-2 font-mono text-xs text-slate/55">
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${heroStatus.open ? 'bg-recovered' : 'bg-slate/30'}`} />
+                  {heroStatus.label}
+                </div>
               </div>
             </div>
 
-            {/* ② Card — full-width on mobile, 460px max on desktop */}
-            <div style={{ transform: `translateY(${cardParallaxY}px)`, willChange: prefersReduced ? undefined : 'transform' }}>
-              {/* Container: 4px shadow room on mobile, 16px on desktop */}
+            {/* ② Card column */}
+            <div ref={cardWrapperRef}>
               <div className="relative pb-[4px] pr-[4px] md:pb-4 md:pr-4 lg:max-w-[460px] lg:ml-auto">
-                {/* Mobile: single 4px offset */}
+                {/* Mobile: single 4px shadow layer */}
                 <div className="absolute bg-paper md:hidden"
                   style={{ inset: 0, transform: 'translate(4px,4px)', border: '1px solid var(--color-rule)', zIndex: 0 }} />
-                {/* Desktop: two-layer stack */}
+                {/* Desktop: two-layer depth stack */}
                 <div className="absolute bg-paper hidden md:block"
                   style={{ inset: 0, transform: 'translate(16px,16px)', border: '1px solid var(--color-rule)', zIndex: 0 }} />
                 <div className="absolute bg-paper hidden md:block"
                   style={{ inset: 0, transform: 'translate(8px,8px)', border: '1px solid var(--color-rule)', zIndex: 1 }} />
                 <div className="relative" style={{ zIndex: 2 }}>
-                  <AnimatedLedgerCard borderColor={borderColor} />
+                  <AnimatedLedgerCard />
                 </div>
               </div>
             </div>
 
-            {/* ③ Mobile-only CTAs — full-width stacked, 12px gap; hidden on desktop */}
-            <div className="lg:hidden flex flex-col gap-3">
-              <Link href="/contact-us/"
-                className="bg-ink text-paper px-8 py-4 text-sm font-medium rounded-sm hover:bg-ink/90 transition-colors text-center block w-full">
+            {/* ③ Mobile-only CTAs */}
+            <div ref={mobileCtasRef} className="lg:hidden flex flex-col gap-3">
+              <Link
+                href="/contact-us/"
+                className="bg-ink text-paper px-8 py-4 text-sm font-medium rounded-sm hover:bg-ink/90 transition-colors text-center block w-full"
+              >
                 Get a Free Consultation
               </Link>
-              <a href="#process"
-                className="link-draw border border-ink text-ink px-8 py-4 text-sm font-medium rounded-sm hover:bg-mist transition-colors text-center block w-full">
+              <a
+                href="#process"
+                className="link-draw border border-ink text-ink px-8 py-4 text-sm font-medium rounded-sm hover:bg-mist transition-colors text-center block w-full"
+              >
                 See How It Works
               </a>
               <div className="flex items-center gap-2 font-mono text-xs text-slate/55 pt-1">
@@ -697,10 +971,25 @@ function HeroSection() {
         </div>
       </div>
 
-      {/* ── Scroll cue — hidden on mobile (thumbs know); fades out after 100px ── */}
+      {/* ── Ticker dock (desktop scrub: slides up at 80% and docks under header) ── */}
+      {/* Lives inside the pinned section. Starts invisible (gsap.set y:40, opacity:0). */}
       <div
+        ref={tickerDockRef}
+        className="absolute left-0 right-0 z-10 hidden lg:block"
+        style={{ top: '60px' }}
+        aria-hidden="true"
+      >
+        <VerticalsTicker />
+      </div>
+
+      {/* Scroll cue */}
+      <div
+        ref={scrollCueRef}
         className="absolute bottom-8 left-8 hidden md:flex items-center gap-2 font-mono text-[10px] text-slate/30 uppercase tracking-widest select-none pointer-events-none"
-        style={{ opacity: scrollCueVisible && !prefersReduced ? 1 : 0, transition: 'opacity 400ms ease' }}
+        style={isMobile ? {
+          opacity: scrollCueVisible && !reducedMotion ? 1 : 0,
+          transition: 'opacity 400ms ease',
+        } : undefined}
         aria-hidden="true"
       >
         SCROLL ↓
@@ -724,7 +1013,7 @@ export default function HomePage() {
       {/* 01 / 07  HERO */}
       <HeroSection />
 
-      {/* TICKER */}
+      {/* TICKER — page-flow ticker (always visible below hero on all viewports) */}
       <VerticalsTicker />
 
       {/* 02 / 07  WHY ARG */}
@@ -827,7 +1116,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* BLOG TEASER (unnumbered) */}
+      {/* BLOG TEASER */}
       <section className="bg-mist py-24 md:py-32 border-b border-rule">
         <div className="max-w-6xl mx-auto px-6 md:px-8">
           <Reveal>
