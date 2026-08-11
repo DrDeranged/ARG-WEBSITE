@@ -1,0 +1,38 @@
+Convert each homepage section into a choreographed scene. One scene
+per commit is fine; push after each if preferred.
+
+1. WHY ARG — "the entries write themselves": pin the section for
+   120vh; the six ledger rows draw in sequentially tied to scrub —
+   rule line draws, then mono label types on, then description fades
+   in. The section folio (02/07) counts up its number with the
+   scramble effect as the section pins.
+2. PROCESS — "one file, three moves": pin for 180vh. A single mono
+   file chip (FILE № 2026-0847) physically travels down the drawn
+   timeline as the user scrubs, docking at each step; the active
+   step's number inks to full ink and its copy reveals; previous
+   steps get a small recovered ✓. The connecting rule draws just
+   ahead of the chip. Mobile: no pin, chip snaps per step on
+   scroll-into-view.
+3. RECOVERY ESTIMATOR — "the instrument": no pin (it's interactive —
+   scroll must stay free), but give it an entrance: the panel's
+   grid pattern draws in, sliders' tracks fill from 0 to their
+   default positions, and the outlook bar sweeps once. While the
+   user drags any slider, subtly dim the rest of the page (ink at
+   4% overlay) to focus the instrument; restore on release.
+4. INDUSTRIES + PULL-LINE — "the spread": the six verticals start as
+   a stacked mono list and fan out into their grid as the section
+   enters (staggered translate from center). The serif pull-line
+   reveals word-by-word tied to scrub across 60vh — the Libertas
+   giant-type moment, ours reads as testimony not slogan.
+5. GIVING BACK — "color returns": this is the emotional beat. The
+   section's photos enter fully desaturated and bloom to full color
+   tied to scrub as the section crosses the viewport center — the
+   only place in the site where color itself animates. Manny's
+   quote reveals line by line.
+6. CLOSING CTA + FOOTER FINALE: the ink band's top rule draws, the
+   headline rises, and the giant footer phone number assembles from
+   scrambled digits, settling as the user reaches it. "Still owed?
+   Let's fix that." underline draws last.
+Each scene: reducedMotion renders settled states; mobile uses the
+simplified non-pinned variants; no scene may exceed 200vh of pin.
+Commit(s) as "Phase 2: <scene> scene".

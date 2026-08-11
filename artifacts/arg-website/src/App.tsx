@@ -10,6 +10,8 @@ import {
   useLocation,
   Router as WouterRouter,
 } from 'wouter';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { MotionProvider, useMotion } from '@/motion';
 
 import HomePage from '@/pages/home';
 import ContactPage from '@/pages/contact';
@@ -38,6 +40,7 @@ function Router() {
   const [location] = useLocation();
   const [phase, setPhase] = useState<TransPhase>('idle');
   const prevKey = useRef(location);
+  const { lenis } = useMotion();
 
   const prefersReduced =
     typeof window !== 'undefined'
@@ -52,16 +55,25 @@ function Router() {
     setPhase('out');
 
     const t1 = setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      // Use Lenis instant-jump when active, native fallback otherwise
+      if (lenis) {
+        lenis.scrollTo(0, { immediate: true });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }
       setPhase('in-start');
       // Two rAFs ensure the in-start style is painted before we animate to in
       requestAnimationFrame(() => requestAnimationFrame(() => setPhase('in')));
     }, 150);
 
-    const t2 = setTimeout(() => setPhase('idle'), 310);
+    const t2 = setTimeout(() => {
+      setPhase('idle');
+      // Recalculate all ScrollTrigger positions after the new page has rendered
+      ScrollTrigger.refresh();
+    }, 310);
 
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [location, prefersReduced]);
+  }, [location, prefersReduced, lenis]);
 
   const ruleActive = phase !== 'idle';
 
@@ -141,10 +153,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
+        <MotionProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </MotionProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

@@ -4,6 +4,7 @@ import { Link, useRoute } from 'wouter';
 import NotFound from '@/pages/not-found';
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useMotion } from '@/motion';
 
 const articleData: Record<string, {
   title: string;
@@ -84,10 +85,11 @@ function calcReadingTime(html: string): string {
 /* ── Reading progress bar ───────────────────────────────── */
 function ReadingProgress() {
   const [progress, setProgress] = useState(0);
+  const { lenis, reducedMotion } = useMotion();
 
   useEffect(() => {
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) return;
+    if (reducedMotion) return;
+
     const handleScroll = () => {
       const article = document.querySelector('article');
       if (!article) return;
@@ -97,9 +99,17 @@ function ReadingProgress() {
       const total = height - windowH;
       setProgress(total > 0 ? Math.min(100, (scrolled / total) * 100) : 0);
     };
+
+    // Prefer Lenis scroll event (fires on each smoothed frame) over
+    // window 'scroll' (which fires less frequently with Lenis active)
+    if (lenis) {
+      lenis.on('scroll', handleScroll);
+      return () => lenis.off('scroll', handleScroll);
+    }
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [lenis, reducedMotion]);
 
   return (
     <div className="fixed top-0 left-0 right-0 z-[60] h-[2px] bg-rule/30 print:hidden">

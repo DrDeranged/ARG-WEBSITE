@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'wouter';
 import { Menu, X, Phone, Mail, ExternalLink, Search, Dog } from 'lucide-react';
 import { ScrambleText } from '@/components/ScrambleText';
+import { useMotion } from '@/motion';
 
 /* ── Office Status ──────────────────────────────────────── */
 type OfficeStatus = { open: boolean; label: string };
@@ -193,10 +194,21 @@ export function Shell({ children }: { children: ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paletteOpen]);
 
+  const { lenis } = useMotion();
+
   useEffect(() => {
-    document.body.style.overflow = paletteOpen || mobileMenuOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [paletteOpen, mobileMenuOpen]);
+    const locked = paletteOpen || mobileMenuOpen;
+    if (lenis) {
+      // Stop/start Lenis instead of hiding overflow — prevents scroll fighting
+      locked ? lenis.stop() : lenis.start();
+    } else {
+      document.body.style.overflow = locked ? 'hidden' : '';
+    }
+    return () => {
+      if (lenis) lenis.start();
+      else document.body.style.overflow = '';
+    };
+  }, [paletteOpen, mobileMenuOpen, lenis]);
 
   // Footer finale scroll reveal
   useEffect(() => {
