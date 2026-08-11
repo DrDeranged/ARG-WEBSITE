@@ -1,0 +1,82 @@
+MOTION ARCHITECTURE V2 — full reconstruction of the scroll system.
+The current build has too many competing motion systems; we are
+rebuilding for Libertas-grade seamlessness through SUBTRACTION and
+single-point orchestration. Be aggressive about deletion.
+
+STEP 1 — THE KILL LIST (delete entirely, don't disable):
+1. Ledger dust canvas particle system — delete.
+2. Number scramble effects everywhere EXCEPT the footer phone —
+   delete the rest.
+3. Magnetic button effect — delete.
+4. Marginalia spine — delete.
+5. Per-section folio decrement animation — folios stay, static.
+6. Image parallax depth on EditorialImage — delete.
+7. The hero's typed-on eyebrow effect — becomes a simple fade.
+8. Any remaining load-time animate-in utility classes — delete.
+What remains as the ONLY motion vocabulary: the smooth scroll, the
+hero sequence (simplified below), section pins that earn it (max 2
+on the whole page), fade/rise reveals, rule draws, the videos, the
+ledger card lifecycle, and the estimator's interactions. Nothing
+else moves.
+
+STEP 2 — LENIS TUNED FOR REAL INPUT DEVICES:
+new Lenis({ lerp: 0.14, wheelMultiplier: 1, smoothWheel: true,
+syncTouch: false, touchMultiplier: 1.5 }). lerp 0.14 (not
+duration-based easing) is the trackpad fix — responsive with just
+enough glide. gsap.ticker drives lenis.raf exclusively;
+lagSmoothing(0); no other RAF loops anywhere in the app (grep and
+remove).
+
+STEP 3 — ONE DIRECTOR, NOT TWELVE TRIGGERS:
+Rebuild homepage motion as a single ScrollDirector module
+(src/motion/director.ts) that creates ALL homepage ScrollTriggers
+in one place, in document order, from one config array — each
+entry: section ref, scene type (reveal | pin-scrub | cinema), and
+its timeline builder. No component creates its own ScrollTrigger
+anymore (EditorialImage, sections, etc. — refactor to register
+with the director). This guarantees consistent defaults (scrub
+0.8, anticipatePin 1, invalidateOnRefresh), ordered creation,
+single refresh, and one kill switch.
+
+STEP 4 — THE PAGE'S MOTION SCRIPT (the only scenes that exist):
+1. HERO (pin #1, 120vh): entrance = film fade-in → headline lines
+   rise → card slides in → CTAs fade, total 1.8s, overlapping
+   beats. Scrub during pin = headline drifts up + film scales
+   1→1.05 + overlay deepens. That's all — no grid etching, no
+   typing, no trio scrub (the PLACE/PURSUE/RECOVER trio becomes a
+   simple 2.5s auto-rotate, not scroll-linked).
+2. Sections 02, 03 (Why ARG, Process): plain choreographed reveals
+   — rule draws then rows stagger-fade, 500ms, once. NO pins. The
+   process file-chip becomes: chip fades in at each step as the
+   step scrolls into view. 
+3. INDUSTRIES CINEMA BREAK (pin #2, 120vh): bw-skyline full-bleed,
+   pull-line reveals word-by-word on scrub, tiles rise at the end.
+   This is the page's one theatrical scrub moment besides the
+   hero.
+4. Everything below (estimator, trust strip, giving back, blog,
+   CTA): reveal-only. Videos underlay via AmbientVideo as built.
+   The giving-back color bloom stays (it's a CSS filter on scroll
+   position — convert to opacity crossfade between a grayscale
+   and color version of the same image to obey the no-filter
+   rule).
+5. Total pins on homepage: exactly 2. Total scrubbed timelines: 2.
+   Everything else: enter-once reveals.
+
+STEP 5 — LOAD ORDER (unchanged contract, re-verify): native scroll
+instantly; director initializes after fonts + hero first-frame
+(1.5s cap); single refresh; entrance skipped if already scrolled.
+
+STEP 6 — INSTRUMENTATION: add ?debugfps=1 query flag rendering a
+tiny mono FPS meter + active-trigger count overlay so we can
+measure instead of guess. Strip from production builds via the
+flag check only (keep the code).
+
+STEP 7 — VERIFY, in this exact environment order:
+a. pnpm build, deploy-preview the PRODUCTION build (not dev — dev
+   mode React + HMR overhead pollutes scroll feel).
+b. Scroll the full page with ?debugfps=1: report min FPS per
+   section on normal and 4x throttle.
+c. Fast-scroll bottom-to-top: zero broken states.
+d. Test wheel AND trackpad feel if possible.
+Commit as "Motion Architecture V2: director rebuild + subtraction
+pass".
