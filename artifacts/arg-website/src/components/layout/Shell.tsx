@@ -311,6 +311,73 @@ function GlobalFolioCounter() {
 
 const SHELL_API_BASE = (import.meta.env.BASE_URL as string | undefined)?.replace(/\/$/, '') ?? '';
 
+/* ── Floating Assist Tab ─────────────────────────────────
+   Ledger-language fixed bottom-right launcher for ArgAssist.
+   Appears after 600 px of scroll on first visit, instantly on
+   subsequent pages in the same session. Dismissable via × for
+   the session. z-40 — below palette and sheet layers.
+──────────────────────────────────────────────────────────*/
+function AssistTab({
+  onOpen,
+  onDismiss,
+  reducedMotion,
+}: {
+  onOpen: () => void;
+  onDismiss: () => void;
+  reducedMotion: boolean;
+}) {
+  const [entered, setEntered] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setEntered(true), 40);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <div
+      className="fixed z-40 bottom-4 right-4 md:bottom-6 md:right-6"
+      style={{
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        opacity: reducedMotion || entered ? 1 : 0,
+        transform: reducedMotion || entered ? 'translateY(0)' : 'translateY(8px)',
+        transition: 'opacity 300ms ease, transform 300ms ease',
+      }}
+    >
+      <div
+        className="relative flex items-center bg-paper border border-rule rounded-[4px]"
+        style={{
+          borderTopWidth: '2px',
+          borderTopColor: 'var(--color-recovered)',
+          boxShadow: '0 2px 12px rgba(16,31,48,0.12)',
+        }}
+      >
+        <button
+          onClick={onOpen}
+          aria-label="Open ARG Assist AI concierge"
+          className="flex items-center gap-2 pl-3 pr-2 py-2 font-mono text-[10px] tracking-widest text-ink hover:text-recovered transition-colors"
+        >
+          {/* Recovered pulse dot */}
+          <span className="relative flex-shrink-0 w-1.5 h-1.5">
+            <span
+              className="absolute inset-0 rounded-full bg-recovered"
+              style={{ animation: 'ping 2s cubic-bezier(0,0,0.2,1) infinite' }}
+            />
+            <span className="relative w-1.5 h-1.5 rounded-full bg-recovered block" />
+          </span>
+          ARG ASSIST
+        </button>
+        <button
+          onClick={onDismiss}
+          aria-label="Dismiss assist tab for this session"
+          className="flex items-center justify-center w-6 h-6 mr-1 text-slate/40 hover:text-ink transition-colors"
+        >
+          <X size={10} aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ── Shell ──────────────────────────────────────────────── */
 export function Shell({ children }: { children: ReactNode }) {
   const [isScrolled, setIsScrolled]           = useState(false);
@@ -320,6 +387,20 @@ export function Shell({ children }: { children: ReactNode }) {
   const [assistOpen, setAssistOpen]           = useState(false);
   const [assistConfigured, setAssistConfigured] = useState<boolean | null>(null);
   const [finaleRevealed, setFinale]           = useState(false);
+
+  // ── Floating Assist Tab state ───────────────────────────────────────────
+  // tabSeenThisSession: user has hit 600px scroll at least once this session
+  // tabDismissed: user clicked ×
+  // tabScrollReady: 600px scroll threshold reached OR already seen this session
+  const [tabSeenThisSession] = useState<boolean>(() =>
+    typeof sessionStorage !== 'undefined' && sessionStorage.getItem('arg:assist-tab-seen') === '1'
+  );
+  const [tabDismissed, setTabDismissed] = useState<boolean>(() =>
+    typeof sessionStorage !== 'undefined' && sessionStorage.getItem('arg:assist-tab-dismissed') === '1'
+  );
+  const [tabScrollReady, setTabScrollReady] = useState<boolean>(() =>
+    typeof sessionStorage !== 'undefined' && sessionStorage.getItem('arg:assist-tab-seen') === '1'
+  );
   const finaleRef    = useRef<HTMLDivElement>(null);
   const progressRef  = useRef<HTMLDivElement>(null);
   const [location, navigate] = useLocation();
@@ -363,6 +444,25 @@ export function Shell({ children }: { children: ReactNode }) {
       else document.body.style.overflow = '';
     };
   }, [paletteOpen, mobileMenuOpen, assistOpen, lenis]);
+
+  // ── Floating Assist Tab: show after 600px scroll (first visit) ─────────
+  useEffect(() => {
+    if (tabSeenThisSession || tabDismissed) return;
+    const h = () => {
+      if (window.scrollY > 600) {
+        setTabScrollReady(true);
+        try { sessionStorage.setItem('arg:assist-tab-seen', '1'); } catch {}
+        window.removeEventListener('scroll', h);
+      }
+    };
+    window.addEventListener('scroll', h, { passive: true });
+    return () => window.removeEventListener('scroll', h);
+  }, [tabSeenThisSession, tabDismissed]);
+
+  const handleTabDismiss = useCallback(() => {
+    setTabDismissed(true);
+    try { sessionStorage.setItem('arg:assist-tab-dismissed', '1'); } catch {}
+  }, []);
 
   // ── ARG Assist: check configuration once on mount ──────────────────────
   useEffect(() => {
@@ -622,6 +722,21 @@ export function Shell({ children }: { children: ReactNode }) {
       {/* ── ARG Assist sheet — only mounted when key is configured ── */}
       {assistConfigured === true && (
         <ArgAssist open={assistOpen} onClose={() => setAssistOpen(false)} />
+      )}
+
+      {/* ── Floating assist tab — appears after 600px scroll (first visit) ──
+           Hidden while palette, mobile menu, or assist sheet is open.        */}
+      {assistConfigured === true &&
+        tabScrollReady &&
+        !tabDismissed &&
+        !paletteOpen &&
+        !mobileMenuOpen &&
+        !assistOpen && (
+        <AssistTab
+          onOpen={() => setAssistOpen(true)}
+          onDismiss={handleTabDismiss}
+          reducedMotion={false}
+        />
       )}
 
       {/* ── Global ambient layers (behind content, pointer-events-none) ── */}

@@ -262,7 +262,7 @@ const WHY_FEATURES = [
 ];
 
 function WhyArgSection() {
-  const { reducedMotion } = useMotion();
+  const { reducedMotion, ready } = useMotion();
   const sectionRef = useRef<HTMLElement>(null);
   const folioRef   = useRef<HTMLSpanElement>(null);
   const ruleRefs   = useRef<(HTMLDivElement | null)[]>([]);
@@ -271,7 +271,7 @@ function WhyArgSection() {
   const descRefs   = useRef<(HTMLParagraphElement | null)[]>([]);
 
   useLayoutEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || !ready) return;
     const ctx = gsap.context(() => {
       const isMobile = window.innerWidth < 1024;
 
@@ -355,7 +355,7 @@ function WhyArgSection() {
       });
     }, sectionRef);
     return () => ctx.revert();
-  }, [reducedMotion]);
+  }, [reducedMotion, ready]);
 
   return (
     <section ref={sectionRef} data-folio-n={2} className="relative bg-mist py-24 md:py-32 border-b border-rule">
@@ -441,7 +441,7 @@ const PROCESS_STEPS = [
 const CHIP_STATUSES = ['·· SUBMITTED ··', '·· UNDER REVIEW ··', '·· IN PURSUIT ··', '✓ SECURED'];
 
 function ProcessSection() {
-  const { reducedMotion } = useMotion();
+  const { reducedMotion, ready } = useMotion();
   const sectionRef   = useRef<HTMLElement>(null);
   const timelineRef  = useRef<HTMLDivElement>(null);
   const chipRef      = useRef<HTMLDivElement>(null);
@@ -457,7 +457,7 @@ function ProcessSection() {
   const mobileChipRef = useRef<HTMLSpanElement>(null);
 
   useLayoutEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || !ready) return;
     const ctx = gsap.context(() => {
       const isMobile = window.innerWidth < 1024;
 
@@ -611,7 +611,7 @@ function ProcessSection() {
       });
     }, sectionRef);
     return () => ctx.revert();
-  }, [reducedMotion]);
+  }, [reducedMotion, ready]);
 
   return (
     <section ref={sectionRef} data-folio-n={3} id="process" className="relative bg-paper py-24 md:py-32 border-b border-rule scroll-m-20">
@@ -777,7 +777,7 @@ const BAND_TEXT: Record<DScore, string>   = { Strong: 'text-recovered', Moderate
 const EST_SCRAMBLE = 'ABCDEFGHJKLMNPQRSTUVWXYZ!@#$%';
 
 function RecoveryEstimator() {
-  const { reducedMotion } = useMotion();
+  const { reducedMotion, ready } = useMotion();
   const sectionRef = useRef<HTMLElement>(null);
 
   const [balance, setBalance] = useState(() => reducedMotion ? 500_000 : 0);
@@ -839,7 +839,7 @@ function RecoveryEstimator() {
 
   // Entrance: section rises + sliders animate 0 → defaults
   useLayoutEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || !ready) return;
     const ctx = gsap.context(() => {
       gsap.set(sectionRef.current, { opacity: 0, y: 24 });
       ScrollTrigger.create({
@@ -1000,7 +1000,7 @@ const PULL_QUOTE = 'Effective collections keep credit flowing. We give creditors
 const PULL_WORDS = PULL_QUOTE.split(' ');
 
 function IndustriesSection() {
-  const { reducedMotion } = useMotion();
+  const { reducedMotion, ready } = useMotion();
   const sectionRef = useRef<HTMLElement>(null);
   const quoteRef   = useRef<HTMLQuoteElement>(null);
   const wordRefs   = useRef<(HTMLSpanElement | null)[]>([]);
@@ -1008,7 +1008,7 @@ function IndustriesSection() {
   const listRef    = useRef<HTMLUListElement>(null);
 
   useLayoutEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || !ready) return;
     const ctx = gsap.context(() => {
       const isMobile = window.innerWidth < 1024;
       const words = wordRefs.current.filter(Boolean) as HTMLSpanElement[];
@@ -1075,7 +1075,7 @@ function IndustriesSection() {
       }
     }, sectionRef);
     return () => ctx.revert();
-  }, [reducedMotion]);
+  }, [reducedMotion, ready]);
 
   return (
     <section ref={sectionRef} data-folio-n={5} className="relative overflow-hidden">
@@ -1087,7 +1087,8 @@ function IndustriesSection() {
           mp4="/videos/bw-skyline.mp4"
           webm="/videos/bw-skyline.webm"
           poster="/videos/bw-skyline.jpg"
-          overlayOpacity={0.55}
+          overlayOpacity={0.48}
+          overlayVariant="gradient"
           aspectClassName=""
           className="w-full h-full"
         />
@@ -1159,7 +1160,8 @@ function TrustStrip() {
           mp4="/videos/office-floor.mp4"
           webm="/videos/office-floor.webm"
           poster="/videos/office-floor.jpg"
-          overlayOpacity={0.82}
+          overlayOpacity={0.72}
+          overlayVariant="gradient"
           aspectClassName=""
           className="w-full h-full"
         />
@@ -1196,7 +1198,7 @@ function TrustStrip() {
    Copy reveals line by line on enter.
 ───────────────────────────────────────────────────────── */
 function GivingBackSection() {
-  const { reducedMotion } = useMotion();
+  const { reducedMotion, ready } = useMotion();
   const sectionRef  = useRef<HTMLElement>(null);
   const photo1Ref   = useRef<HTMLDivElement>(null);
   const photo2Ref   = useRef<HTMLDivElement>(null);
@@ -1207,7 +1209,7 @@ function GivingBackSection() {
   const lines       = useSplitLines(headlineRef);
 
   useLayoutEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || !ready) return;
     const ctx = gsap.context(() => {
       // Headline lines rise on enter
       const lineEls = lines.current;
@@ -1258,7 +1260,7 @@ function GivingBackSection() {
       });
     }, sectionRef);
     return () => ctx.revert();
-  }, [reducedMotion]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [reducedMotion, ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <section ref={sectionRef} data-folio-n={6} className="relative bg-ink text-paper py-24 md:py-32 border-b border-ink">
@@ -1383,7 +1385,7 @@ function ScramblePhone({ phone, trigger }: { phone: string; trigger: boolean }) 
 }
 
 function ClosingCTA() {
-  const { reducedMotion } = useMotion();
+  const { reducedMotion, ready } = useMotion();
   const sectionRef   = useRef<HTMLElement>(null);
   const ruleRef      = useRef<HTMLDivElement>(null);
   const headlineRef  = useRef<HTMLHeadingElement>(null);
@@ -1394,7 +1396,7 @@ function ClosingCTA() {
   const [phoneTriggered, setPhoneTriggered] = useState(reducedMotion);
 
   useLayoutEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || !ready) return;
     const ctx = gsap.context(() => {
       const lineEls = lines.current;
 
@@ -1433,7 +1435,7 @@ function ClosingCTA() {
       });
     }, sectionRef);
     return () => ctx.revert();
-  }, [reducedMotion]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [reducedMotion, ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <section ref={sectionRef} data-folio-n={7} className="relative bg-ink text-paper py-24 md:py-32 overflow-hidden">
@@ -1443,7 +1445,8 @@ function ClosingCTA() {
           mp4="/videos/dusk-skyline.mp4"
           webm="/videos/dusk-skyline.webm"
           poster="/videos/dusk-skyline.jpg"
-          overlayOpacity={0.75}
+          overlayOpacity={0.62}
+          overlayVariant="gradient"
           aspectClassName=""
           className="w-full h-full"
         />
@@ -1546,7 +1549,7 @@ const TRIO_WORDS   = ['PLACE.', 'PURSUE.', 'RECOVER.'] as const;
    HERO — main section
 ───────────────────────────────────────────────────────── */
 function HeroSection() {
-  const { reducedMotion } = useMotion();
+  const { reducedMotion, ready } = useMotion();
   const heroStatus = useHeroStatus();
 
   const [isMobile] = useState<boolean>(() =>
@@ -1601,12 +1604,137 @@ function HeroSection() {
   }, [isMobile, reducedMotion]);
 
   useLayoutEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || !ready) return;
 
     const speed    = isMobile ? 0.6 : 1.0;
     const baselines = baselineRefs.current.filter(Boolean) as HTMLDivElement[];
     const lineEls   = lines.current;
 
+    // Helper: put all hero elements into their post-entrance settled positions.
+    // Called immediately when the user arrives mid-page (scrollY > 200) so no
+    // entrance animation plays beneath their scroll position.
+    const settleAll = () => {
+      if (baselines.length) gsap.set(baselines, { scaleX: 1, transformOrigin: 'left' });
+      if (lineEls.length)   gsap.set(lineEls, { y: 0, opacity: 1 });
+      if (eyebrowRef.current)     gsap.set(eyebrowRef.current, { opacity: 1 });
+      if (trioOuterRef.current)   gsap.set(trioOuterRef.current, { opacity: 1 });
+      if (subheadRef.current)     gsap.set(subheadRef.current, { opacity: 1, y: 0 });
+      if (desktopCtasRef.current) gsap.set(desktopCtasRef.current, { opacity: 1, y: 0 });
+      if (cardWrapperRef.current) gsap.set(cardWrapperRef.current, { x: 0, opacity: 1 });
+      if (mobileCtasRef.current)  gsap.set(mobileCtasRef.current, { opacity: 1, y: 0 });
+      if (tickerDockRef.current)  gsap.set(tickerDockRef.current, { y: 40, opacity: 0 });
+    };
+
+    // Helper: build the desktop scroll-scrub pin timeline.
+    // Returns the timeline reference so it can be killed in cleanup.
+    // IMPORTANT: only called AFTER the entrance completes (or when skipped),
+    // so pin registration never overlaps with the entrance animation.
+    let scrubTl: gsap.core.Timeline | null = null;
+    const buildScrubTl = () => {
+      scrubTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          pin: true,
+          scrub: 0.8,
+          pinSpacing: true,
+          invalidateOnRefresh: true,
+          start: 'top top',
+          end: '+=150%',
+          anticipatePin: 1,
+          onEnter: () => {
+            if (sectionRef.current) sectionRef.current.style.willChange = 'transform, opacity';
+          },
+          onLeaveBack: () => {
+            if (sectionRef.current) sectionRef.current.style.willChange = '';
+          },
+          onLeave: () => {
+            if (sectionRef.current) sectionRef.current.style.willChange = '';
+          },
+          onUpdate: (self) => {
+            if (!cardWrapperRef.current) return;
+            const p = self.progress;
+            const hi = p < 0.8 ? Math.min(4, Math.floor((p / 0.8) * 5)) : 4;
+            cardWrapperRef.current
+              .querySelectorAll<HTMLElement>('[data-day-stamp]')
+              .forEach((el, i) => {
+                el.style.color      = i <= hi ? 'var(--color-recovered)' : '';
+                el.style.fontWeight = i === hi ? '600' : '';
+              });
+          },
+        },
+      });
+
+      if (lineEls.length) {
+        scrubTl.to(lineEls, {
+          y: -88,
+          opacity: 0,
+          stagger: { amount: 0.12 },
+          ease: 'power2.in',
+          duration: 0.55,
+        }, 0);
+      }
+
+      const basesDn = [...baselines].reverse();
+      scrubTl.to(basesDn, {
+        opacity: 0,
+        stagger: 0.022,
+        duration: 0.65,
+      }, 0);
+
+      if (cardWrapperRef.current) {
+        scrubTl.to(cardWrapperRef.current, {
+          scale: 0.92,
+          x: -20,
+          y: -32,
+          opacity: 0.82,
+          ease: 'power1.inOut',
+          duration: 0.8,
+        }, 0);
+      }
+
+      if (trioInnerRef.current) {
+        scrubTl.to(trioInnerRef.current, {
+          y: '-66.67%',
+          ease: 'power1.inOut',
+          duration: 0.8,
+        }, 0);
+      }
+
+      if (scrollCueRef.current) {
+        scrubTl.to(scrollCueRef.current, { opacity: 0, duration: 0.08 }, 0);
+      }
+
+      const fadeGroup = [subheadRef.current, desktopCtasRef.current].filter(Boolean);
+      if (fadeGroup.length) {
+        scrubTl.to(fadeGroup, {
+          opacity: 0,
+          y: -14,
+          stagger: 0.05,
+          duration: 0.25,
+        }, 0.6);
+      }
+
+      if (tickerDockRef.current) {
+        scrubTl.to(tickerDockRef.current, {
+          y: 0,
+          opacity: 1,
+          ease: 'power2.out',
+          duration: 0.2,
+        }, 0.8);
+      }
+    };
+
+    // ── Fast path: user already scrolled past the hero before init fired ──
+    // Skip the entrance — settle immediately and create the pin. Prevents an
+    // entrance animation the user can't see from yanking their scroll position.
+    if (!isMobile && window.scrollY > 200) {
+      settleAll();
+      buildScrubTl();
+      ScrollTrigger.refresh();
+      return () => { scrubTl?.kill(); };
+    }
+
+    // ── Normal path: initial hidden states → entrance → (desktop) pin ─────
     if (baselines.length) gsap.set(baselines, { scaleX: 0, transformOrigin: 'left' });
     if (lineEls.length)   gsap.set(lineEls, { y: '110%', opacity: 0 });
     if (eyebrowRef.current)     gsap.set(eyebrowRef.current, { opacity: 0 });
@@ -1617,7 +1745,15 @@ function HeroSection() {
     if (mobileCtasRef.current)  gsap.set(mobileCtasRef.current, { opacity: 0, y: 8 });
     if (tickerDockRef.current)  gsap.set(tickerDockRef.current, { y: 40, opacity: 0 });
 
-    const entrance = gsap.timeline();
+    const entrance = gsap.timeline({
+      // Desktop: register the pin only AFTER the entrance completes —
+      // never let pin + entrance overlap during first seconds.
+      onComplete: !isMobile ? () => {
+        if (!sectionRef.current) return;
+        buildScrubTl();
+        ScrollTrigger.refresh();
+      } : undefined,
+    });
 
     entrance.to(baselines, {
       scaleX: 1,
@@ -1664,107 +1800,17 @@ function HeroSection() {
       entrance.to(mobileCtasRef.current, { opacity: 1, y: 0, duration: 0.4 * speed }, 1.2 * speed);
     }
 
+    // Mobile: entrance only, no pin
     if (isMobile) {
       return () => { entrance.kill(); };
     }
 
-    const scrubTl = gsap.timeline({
-      scrollTrigger: {
-        trigger: sectionRef.current,
-        pin: true,
-        scrub: 0.8,
-        pinSpacing: true,
-        invalidateOnRefresh: true,
-        start: 'top top',
-        end: '+=150%',
-        anticipatePin: 1,
-        onEnter: () => {
-          if (sectionRef.current) sectionRef.current.style.willChange = 'transform, opacity';
-        },
-        onLeaveBack: () => {
-          if (sectionRef.current) sectionRef.current.style.willChange = '';
-        },
-        onLeave: () => {
-          if (sectionRef.current) sectionRef.current.style.willChange = '';
-        },
-        onUpdate: (self) => {
-          if (!cardWrapperRef.current) return;
-          const p = self.progress;
-          const hi = p < 0.8 ? Math.min(4, Math.floor((p / 0.8) * 5)) : 4;
-          cardWrapperRef.current
-            .querySelectorAll<HTMLElement>('[data-day-stamp]')
-            .forEach((el, i) => {
-              el.style.color      = i <= hi ? 'var(--color-recovered)' : '';
-              el.style.fontWeight = i === hi ? '600' : '';
-            });
-        },
-      },
-    });
-
-    if (lineEls.length) {
-      scrubTl.to(lineEls, {
-        y: -88,
-        opacity: 0,
-        stagger: { amount: 0.12 },
-        ease: 'power2.in',
-        duration: 0.55,
-      }, 0);
-    }
-
-    const basesDn = [...baselines].reverse();
-    scrubTl.to(basesDn, {
-      opacity: 0,
-      stagger: 0.022,
-      duration: 0.65,
-    }, 0);
-
-    if (cardWrapperRef.current) {
-      scrubTl.to(cardWrapperRef.current, {
-        scale: 0.92,
-        x: -20,
-        y: -32,
-        opacity: 0.82,
-        ease: 'power1.inOut',
-        duration: 0.8,
-      }, 0);
-    }
-
-    if (trioInnerRef.current) {
-      scrubTl.to(trioInnerRef.current, {
-        y: '-66.67%',
-        ease: 'power1.inOut',
-        duration: 0.8,
-      }, 0);
-    }
-
-    if (scrollCueRef.current) {
-      scrubTl.to(scrollCueRef.current, { opacity: 0, duration: 0.08 }, 0);
-    }
-
-    const fadeGroup = [subheadRef.current, desktopCtasRef.current].filter(Boolean);
-    if (fadeGroup.length) {
-      scrubTl.to(fadeGroup, {
-        opacity: 0,
-        y: -14,
-        stagger: 0.05,
-        duration: 0.25,
-      }, 0.6);
-    }
-
-    if (tickerDockRef.current) {
-      scrubTl.to(tickerDockRef.current, {
-        y: 0,
-        opacity: 1,
-        ease: 'power2.out',
-        duration: 0.2,
-      }, 0.8);
-    }
-
+    // Desktop: cleanup kills entrance AND scrubTl (created async in onComplete)
     return () => {
       entrance.kill();
-      scrubTl.kill();
+      scrubTl?.kill();
     };
-  }, [reducedMotion, isMobile]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [reducedMotion, isMobile, ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <section
@@ -1784,12 +1830,19 @@ function HeroSection() {
             poster="/videos/hero-film.jpg"
             className="absolute inset-0 w-full h-full object-cover"
             ref={el => { if (el) el.muted = true; }}
+            onLoadedData={() => window.dispatchEvent(new CustomEvent('arg:video-ready'))}
           >
             <source src="/videos/hero-film.webm" type="video/webm" />
             <source src="/videos/hero-film.mp4" type="video/mp4" />
           </video>
-          {/* Paper overlay at 88% — keeps hero legible, film is a whisper */}
-          <div className="absolute inset-0 bg-paper" style={{ opacity: 0.88 }} />
+          {/* Paper overlay: gradient vignette — full at edges, film glows through centre */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(to bottom, rgba(249,247,242,1) 0%, rgba(249,247,242,1) 8%, rgba(249,247,242,0.76) 50%, rgba(249,247,242,1) 92%, rgba(249,247,242,1) 100%)',
+              opacity: 0.85,
+            }}
+          />
         </div>
       )}
 

@@ -5,6 +5,10 @@
  *
  * Pass aspectClassName="" to use cover mode (fills parent sizing).
  * In cover mode no border is rendered — caller controls container sizing.
+ *
+ * overlayVariant="gradient" renders a vertical vignette: ink at full opacity
+ * at top/bottom edges, ~12 percentage points lighter in the centre so films
+ * glow through while text zones stay protected.
  */
 import { useEffect, useRef, useState } from 'react';
 
@@ -22,6 +26,11 @@ interface AmbientVideoProps {
   aspectClassName?: string;
   /** Ink overlay opacity, 0–1. Default: 0.5 */
   overlayOpacity?: number;
+  /**
+   * 'flat'     — flat bg-ink at overlayOpacity (default)
+   * 'gradient' — vertical vignette: full ink at edges, ~−12 points at centre
+   */
+  overlayVariant?: 'flat' | 'gradient';
   /** Mono caption rendered below the frame, matching EditorialImage style */
   label?: string;
 }
@@ -49,6 +58,29 @@ function LedgerFill() {
   );
 }
 
+// Ink colour approximated from hsl(212 50% 12.5%) → rgb(16,31,48)
+const INK_R = 16, INK_G = 31, INK_B = 48;
+
+/** Build the gradient background string for overlayVariant='gradient'.
+ *  Edges stay at full RGB opacity; centre drops to ~76 % of full,
+ *  so when the div's own opacity equals overlayOpacity the effective
+ *  centre opacity is ≈ overlayOpacity × 0.76 (≈ −12 pts for typical values). */
+function buildGradient(): string {
+  const full = `rgba(${INK_R},${INK_G},${INK_B},1)`;
+  const mid  = `rgba(${INK_R},${INK_G},${INK_B},0.76)`;
+  return [
+    `linear-gradient(to bottom,`,
+    `  ${full} 0%,`,
+    `  ${full} 8%,`,
+    `  ${mid}  50%,`,
+    `  ${full} 92%,`,
+    `  ${full} 100%`,
+    `)`,
+  ].join(' ');
+}
+
+const GRADIENT_BG = buildGradient();
+
 /* ── Component ──────────────────────────────────────────────────────── */
 export function AmbientVideo({
   mp4,
@@ -57,6 +89,7 @@ export function AmbientVideo({
   className = '',
   aspectClassName = 'aspect-video',
   overlayOpacity = 0.5,
+  overlayVariant = 'flat',
   label,
 }: AmbientVideoProps) {
   const wrapperRef       = useRef<HTMLDivElement>(null);
@@ -95,7 +128,6 @@ export function AmbientVideo({
     video.muted = true;
 
     // Hysteresis: play at ≥35% visible, pause at <20% visible
-    // Two thresholds let us check both levels in one observer.
     const PLAY_THRESHOLD  = 0.35;
     const PAUSE_THRESHOLD = 0.20;
 
@@ -108,7 +140,6 @@ export function AmbientVideo({
           playingRef.current = true;
           video.play().catch(() => {
             playingRef.current = false;
-            // Low-power mode or policy block — degrade to poster silently
           });
         } else if (ratio < PAUSE_THRESHOLD && playingRef.current) {
           playingRef.current = false;
@@ -160,6 +191,12 @@ export function AmbientVideo({
   ─────────────────────────────────────────────────────────────────*/
   const isCoverMode = aspectClassName === '';
 
+  /* ── Overlay styles ─────────────────────────────────────────────── */
+  const overlayStyle: React.CSSProperties =
+    overlayVariant === 'gradient'
+      ? { background: GRADIENT_BG, opacity: overlayOpacity }
+      : { opacity: overlayOpacity };
+
   /* ── Render ─────────────────────────────────────────────────────── */
   return (
     <figure className={isCoverMode ? 'block w-full h-full' : 'block'}>
@@ -208,8 +245,8 @@ export function AmbientVideo({
 
         {/* ── Ink overlay ─────────────────────────────────────────────── */}
         <div
-          className="absolute inset-0 bg-ink pointer-events-none"
-          style={{ opacity: overlayOpacity }}
+          className={overlayVariant === 'gradient' ? 'absolute inset-0 pointer-events-none' : 'absolute inset-0 bg-ink pointer-events-none'}
+          style={overlayStyle}
         />
       </div>
 

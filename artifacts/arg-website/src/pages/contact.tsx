@@ -590,7 +590,8 @@ export default function ContactPage() {
           <AmbientVideo
             mp4="/videos/hands-ledger.mp4"
             poster="/videos/hands-ledger.jpg"
-            overlayOpacity={0.7}
+            overlayOpacity={0.6}
+           overlayVariant="gradient"
             aspectClassName=""
             className="w-full h-full"
           />

@@ -1,0 +1,61 @@
+Three fixes: first-load scroll flow, floating assist launcher,
+overlay tuning for more colorful films.
+
+PART A — FIRST-LOAD SCROLL FLOW:
+1. Gate motion initialization on readiness: Lenis + all
+   ScrollTrigger scene creation must not run until BOTH
+   document.fonts.ready has resolved AND the hero's video poster
+   or first frame has painted (the AmbientVideo loadeddata/error
+   event, with a 1500ms timeout fallback so a slow video never
+   blocks). Until then: native scroll, content visible in settled
+   states — the page must be readable and scrollable INSTANTLY,
+   with motion enhancing progressively.
+2. After initialization: single ScrollTrigger.refresh(), then the
+   hero entrance sequence plays. If the user has ALREADY scrolled
+   past 200px before init completes (impatient reload mid-page),
+   skip the hero entrance entirely and render settled — never
+   animate an entrance the user can't see or yank their scroll
+   position.
+3. The hero pin must not register until the entrance completes
+   (or is skipped) — currently pin + entrance overlap is the
+   first-seconds fight. Sequence: entrance done → create pin →
+   refresh.
+4. Verify: hard-refresh the homepage and scroll IMMEDIATELY —
+   no jump, no dead scroll, no double-fire. Test on 4x throttle
+   and on a fresh incognito load (cold cache — fonts/video slow).
+
+PART B — FLOATING ASSIST LAUNCHER (bottom-right, ledger language —
+NOT a chat bubble):
+1. A fixed bottom-right "ledger tab": a compact paper rectangle
+   (1px rule border, 2px recovered top edge), mono label
+   "ARG ASSIST" with a small recovered pulse dot, sharp corners
+   (4px max), subtle 0 2px 12px rgba(16,31,48,0.12) elevation —
+   documented exception. Desktop: bottom-6 right-6. Mobile:
+   bottom-4 right-4, respecting safe-area-inset-bottom, and it
+   must never overlap the estimator's sliders or any sticky
+   elements — z-40, below palette/sheet layers.
+2. Behavior: opens the existing assist sheet. Hidden while the
+   sheet, palette, or mobile menu is open. Appears after 600px of
+   scroll on first visit (not instantly — let the hero breathe),
+   instantly on subsequent pages in the session
+   (sessionStorage flag). Dismissable via a tiny × that hides it
+   for the session; the header chip and ⌘K remain always.
+3. First appearance: slides up 8px + fades (respecting
+   reduced-motion). No attention-seeking loops beyond the 2s
+   pulse-dot interval.
+4. Keep header chip, ⌘K entry, and contact-page row unchanged —
+   the tab is an addition, not a replacement.
+
+PART C — LET MORE COLOR THROUGH THE FILMS:
+1. Reduce ink overlay opacities: hero 0.65 → 0.52, industries
+   bw-skyline 0.55 → 0.48, closing CTA dusk 0.75 → 0.62, trust
+   strip office 0.8 → 0.72, contact hands 0.7 → 0.6.
+2. Change each overlay from flat ink to a vertical gradient: ink
+   at the reduced opacity at top and bottom edges, dropping ~12
+   points in the middle — films glow through the center while
+   text zones stay protected.
+3. AFTER changing: re-verify AA contrast for every text element
+   over each film's brightest frame; where a specific text block
+   fails, fix it with a local text-backing (ink at 40% behind
+   that block only), NOT by re-deepening the whole overlay.
+Commit as "First-load flow + assist tab + brighter films".
