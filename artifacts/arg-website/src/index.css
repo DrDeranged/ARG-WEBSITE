@@ -281,6 +281,15 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* One-shot attention nudge for the assist tab — plays once on first appearance */
+@keyframes arg-nudge {
+  0%   { transform: translateY(0); }
+  20%  { transform: translateY(-8px); }
+  45%  { transform: translateY(-3px); }
+  70%  { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
+}
+
 @layer base {
   /* Slider micro-physics — thumb scales on drag */
   input[type='range']::-webkit-slider-thumb {
