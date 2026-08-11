@@ -62,15 +62,31 @@ export function MotionProvider({ children }: { children: ReactNode }) {
     gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0); // prevents large jumps after tab-switch
 
-    // Global ScrollTrigger defaults
-    ScrollTrigger.defaults({ scrub: 0.6 });
+    // Global ScrollTrigger defaults — scrub 0.8 across all pinned scenes
+    ScrollTrigger.defaults({ scrub: 0.8 });
 
     setLenis(l);
+
+    // Refresh ScrollTrigger once fonts are ready (catches baseline shifts)
+    document.fonts.ready.then(() => ScrollTrigger.refresh());
+
+    // Refresh after any ambient video loads its first frame
+    const onVideoReady = () => ScrollTrigger.refresh();
+    window.addEventListener('arg:video-ready', onVideoReady);
+
+    // Refresh after route changes (dispatched by Shell)
+    const onRouteChange = () => {
+      // Slight delay lets React finish rendering the new page
+      setTimeout(() => ScrollTrigger.refresh(), 80);
+    };
+    window.addEventListener('arg:route-change', onRouteChange);
 
     return () => {
       gsap.ticker.remove(tick);
       l.destroy();
       setLenis(null);
+      window.removeEventListener('arg:video-ready', onVideoReady);
+      window.removeEventListener('arg:route-change', onRouteChange);
     };
   }, [reducedMotion]);
 

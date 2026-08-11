@@ -1,0 +1,83 @@
+ArgAssist upgrade — approved for full launch. Three parts: knowledge,
+presence, polish. The hard guardrails in the system prompt are
+UNTOUCHABLE: no fee percentages, no legal advice, no recovery-odds
+for specific cases, no discussion of specific debtors, always the
+specialist redirect for those. Everything else below expands around
+that core.
+
+PART A — KNOWLEDGE EXPANSION (system prompt content):
+Rebuild the system prompt's knowledge section so the assistant can
+accurately answer every legitimate visitor question, sourced ONLY
+from what the site itself states (it must never invent facts about
+ARG). Include, verbatim-accurate from the site:
+- What ARG is: full-service commercial collections agency,
+  Fairfield NJ, B2B debt recovery exclusively, contingency-based —
+  no recovery, no fee (fee STRUCTURE discussed only with a
+  specialist).
+- Who it serves: MCA funders, factoring, equipment leasing,
+  commercial loans, fintech lending, law firms & judgment holders.
+- The process: case analysis → skip trace & verify → execute
+  (negotiation, payment plans, liens, litigation through affiliated
+  counsel).
+- Placement requirements: contract/agreement, payment history,
+  outstanding balance, debtor contact/banking details; partial info
+  acceptable — skip tracing fills gaps; placements typically live
+  within one business day of receiving documents.
+- Contact facts: (877) 464-8470, fax (888) 881-8211,
+  collect@advancedrecoverygroup.com, hours Mon–Thu 9AM–5PM ET, Fri
+  9AM–4PM ET, Client Portal at the Simplicity login for existing
+  clients.
+- Careers: current opening(s) as listed on /careers/ and how to
+  apply.
+- The charity program: monthly meal donations, FMSC partnership,
+  the DR service trip (it may reference the blog article).
+- The website's own tools: it can point users to the Recovery
+  Estimator, the contact form, the vCard download, and the FAQ.
+Behavioral additions: answer in 2-4 sentences by default, expand
+only when asked; always ground answers in the above; if asked
+something about ARG not covered here, say it doesn't have that
+detail and offer the specialist route (never guess); detect
+placement intent ("I have a merchant who defaulted…") and
+proactively walk through the placement checklist, then offer the
+handoff. Keep the existing off-limits list and exact redirect
+wording. Keep the opening disclosure line.
+
+PART B — PRESENCE (discoverability):
+1. Header: a small "ASSIST" chip (mono, rule-bordered, subtle
+   recovered-green dot) next to the ⌘K hint on desktop; in the
+   mobile menu as a full-width row. Both open the assist sheet.
+2. Contact page: under the direct-line rows, add a ledger row
+   "ASK ARG ASSIST →" opening the sheet.
+3. Keep the ⌘K palette entry. Remove the config gate's hiding
+   behavior only in the sense that the key now exists — the
+   status-check architecture stays (if the key is ever removed,
+   everything vanishes again gracefully).
+
+PART C — ON-THEME POLISH (the sheet):
+1. Layout: right-side sheet, paper bg, 1px rule border-left,
+   header row in ink with "ARG ASSIST" in mono paper text + the
+   disclosure line beneath it in mono 10px, close button ≥44px.
+   Mobile: full-screen sheet with safe-area insets.
+2. Conversation rendering: user turns right-aligned in mono
+   against mist; assistant turns left in the serif body face with
+   an ink left-rule; every turn gets a mono ET timestamp; the
+   streaming response renders progressively with a thin recovered
+   caret while tokens arrive (no bouncing-dots cliché).
+3. Suggested chips on empty state (mono, rule-bordered, tappable):
+   "What do you need to place a file?", "How does contingency
+   work?", "What industries do you serve?", "How fast can you
+   start?" — chips send that exact question.
+4. The specialist handoff: a persistent "SEND TO A SPECIALIST"
+   action in the sheet footer that summarizes the conversation
+   into the contact form (or a prefilled mailto when email isn't
+   configured) — mono confirmation when sent.
+5. Errors: rate-limit and API failures render as a calm ledger
+   row with the phone/email fallback — never a red toast.
+6. Motion: sheet opens with the established 150ms scale/fade;
+   streaming text respects reduced-motion (renders in chunks
+   without the caret animation).
+PART D — VERIFY: ask it a fee-percentage question and a legal
+question in preview — confirm both produce the exact specialist
+redirect; ask all four chip questions — confirm grounded, concise
+answers; confirm the sheet works on mobile; build + tsc clean.
+Commit as "ArgAssist: full launch — knowledge, presence, polish".

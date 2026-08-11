@@ -1,4 +1,5 @@
 import { Shell } from '@/components/layout/Shell';
+import { AmbientVideo } from '@/components/AmbientVideo';
 import { EditorialImage } from '@/components/EditorialImage';
 import { ScrambleText } from '@/components/ScrambleText';
 import { SectionRule } from '@/components/SectionRule';
@@ -321,7 +322,9 @@ function WhyArgSection() {
         scrollTrigger: {
           trigger: sectionRef.current,
           pin: true,
-          scrub: 0.9,
+          scrub: 0.8,
+          pinSpacing: true,
+          invalidateOnRefresh: true,
           start: 'top top',
           end: '+=120%',
           anticipatePin: 1,
@@ -499,11 +502,18 @@ function ProcessSection() {
       }
 
       // Desktop: pin 180vh
-      gsap.set(chipRef.current, { y: -36 });
-      if (ruleInkRef.current) ruleInkRef.current.style.height = '0px';
-      gsap.set(imgColRef.current, { opacity: 0, x: 16 });
-
+      let ruleH = 1;               // rule total height for scaleY animation
       let s0 = 0, s1 = 0, s2 = 0; // step dot centers relative to timeline container top
+
+      gsap.set(chipRef.current, { y: -36 });
+      // Rule: fixed height measured from container, animated via scaleY (no layout thrash)
+      if (ruleInkRef.current && timelineRef.current) {
+        ruleH = Math.max(1, (timelineRef.current.offsetHeight ?? 400) - 24);
+        ruleInkRef.current.style.height = `${ruleH}px`;
+        ruleInkRef.current.style.transform = 'scaleY(0)';
+        ruleInkRef.current.style.transformOrigin = 'top';
+      }
+      gsap.set(imgColRef.current, { opacity: 0, x: 16 });
 
       // Imperative scrub: onUpdate drives chip position, rule height, step states
       const prevRevealed = [false, false, false];
@@ -511,7 +521,9 @@ function ProcessSection() {
       ScrollTrigger.create({
         trigger: sectionRef.current,
         pin: true,
-        scrub: 1.0,
+        scrub: 0.8,
+        pinSpacing: true,
+        invalidateOnRefresh: true,
         start: 'top top',
         end: '+=180%',
         anticipatePin: 1,
@@ -545,9 +557,11 @@ function ProcessSection() {
           else                chipY = s1 + ((p - 0.65) / 0.35) * (s2 - s1);
           if (chipRef.current) chipRef.current.style.transform = `translateY(${chipY}px)`;
 
-          // ── Rule ink: draws ahead of chip (+40px lead) ───────────────
+          // ── Rule ink: scaleY from top, draws ahead of chip (+40px lead) ──
           const leadH = Math.max(0, chipY + 48);
-          if (ruleInkRef.current) ruleInkRef.current.style.height = `${leadH}px`;
+          if (ruleInkRef.current && ruleH > 1) {
+            ruleInkRef.current.style.transform = `scaleY(${Math.min(1, leadH / ruleH)})`;
+          }
 
           // ── Chip status label ─────────────────────────────────────────
           if (chipLabelRef.current) {
@@ -987,122 +1001,186 @@ const PULL_WORDS = PULL_QUOTE.split(' ');
 
 function IndustriesSection() {
   const { reducedMotion } = useMotion();
-  const sectionRef  = useRef<HTMLElement>(null);
-  const listRef     = useRef<HTMLUListElement>(null);
-  const itemRefs    = useRef<(HTMLLIElement | null)[]>([]);
-  const quoteRef    = useRef<HTMLQuoteElement>(null);
-  const wordRefs    = useRef<(HTMLSpanElement | null)[]>([]);
+  const sectionRef = useRef<HTMLElement>(null);
+  const quoteRef   = useRef<HTMLQuoteElement>(null);
+  const wordRefs   = useRef<(HTMLSpanElement | null)[]>([]);
+  const panelRef   = useRef<HTMLDivElement>(null);
+  const listRef    = useRef<HTMLUListElement>(null);
 
   useLayoutEffect(() => {
     if (reducedMotion) return;
     const ctx = gsap.context(() => {
       const isMobile = window.innerWidth < 1024;
-      const items = itemRefs.current.filter(Boolean) as HTMLLIElement[];
+      const words = wordRefs.current.filter(Boolean) as HTMLSpanElement[];
 
-      // ── Fan-out: items start clustered at list center ────────────────
-      const list = listRef.current;
-      if (list && items.length) {
-        const H = list.offsetHeight || 260;
-        const W = list.offsetWidth  || 400;
-        const cY = H / 2;
-        const cX = W / 2;
-        items.forEach(item => {
-          const itemCY = item.offsetTop + item.offsetHeight / 2;
-          const itemCX = item.offsetLeft + item.offsetWidth / 2;
-          gsap.set(item, { x: cX - itemCX, y: cY - itemCY, opacity: 0 });
-        });
-
-        ScrollTrigger.create({
-          trigger: list,
-          start: 'top 72%',
-          once: true,
-          onEnter: () => {
-            gsap.to(items, {
-              x: 0, y: 0, opacity: 1,
-              duration: 0.7,
-              stagger: 0.08,
-              ease: 'power3.out',
-            });
-          },
-        });
+      if (isMobile) {
+        // Mobile: IO-based entrance for quote + panel
+        if (quoteRef.current) {
+          gsap.set(quoteRef.current, { opacity: 0, y: 12 });
+          ScrollTrigger.create({
+            trigger: quoteRef.current,
+            start: 'top 82%',
+            once: true,
+            onEnter: () => gsap.to(quoteRef.current, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }),
+          });
+        }
+        if (panelRef.current) {
+          gsap.set(panelRef.current, { opacity: 0, y: 24 });
+          ScrollTrigger.create({
+            trigger: panelRef.current,
+            start: 'top 80%',
+            once: true,
+            onEnter: () => gsap.to(panelRef.current, { opacity: 1, y: 0, duration: 0.65, ease: 'power2.out' }),
+          });
+        }
+        return;
       }
 
-      // ── Pull-quote: word-by-word scrub (desktop only, 60vh) ─────────
-      const words = wordRefs.current.filter(Boolean) as HTMLSpanElement[];
-      if (!isMobile && words.length && quoteRef.current) {
-        gsap.set(words, { opacity: 0.12 });
-        const quoteTl = gsap.timeline({
-          scrollTrigger: {
-            trigger: quoteRef.current,
-            start: 'top 70%',
-            end: '+=60%',
-            scrub: 0.5,
+      // Desktop: pin 140vh — words reveal 0→0.65, panel rises 0.58→1.0
+      gsap.set(words, { opacity: 0.12 });
+      if (panelRef.current) gsap.set(panelRef.current, { opacity: 0, y: 40 });
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          pin: true,
+          scrub: 0.8,
+          pinSpacing: true,
+          invalidateOnRefresh: true,
+          start: 'top top',
+          end: '+=140%',
+          anticipatePin: 1,
+          onEnter: () => {
+            if (sectionRef.current) sectionRef.current.style.willChange = 'transform';
           },
-          defaults: { ease: 'none' },
-        });
-        quoteTl.to({}, { duration: 1 }); // anchor 1s total
-        words.forEach((word, i) => {
-          quoteTl.to(word, { opacity: 1, duration: 0.015 }, i / words.length);
-        });
-      } else if (isMobile && quoteRef.current) {
-        gsap.set(quoteRef.current, { opacity: 0, y: 12 });
-        ScrollTrigger.create({
-          trigger: quoteRef.current,
-          start: 'top 82%',
-          once: true,
-          onEnter: () => gsap.to(quoteRef.current, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }),
-        });
+          onLeave: () => {
+            if (sectionRef.current) sectionRef.current.style.willChange = '';
+          },
+          onLeaveBack: () => {
+            if (sectionRef.current) sectionRef.current.style.willChange = '';
+          },
+        },
+      });
+
+      tl.to({}, { duration: 1 }); // anchor total to 1.0s
+
+      // Word-by-word reveal across first 65% of the scrub
+      words.forEach((word, i) => {
+        tl.to(word, { opacity: 1, duration: 0.012, ease: 'none' }, (i / words.length) * 0.65);
+      });
+
+      // Industry panel rises across last 40% of scrub
+      if (panelRef.current) {
+        tl.to(panelRef.current, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.35 }, 0.58);
       }
     }, sectionRef);
     return () => ctx.revert();
   }, [reducedMotion]);
 
   return (
-    <section ref={sectionRef} data-folio-n={5} className="relative bg-paper py-24 md:py-32 border-b border-rule">
+    <section ref={sectionRef} data-folio-n={5} className="relative overflow-hidden">
       <SectionFolio n={5} />
-      <div className="max-w-6xl mx-auto px-6 md:px-8">
-        <SectionRule />
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-          {/* Industries list */}
-          <div className="lg:col-span-5">
-            <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-4 uppercase">Trusted Partners</p>
-            <h2 className="text-h2 font-serif text-ink mb-8">Industries we serve</h2>
-            <ul ref={listRef} className="flex flex-col gap-4 font-mono text-sm text-slate">
-              {INDUSTRIES.map((industry, i) => (
-                <li
-                  key={industry}
-                  ref={el => { itemRefs.current[i] = el; }}
-                  className="flex items-center gap-4"
-                  style={reducedMotion ? {} : { opacity: 0 }}
-                >
-                  <span className="w-4 h-[1px] bg-recovered block flex-shrink-0" />
-                  {industry}
-                </li>
-              ))}
-            </ul>
-          </div>
 
-          {/* Pull-quote */}
-          <div className="lg:col-span-7 flex flex-col justify-center border-t lg:border-t-0 lg:border-l border-rule pt-12 lg:pt-0 lg:pl-16">
-            <blockquote
-              ref={quoteRef}
-              className="font-serif text-ink leading-snug"
-              style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', lineHeight: 1.25 }}
-            >
-              {reducedMotion ? (
-                PULL_QUOTE
-              ) : (
-                PULL_WORDS.map((word, i) => (
-                  <span
-                    key={i}
-                    ref={el => { wordRefs.current[i] = el; }}
-                    style={{ opacity: 0.12 }}
-                  >
-                    {word}{' '}
-                  </span>
-                ))
-              )}
-            </blockquote>
+      {/* bw-skyline cinema background — overlay 0.55 */}
+      <div className="absolute inset-0 z-0">
+        <AmbientVideo
+          mp4="/videos/bw-skyline.mp4"
+          webm="/videos/bw-skyline.webm"
+          poster="/videos/bw-skyline.jpg"
+          overlayOpacity={0.55}
+          aspectClassName=""
+          className="w-full h-full"
+        />
+      </div>
+
+      {/* Pull-quote centrepiece — word-by-word over the film */}
+      <div className="relative z-10 min-h-screen flex flex-col justify-center px-6 md:px-8 py-32 md:py-40">
+        <div className="max-w-5xl mx-auto w-full">
+          <p className="font-mono text-paper/50 tracking-widest text-xs font-semibold mb-8 uppercase">
+            Trusted Partners
+          </p>
+          <blockquote
+            ref={quoteRef}
+            className="font-serif text-paper leading-[1.2]"
+            style={{ fontSize: 'clamp(1.8rem, 4vw, 3.25rem)' }}
+          >
+            {reducedMotion ? (
+              PULL_QUOTE
+            ) : (
+              PULL_WORDS.map((word, i) => (
+                <span
+                  key={i}
+                  ref={el => { wordRefs.current[i] = el; }}
+                  style={{ opacity: 0.12 }}
+                >
+                  {word}{' '}
+                </span>
+              ))
+            )}
+          </blockquote>
+        </div>
+      </div>
+
+      {/* Industry tiles panel — translucent paper/95, rises over the film */}
+      <div
+        ref={panelRef}
+        className="relative z-10 bg-paper/95 border-t border-rule py-14 md:py-16"
+        style={reducedMotion ? {} : { opacity: 0, transform: 'translateY(40px)' }}
+      >
+        <div className="max-w-6xl mx-auto px-6 md:px-8">
+          <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-8 uppercase">
+            Industries we serve
+          </p>
+          <ul ref={listRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 font-mono text-sm text-slate">
+            {INDUSTRIES.map((industry) => (
+              <li key={industry} className="flex items-center gap-4">
+                <span className="w-4 h-[1px] bg-recovered block flex-shrink-0" />
+                {industry}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   TRUST STRIP — compact ink band between Industries and Giving Back
+   office-floor plays at overlay 0.82 — barely-there motion.
+   Three key facts. No folio. No animation. Pure signal.
+───────────────────────────────────────────────────────── */
+function TrustStrip() {
+  return (
+    <section className="relative bg-ink overflow-hidden py-12 md:py-16 border-b border-ink/20">
+      {/* office-floor: barely-there ambient beneath the ink */}
+      <div className="absolute inset-0 z-0">
+        <AmbientVideo
+          mp4="/videos/office-floor.mp4"
+          webm="/videos/office-floor.webm"
+          poster="/videos/office-floor.jpg"
+          overlayOpacity={0.82}
+          aspectClassName=""
+          className="w-full h-full"
+        />
+      </div>
+
+      <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 sm:divide-x divide-paper/10">
+          <div className="py-6 sm:py-0 sm:pr-12 border-b sm:border-b-0 border-paper/10">
+            <p className="font-mono text-[10px] text-paper/40 uppercase tracking-widest mb-3">Placement Model</p>
+            <p className="font-serif text-paper text-2xl md:text-3xl leading-tight">Contingency Only</p>
+            <p className="font-mono text-xs text-paper/50 mt-2">No recovery, no fee — ever.</p>
+          </div>
+          <div className="py-6 sm:py-0 sm:px-12 border-b sm:border-b-0 border-paper/10">
+            <p className="font-mono text-[10px] text-paper/40 uppercase tracking-widest mb-3">Scope</p>
+            <p className="font-serif text-paper text-2xl md:text-3xl leading-tight">B2B Commercial</p>
+            <p className="font-mono text-xs text-paper/50 mt-2">Business debt only — not consumer.</p>
+          </div>
+          <div className="py-6 sm:py-0 sm:pl-12">
+            <p className="font-mono text-[10px] text-paper/40 uppercase tracking-widest mb-3">First Contact</p>
+            <p className="font-serif text-paper text-2xl md:text-3xl leading-tight">One Business Day</p>
+            <p className="font-mono text-xs text-paper/50 mt-2">A specialist responds within 24 hours.</p>
           </div>
         </div>
       </div>
@@ -1122,6 +1200,8 @@ function GivingBackSection() {
   const sectionRef  = useRef<HTMLElement>(null);
   const photo1Ref   = useRef<HTMLDivElement>(null);
   const photo2Ref   = useRef<HTMLDivElement>(null);
+  const overlay1Ref = useRef<HTMLDivElement>(null);
+  const overlay2Ref = useRef<HTMLDivElement>(null);
   const copyRef     = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
   const lines       = useSplitLines(headlineRef);
@@ -1159,13 +1239,13 @@ function GivingBackSection() {
         });
       }
 
-      // Photos: desaturate → full color tied to scrub crossing viewport center
-      [photo1Ref, photo2Ref].forEach((ref, i) => {
+      // Photos: desaturate → full color via mix-blend saturation overlay (no filter animation)
+      [overlay1Ref, overlay2Ref].forEach((ref, i) => {
         const el = ref.current;
         if (!el) return;
-        gsap.set(el, { filter: 'grayscale(1)' });
+        gsap.set(el, { opacity: 1 });
         gsap.to(el, {
-          filter: 'grayscale(0)',
+          opacity: 0,
           ease: 'power1.inOut',
           delay: i * 0.15,
           scrollTrigger: {
@@ -1210,9 +1290,9 @@ function GivingBackSection() {
             </div>
           </div>
 
-          {/* Photos: bloom from grayscale to color on scrub */}
+          {/* Photos: bloom from grayscale to color on scrub (mix-blend saturation, no filter animation) */}
           <div className="grid grid-cols-2 gap-4">
-            <div ref={photo1Ref} className="mt-12" style={reducedMotion ? {} : { filter: 'grayscale(1)' }}>
+            <div ref={photo1Ref} className="mt-12 relative">
               <EditorialImage
                 src="/images/manny-kids.jpg"
                 alt="ARG team member with children in the Dominican Republic"
@@ -1222,8 +1302,18 @@ function GivingBackSection() {
                 height={400}
                 depth
               />
+              {/* Saturation overlay: opacity 1→0 = grayscale→color, no filter animation */}
+              <div
+                ref={overlay1Ref}
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: 'hsl(0,0%,50%)',
+                  mixBlendMode: 'saturation' as React.CSSProperties['mixBlendMode'],
+                  opacity: reducedMotion ? 0 : 1,
+                }}
+              />
             </div>
-            <div ref={photo2Ref} style={reducedMotion ? {} : { filter: 'grayscale(1)' }}>
+            <div ref={photo2Ref} className="relative">
               <EditorialImage
                 src="/images/meals.jpg"
                 alt="Packing FMSC meal packages at the warehouse"
@@ -1232,6 +1322,15 @@ function GivingBackSection() {
                 width={400}
                 height={400}
                 depth
+              />
+              <div
+                ref={overlay2Ref}
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: 'hsl(0,0%,50%)',
+                  mixBlendMode: 'saturation' as React.CSSProperties['mixBlendMode'],
+                  opacity: reducedMotion ? 0 : 1,
+                }}
               />
             </div>
           </div>
@@ -1337,17 +1436,29 @@ function ClosingCTA() {
   }, [reducedMotion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <section ref={sectionRef} data-folio-n={7} className="relative bg-ink text-paper py-24 md:py-32">
+    <section ref={sectionRef} data-folio-n={7} className="relative bg-ink text-paper py-24 md:py-32 overflow-hidden">
+      {/* dusk-skyline ambient video — barely-there motion behind the ink band */}
+      <div className="absolute inset-0 z-0">
+        <AmbientVideo
+          mp4="/videos/dusk-skyline.mp4"
+          webm="/videos/dusk-skyline.webm"
+          poster="/videos/dusk-skyline.jpg"
+          overlayOpacity={0.75}
+          aspectClassName=""
+          className="w-full h-full"
+        />
+      </div>
+
       <SectionFolio n={7} />
 
       {/* Animated top rule (replaces border-t border-recovered) */}
       <div
         ref={ruleRef}
-        className="absolute top-0 left-0 right-0 h-[2px] bg-recovered"
+        className="absolute top-0 left-0 right-0 h-[2px] bg-recovered z-[1]"
         style={reducedMotion ? {} : { transform: 'scaleX(0)', transformOrigin: 'left' }}
       />
 
-      <div className="max-w-4xl mx-auto px-6 md:px-8 text-center flex flex-col items-center">
+      <div className="relative z-[1] max-w-4xl mx-auto px-6 md:px-8 text-center flex flex-col items-center">
         {/* Headline */}
         <h2 ref={headlineRef} className="text-h2 font-serif text-paper mb-8">
           Ready to recover what you&rsquo;re owed?
@@ -1561,7 +1672,9 @@ function HeroSection() {
       scrollTrigger: {
         trigger: sectionRef.current,
         pin: true,
-        scrub: 1.2,
+        scrub: 0.8,
+        pinSpacing: true,
+        invalidateOnRefresh: true,
         start: 'top top',
         end: '+=150%',
         anticipatePin: 1,
@@ -1659,6 +1772,27 @@ function HeroSection() {
       data-folio-n={1}
       className="relative bg-paper border-b border-rule overflow-hidden md:flex md:items-center hero-height"
     >
+      {/* hero-film: subtle ambient motion behind paper content */}
+      {!reducedMotion && (
+        <div className="absolute inset-0 z-0" aria-hidden="true">
+          <video
+            muted
+            autoPlay
+            loop
+            playsInline
+            preload="none"
+            poster="/videos/hero-film.jpg"
+            className="absolute inset-0 w-full h-full object-cover"
+            ref={el => { if (el) el.muted = true; }}
+          >
+            <source src="/videos/hero-film.webm" type="video/webm" />
+            <source src="/videos/hero-film.mp4" type="video/mp4" />
+          </video>
+          {/* Paper overlay at 88% — keeps hero legible, film is a whisper */}
+          <div className="absolute inset-0 bg-paper" style={{ opacity: 0.88 }} />
+        </div>
+      )}
+
       <div className="absolute inset-0 pointer-events-none select-none" aria-hidden="true">
         {Array.from({ length: N_BASELINES }, (_, i) => (
           <div
@@ -1875,6 +2009,9 @@ export default function HomePage() {
 
       {/* 05 / 07  INDUSTRIES + PULL-LINE — "the spread" */}
       <IndustriesSection />
+
+      {/* TRUST STRIP — office-floor barely visible beneath ink */}
+      <TrustStrip />
 
       {/* 06 / 07  GIVING BACK — "color returns" */}
       <GivingBackSection />

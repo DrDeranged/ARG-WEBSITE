@@ -1,5 +1,6 @@
 import { Shell } from '@/components/layout/Shell';
 import { EditorialImage } from '@/components/EditorialImage';
+import { AmbientVideo } from '@/components/AmbientVideo';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -358,6 +359,21 @@ export default function ContactPage() {
       <ContactRow label="Email" value="collect@advancedrecoverygroup.com" href="mailto:collect@advancedrecoverygroup.com"  type="email" />
       <ContactRow label="Fax"   value="(888) 881-8211"                                                                     type="fax"   />
       <VCardRow />
+      {/* ARG Assist ledger row — opens the AI concierge sheet */}
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new CustomEvent('arg:assist'))}
+        className="w-full flex items-center justify-between py-4 border-t border-rule group hover:bg-mist/40 transition-colors text-left"
+      >
+        <span className="font-mono text-[10px] uppercase tracking-widest text-slate/50">
+          AI Concierge
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="font-mono text-sm text-ink group-hover:text-recovered transition-colors">
+            Ask ARG Assist →
+          </span>
+        </span>
+      </button>
     </div>
   );
 
@@ -568,8 +584,18 @@ export default function ContactPage() {
       </section>
 
       {/* ── CLOSER BAND ─────────────────────────────────── */}
-      <section className="bg-ink py-14 md:py-16">
-        <div className="max-w-6xl mx-auto px-6 md:px-8 flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+      <section className="relative bg-ink overflow-hidden py-14 md:py-16">
+        {/* hands-ledger ambient background */}
+        <div className="absolute inset-0 z-0">
+          <AmbientVideo
+            mp4="/videos/hands-ledger.mp4"
+            poster="/videos/hands-ledger.jpg"
+            overlayOpacity={0.7}
+            aspectClassName=""
+            className="w-full h-full"
+          />
+        </div>
+        <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8 flex flex-col md:flex-row md:items-center md:justify-between gap-8">
           <h2 className="text-2xl md:text-3xl font-serif text-paper leading-snug">Have documents ready to send?</h2>
           <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
             <a href="mailto:collect@advancedrecoverygroup.com" className="inline-flex items-center justify-center gap-2 bg-recovered text-paper font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-sm hover:bg-recovered/90 transition-colors min-h-[44px]">

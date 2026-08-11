@@ -1,0 +1,76 @@
+Scroll-cinema pass: distribute video scenes down the page + fix
+scroll flow. I've uploaded arg-videos.zip to the workspace root —
+extract ALL contents into artifacts/arg-website/public/videos/
+(18 files, six clip sets) before anything else.
+
+PART A — SCROLL FLOW OVERHAUL (do this first; the page currently
+doesn't flow smoothly):
+1. Lenis/GSAP sync must be exactly: gsap.ticker.add((t) =>
+   lenis.raf(t * 1000)); gsap.ticker.lagSmoothing(0); and remove
+   any separate requestAnimationFrame loop driving Lenis — double
+   RAF loops are the #1 cause of stutter. ScrollTrigger.scrollerProxy
+   is NOT needed with Lenis on the window — remove it if present.
+2. Every pinned ScrollTrigger gets anticipatePin: 1 and
+   pinSpacing: true; audit each pin for layout jump at pin start/end
+   (the "hard stop" feel). invalidateOnRefresh: true on all scrubbed
+   timelines.
+3. Scrub values: standardize to scrub: 0.8 for scene timelines
+   (currently likely mixed values causing sections to feel
+   differently weighted). Entrance-only (non-scrub) reveals use
+   toggleActions: 'play none none none'.
+4. Kill jank sources: no filter, box-shadow, width/height, or
+   background-position animations anywhere in scene timelines —
+   transform/opacity only (audit and convert violations). Images
+   and video wrappers in animated scenes get transform:
+   translateZ(0) once, not will-change everywhere.
+5. ScrollTrigger.refresh() must run after: fonts load
+   (document.fonts.ready), each route change, AND after each
+   AmbientVideo's poster/first-frame paints (dispatch a custom
+   event from AmbientVideo on loadeddata; listen once globally) —
+   late-loading media changing layout heights mid-scroll is why
+   scenes misfire at wrong positions.
+6. Videos and scroll: at most TWO videos playing simultaneously —
+   raise AmbientVideo's play threshold to 35% visible and pause at
+   <20% (hysteresis prevents flicker at boundaries).
+7. Mobile: pins disabled (already spec'd) — verify none leak
+   through; Lenis syncTouch stays default (native-feel touch).
+
+PART B — CINEMA BREAKS DOWN THE PAGE (the Libertas alternation:
+document scene → cinema scene → document scene). All use
+AmbientVideo; all captions follow the honesty rule (no claims that
+stock footage is ARG's own office/city).
+1. HERO: hero-film.(mp4|webm|jpg) — already wired; verify it plays
+   now that files exist.
+2. INDUSTRIES + PULL-LINE becomes a full cinema break: the section
+   turns full-bleed with bw-skyline as its background (overlay
+   0.55), pinned 140vh; the giant serif pull-line reveals
+   word-by-word over the black-and-white film, paper text; the six
+   industry tiles then rise over it in a translucent
+   paper/95-backed panel. This is the page's centerpiece cinema
+   moment.
+3. TRUST STRIP (the ink band): office-floor plays beneath at
+   overlay 0.8 — barely-there motion under the ink, text unchanged.
+4. GIVING BACK: keep photos primary (no stock video here — this
+   section is reserved for real footage later), but no change
+   needed now.
+5. CLOSING CTA: dusk-skyline behind the ink band at overlay 0.75 —
+   the city at dusk under "Ready to recover what you're owed?".
+6. CONTACT PAGE closer band ("Have documents ready to send?"):
+   hands-ledger behind it at overlay 0.7.
+7. CAREERS: careers-broll already integrated — confirm it plays.
+Each cinema section: text AA-contrast over brightest frames (deepen
+overlays if needed), reduced-motion/save-data renders posters,
+mobile renders the video but without pinning.
+
+PART C — VERIFY (report each):
+a. Scroll the full homepage at normal speed: every scene fires at
+   the correct position, no dead zones, no double-fires, no pin
+   jumps. Then scroll FAST bottom-to-top: no broken states left
+   behind.
+b. Performance: 4x CPU throttle full-page scroll — identify and fix
+   any dropped-frame section. Lighthouse home ≥85 with all video
+   active (video weight is lazy, so this is achievable).
+c. Network: only videos near the viewport download; confirm via
+   waterfall.
+d. Build + tsc clean. Commit as "Scroll cinema: five-scene video
+   distribution + flow overhaul".

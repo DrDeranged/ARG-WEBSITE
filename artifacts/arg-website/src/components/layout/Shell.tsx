@@ -334,6 +334,11 @@ export function Shell({ children }: { children: ReactNode }) {
 
   useEffect(() => { setMobileMenu(false); }, [location]);
 
+  // Notify MotionProvider to refresh ScrollTrigger after each route change
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('arg:route-change'));
+  }, [location]);
+
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); paletteOpen ? closePalette() : openPalette(); }

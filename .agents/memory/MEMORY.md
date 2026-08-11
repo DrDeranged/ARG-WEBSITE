@@ -1,0 +1,2 @@
+- [hands-ledger video](hands-ledger-video.md) — hands-ledger.webm is 0 bytes; only pass mp4 to that AmbientVideo instance, never webm prop
+- [GSAP context TDZ](gsap-context-tdz.md) — let declarations inside gsap.context() callbacks have TDZ; declare before any block that assigns to them
