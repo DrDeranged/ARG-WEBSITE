@@ -7,7 +7,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { Helmet } from 'react-helmet-async';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useMotion, useSplitLines } from '@/motion';
+import { useMotion, useSplitLines, createReveal, createPinScrub, createCinema } from '@/motion';
 
 /* ─────────────────────────────────────────────────────────
    SCROLL-REVEAL HOOK  (used by blog teaser section)
@@ -257,11 +257,7 @@ function WhyArgSection() {
 
       WHY_FEATURES.forEach((_, i) => {
         const row = ruleRefs.current[i]?.parentElement?.parentElement;
-        if (!row) return;
-        ScrollTrigger.create({
-          trigger: row,
-          start: 'top 82%',
-          once: true,
+        createReveal(row ?? null, {
           onEnter: () => {
             gsap.timeline()
               .to(ruleRefs.current[i],  { scaleX: 1, duration: 0.4, ease: 'power2.out' })
@@ -371,8 +367,6 @@ function ProcessSection() {
   useLayoutEffect(() => {
     if (reducedMotion || !ready) return;
     const ctx = gsap.context(() => {
-      const isMobile = window.innerWidth < 1024;
-
       // Initial states
       bodyRefs.current.forEach(el => el && gsap.set(el, { opacity: 0, y: 10 }));
       dotRefs.current.forEach(el => {
@@ -392,10 +386,8 @@ function ProcessSection() {
       }
 
       // Section enter: draw rule + slide image in
-      ScrollTrigger.create({
-        trigger: sectionRef.current,
+      createReveal(sectionRef.current, {
         start: 'top 70%',
-        once: true,
         onEnter: () => {
           gsap.to(ruleInkRef.current, { scaleY: 1, duration: 1.2, ease: 'power2.inOut' });
           gsap.to(imgColRef.current,  { opacity: 1, x: 0, duration: 0.7, ease: 'power2.out' });
@@ -405,11 +397,8 @@ function ProcessSection() {
       // Per-step reveals: dot/number ink, body copy, check marks, chip labels
       PROCESS_STEPS.forEach((_, i) => {
         const el = stepRefs.current[i];
-        if (!el) return;
-        ScrollTrigger.create({
-          trigger: el,
+        createReveal(el ?? null, {
           start: 'top 78%',
-          once: true,
           onEnter: () => {
             if (dotRefs.current[i]) dotRefs.current[i]!.style.backgroundColor = 'hsl(212 50% 12.5%)';
             if (numRefs.current[i]) numRefs.current[i]!.style.color = 'hsl(246 100% 98%)';
@@ -656,14 +645,10 @@ function RecoveryEstimator() {
     if (reducedMotion || !ready) return;
     const ctx = gsap.context(() => {
       gsap.set(sectionRef.current, { opacity: 0, y: 24 });
-      ScrollTrigger.create({
-        trigger: sectionRef.current,
+      createReveal(sectionRef.current, {
         start: 'top 85%',
-        once: true,
         onEnter: () => {
-          // Fade the section in
           gsap.to(sectionRef.current, { opacity: 1, y: 0, duration: 0.65, ease: 'power2.out' });
-          // Sweep sliders 0 → defaults via GSAP proxy
           const proxy = { balance: 0, months: 0 };
           gsap.to(proxy, {
             balance: 500_000,
@@ -829,19 +814,14 @@ function IndustriesSection() {
         // Mobile: IO-based entrance for quote + panel
         if (quoteRef.current) {
           gsap.set(quoteRef.current, { opacity: 0, y: 12 });
-          ScrollTrigger.create({
-            trigger: quoteRef.current,
-            start: 'top 82%',
-            once: true,
+          createReveal(quoteRef.current, {
             onEnter: () => gsap.to(quoteRef.current, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }),
           });
         }
         if (panelRef.current) {
           gsap.set(panelRef.current, { opacity: 0, y: 24 });
-          ScrollTrigger.create({
-            trigger: panelRef.current,
+          createReveal(panelRef.current, {
             start: 'top 80%',
-            once: true,
             onEnter: () => gsap.to(panelRef.current, { opacity: 1, y: 0, duration: 0.65, ease: 'power2.out' }),
           });
         }
@@ -852,16 +832,9 @@ function IndustriesSection() {
       gsap.set(words, { opacity: 0.12 });
       if (panelRef.current) gsap.set(panelRef.current, { opacity: 0, y: 40 });
 
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          pin: true,
-          scrub: 0.8,
-          pinSpacing: true,
-          invalidateOnRefresh: true,
-          start: 'top top',
+      // Cinema pin #2 — wired through director
+      const tl = createCinema(sectionRef.current, {
           end: '+=140%',
-          anticipatePin: 1,
           onEnter: () => {
             if (sectionRef.current) sectionRef.current.style.willChange = 'transform';
           },
@@ -871,7 +844,6 @@ function IndustriesSection() {
           onLeaveBack: () => {
             if (sectionRef.current) sectionRef.current.style.willChange = '';
           },
-        },
       });
 
       tl.to({}, { duration: 1 }); // anchor total to 1.0s
@@ -1027,10 +999,7 @@ function GivingBackSection() {
       const lineEls = lines.current;
       if (lineEls.length) {
         gsap.set(lineEls, { y: '105%', opacity: 0 });
-        ScrollTrigger.create({
-          trigger: headlineRef.current,
-          start: 'top 82%',
-          once: true,
+        createReveal(headlineRef.current, {
           onEnter: () => {
             gsap.to(lineEls, {
               y: '0%', opacity: 1,
@@ -1045,10 +1014,8 @@ function GivingBackSection() {
       // Copy block fades up
       if (copyRef.current) {
         gsap.set(copyRef.current, { opacity: 0, y: 14 });
-        ScrollTrigger.create({
-          trigger: copyRef.current,
+        createReveal(copyRef.current, {
           start: 'top 80%',
-          once: true,
           onEnter: () => gsap.to(copyRef.current, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }),
         });
       }
@@ -1217,10 +1184,8 @@ function ClosingCTA() {
       if (taglineRef.current)   gsap.set(taglineRef.current, { opacity: 0, y: 8 });
       if (underlineRef.current) gsap.set(underlineRef.current, { scaleX: 0, transformOrigin: 'left' });
 
-      ScrollTrigger.create({
-        trigger: sectionRef.current,
+      createReveal(sectionRef.current, {
         start: 'top 75%',
-        once: true,
         onEnter: () => {
           const tl = gsap.timeline();
           // 1. Top rule draws
@@ -1374,7 +1339,8 @@ function HeroSection() {
   const desktopCtasRef = useRef<HTMLDivElement>(null);
   const cardWrapperRef = useRef<HTMLDivElement>(null);
   const mobileCtasRef  = useRef<HTMLDivElement>(null);
-  const tickerDockRef  = useRef<HTMLDivElement>(null);
+  const heroFilmRef    = useRef<HTMLDivElement>(null);
+  const heroOverlayRef = useRef<HTMLDivElement>(null);
   const scrollCueRef   = useRef<HTMLDivElement>(null);
 
   const lines = useSplitLines(headlineRef);
@@ -1395,122 +1361,52 @@ function HeroSection() {
     return () => window.removeEventListener('scroll', h);
   }, [isMobile, reducedMotion]);
 
+  // HERO — V2 motion script
+  // Entrance: 1.8s — film fade → headline rise → card → CTAs (simplified, no baseline etching)
+  // Scrub (pin #1, 120vh): headline drifts up + film scales 1→1.05 + overlay deepens (only 3 beats)
   useLayoutEffect(() => {
     if (reducedMotion || !ready) return;
 
-    const speed    = isMobile ? 0.6 : 1.0;
-    const baselines = baselineRefs.current.filter(Boolean) as HTMLDivElement[];
-    const lineEls   = lines.current;
+    const speed   = isMobile ? 0.6 : 1.0;
+    const lineEls = lines.current;
 
-    // Helper: put all hero elements into their post-entrance settled positions.
-    // Called immediately when the user arrives mid-page (scrollY > 200) so no
-    // entrance animation plays beneath their scroll position.
+    // settleAll: instant post-entrance state for the fast path (already scrolled)
     const settleAll = () => {
-      if (baselines.length) gsap.set(baselines, { scaleX: 1, transformOrigin: 'left' });
-      if (lineEls.length)   gsap.set(lineEls, { y: 0, opacity: 1 });
+      if (lineEls.length)         gsap.set(lineEls, { y: 0, opacity: 1 });
       if (eyebrowRef.current)     gsap.set(eyebrowRef.current, { opacity: 1 });
       if (trioOuterRef.current)   gsap.set(trioOuterRef.current, { opacity: 1 });
       if (subheadRef.current)     gsap.set(subheadRef.current, { opacity: 1, y: 0 });
       if (desktopCtasRef.current) gsap.set(desktopCtasRef.current, { opacity: 1, y: 0 });
       if (cardWrapperRef.current) gsap.set(cardWrapperRef.current, { x: 0, opacity: 1 });
       if (mobileCtasRef.current)  gsap.set(mobileCtasRef.current, { opacity: 1, y: 0 });
-      if (tickerDockRef.current)  gsap.set(tickerDockRef.current, { y: 40, opacity: 0 });
+      if (heroFilmRef.current)    gsap.set(heroFilmRef.current, { opacity: 1 });
     };
 
-    // Helper: build the desktop scroll-scrub pin timeline.
-    // Returns the timeline reference so it can be killed in cleanup.
-    // IMPORTANT: only called AFTER the entrance completes (or when skipped),
-    // so pin registration never overlaps with the entrance animation.
+    // buildScrubTl: 3 beats only — no card, no CTAs, no baseline fade
     let scrubTl: gsap.core.Timeline | null = null;
     const buildScrubTl = () => {
-      scrubTl = gsap.timeline({
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          pin: true,
-          scrub: 0.8,
-          pinSpacing: true,
-          invalidateOnRefresh: true,
-          start: 'top top',
-          end: '+=150%',
-          anticipatePin: 1,
-          onEnter: () => {
-            if (sectionRef.current) sectionRef.current.style.willChange = 'transform, opacity';
-          },
-          onLeaveBack: () => {
-            if (sectionRef.current) sectionRef.current.style.willChange = '';
-          },
-          onLeave: () => {
-            if (sectionRef.current) sectionRef.current.style.willChange = '';
-          },
-          onUpdate: (self) => {
-            if (!cardWrapperRef.current) return;
-            const p = self.progress;
-            const hi = p < 0.8 ? Math.min(4, Math.floor((p / 0.8) * 5)) : 4;
-            cardWrapperRef.current
-              .querySelectorAll<HTMLElement>('[data-day-stamp]')
-              .forEach((el, i) => {
-                el.style.color      = i <= hi ? 'var(--color-recovered)' : '';
-                el.style.fontWeight = i === hi ? '600' : '';
-              });
-          },
-        },
+      scrubTl = createPinScrub(sectionRef.current, {
+        end: '+=150%',
+        onEnter:     () => { if (sectionRef.current) sectionRef.current.style.willChange = 'transform'; },
+        onLeave:     () => { if (sectionRef.current) sectionRef.current.style.willChange = ''; },
+        onLeaveBack: () => { if (sectionRef.current) sectionRef.current.style.willChange = ''; },
       });
 
+      // Headline drifts up
       if (lineEls.length) {
-        scrubTl.to(lineEls, {
-          y: -88,
-          opacity: 0,
-          stagger: { amount: 0.12 },
-          ease: 'power2.in',
-          duration: 0.55,
-        }, 0);
+        scrubTl.to(lineEls, { y: -40, ease: 'power1.inOut', duration: 1 }, 0);
       }
-
-      const basesDn = [...baselines].reverse();
-      scrubTl.to(basesDn, {
-        opacity: 0,
-        stagger: 0.022,
-        duration: 0.65,
-      }, 0);
-
-      if (cardWrapperRef.current) {
-        scrubTl.to(cardWrapperRef.current, {
-          scale: 0.92,
-          x: -20,
-          y: -32,
-          opacity: 0.82,
-          ease: 'power1.inOut',
-          duration: 0.8,
-        }, 0);
+      // Film scales 1→1.05
+      if (heroFilmRef.current) {
+        scrubTl.to(heroFilmRef.current, { scale: 1.05, ease: 'power1.inOut', duration: 1 }, 0);
       }
-
-      if (scrollCueRef.current) {
-        scrubTl.to(scrollCueRef.current, { opacity: 0, duration: 0.08 }, 0);
-      }
-
-      const fadeGroup = [subheadRef.current, desktopCtasRef.current].filter(Boolean);
-      if (fadeGroup.length) {
-        scrubTl.to(fadeGroup, {
-          opacity: 0,
-          y: -14,
-          stagger: 0.05,
-          duration: 0.25,
-        }, 0.6);
-      }
-
-      if (tickerDockRef.current) {
-        scrubTl.to(tickerDockRef.current, {
-          y: 0,
-          opacity: 1,
-          ease: 'power2.out',
-          duration: 0.2,
-        }, 0.8);
+      // Overlay deepens (vignette becomes more opaque)
+      if (heroOverlayRef.current) {
+        scrubTl.to(heroOverlayRef.current, { opacity: 1, ease: 'power1.inOut', duration: 1 }, 0);
       }
     };
 
-    // ── Fast path: user already scrolled past the hero before init fired ──
-    // Skip the entrance — settle immediately and create the pin. Prevents an
-    // entrance animation the user can't see from yanking their scroll position.
+    // ── Fast path: skip entrance if already scrolled ───────────────────────
     if (!isMobile && window.scrollY > 200) {
       settleAll();
       buildScrubTl();
@@ -1518,20 +1414,17 @@ function HeroSection() {
       return () => { scrubTl?.kill(); };
     }
 
-    // ── Normal path: initial hidden states → entrance → (desktop) pin ─────
-    if (baselines.length) gsap.set(baselines, { scaleX: 0, transformOrigin: 'left' });
-    if (lineEls.length)   gsap.set(lineEls, { y: '110%', opacity: 0 });
+    // ── Normal path: hidden → 1.8s entrance → (desktop) pin ──────────────
+    if (lineEls.length)         gsap.set(lineEls, { y: 40, opacity: 0 });
     if (eyebrowRef.current)     gsap.set(eyebrowRef.current, { opacity: 0 });
     if (trioOuterRef.current)   gsap.set(trioOuterRef.current, { opacity: 0 });
-    if (subheadRef.current)     gsap.set(subheadRef.current, { opacity: 0, y: 12 });
-    if (desktopCtasRef.current) gsap.set(desktopCtasRef.current, { opacity: 0, y: 8 });
+    if (subheadRef.current)     gsap.set(subheadRef.current, { opacity: 0, y: 10 });
+    if (desktopCtasRef.current) gsap.set(desktopCtasRef.current, { opacity: 0, y: 6 });
     if (cardWrapperRef.current) gsap.set(cardWrapperRef.current, { x: 24, opacity: 0 });
-    if (mobileCtasRef.current)  gsap.set(mobileCtasRef.current, { opacity: 0, y: 8 });
-    if (tickerDockRef.current)  gsap.set(tickerDockRef.current, { y: 40, opacity: 0 });
+    if (mobileCtasRef.current)  gsap.set(mobileCtasRef.current, { opacity: 0, y: 6 });
+    if (heroFilmRef.current)    gsap.set(heroFilmRef.current, { opacity: 0 });
 
     const entrance = gsap.timeline({
-      // Desktop: register the pin only AFTER the entrance completes —
-      // never let pin + entrance overlap during first seconds.
       onComplete: !isMobile ? () => {
         if (!sectionRef.current) return;
         buildScrubTl();
@@ -1539,61 +1432,50 @@ function HeroSection() {
       } : undefined,
     });
 
-    entrance.to(baselines, {
-      scaleX: 1,
-      duration: 0.8 * speed,
-      stagger: 0.04 * speed,
-      ease: 'power2.out',
-    }, 0);
-
-    if (eyebrowRef.current) {
-      entrance.to(eyebrowRef.current, { opacity: 1, duration: 0.25 * speed }, 0.28 * speed);
+    // Beat 1 — film fades in (0 → 0.6s)
+    if (heroFilmRef.current) {
+      entrance.to(heroFilmRef.current, { opacity: 1, duration: 0.6 * speed, ease: 'power2.out' }, 0);
     }
 
+    // Beat 2 — eyebrow + trio + headline lines rise (0.2 → 1.0s)
+    if (eyebrowRef.current) {
+      entrance.to(eyebrowRef.current, { opacity: 1, duration: 0.3 * speed }, 0.2 * speed);
+    }
+    if (trioOuterRef.current) {
+      entrance.to(trioOuterRef.current, { opacity: 1, duration: 0.3 * speed }, 0.25 * speed);
+    }
     if (lineEls.length) {
       entrance.to(lineEls, {
-        y: '0%',
+        y: 0,
         opacity: 1,
-        duration: 0.7 * speed,
-        stagger: 0.13 * speed,
+        duration: 0.65 * speed,
+        stagger: 0.11 * speed,
         ease: 'power2.out',
-      }, 0.82 * speed);
+      }, 0.35 * speed);
     }
 
-    if (trioOuterRef.current) {
-      entrance.to(trioOuterRef.current, { opacity: 1, duration: 0.3 * speed }, 0.85 * speed);
-    }
-
-    if (subheadRef.current) {
-      entrance.to(subheadRef.current, { opacity: 1, y: 0, duration: 0.5 * speed }, 1.15 * speed);
-    }
-
-    if (desktopCtasRef.current) {
-      entrance.to(desktopCtasRef.current, { opacity: 1, y: 0, duration: 0.4 * speed }, '>-0.15');
-    }
-
+    // Beat 3 — card slides in from right (0.8 → 1.3s)
     if (cardWrapperRef.current) {
       entrance.to(cardWrapperRef.current, {
         x: 0, opacity: 1,
-        duration: 0.6 * speed,
+        duration: 0.5 * speed,
         ease: 'power2.out',
-      }, 1.1 * speed);
+      }, 0.8 * speed);
     }
 
+    // Beat 4 — subhead + CTAs fade in (1.05 → 1.5s)
+    if (subheadRef.current) {
+      entrance.to(subheadRef.current, { opacity: 1, y: 0, duration: 0.4 * speed }, 1.05 * speed);
+    }
+    if (desktopCtasRef.current) {
+      entrance.to(desktopCtasRef.current, { opacity: 1, y: 0, duration: 0.35 * speed }, 1.15 * speed);
+    }
     if (mobileCtasRef.current) {
-      entrance.to(mobileCtasRef.current, { opacity: 1, y: 0, duration: 0.4 * speed }, 1.2 * speed);
+      entrance.to(mobileCtasRef.current, { opacity: 1, y: 0, duration: 0.35 * speed }, 1.15 * speed);
     }
 
-    // Mobile: entrance only, no pin
-    if (isMobile) {
-      return () => { entrance.kill(); };
-    }
-
-    // Desktop: cleanup kills entrance AND scrubTl (created async in onComplete)
-    return () => {
-      entrance.kill();
-      scrubTl?.kill();
-    };
+    if (isMobile) return () => { entrance.kill(); };
+    return () => { entrance.kill(); scrubTl?.kill(); };
   }, [reducedMotion, isMobile, ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -1604,7 +1486,7 @@ function HeroSection() {
     >
       {/* hero-film: subtle ambient motion behind paper content */}
       {!reducedMotion && (
-        <div className="absolute inset-0 z-0" aria-hidden="true">
+        <div ref={heroFilmRef} className="absolute inset-0 z-0" aria-hidden="true">
           <video
             muted
             autoPlay
@@ -1621,6 +1503,7 @@ function HeroSection() {
           </video>
           {/* Paper overlay: gradient vignette — full at edges, film glows through centre */}
           <div
+            ref={heroOverlayRef}
             className="absolute inset-0"
             style={{
               background: 'linear-gradient(to bottom, rgba(249,247,242,1) 0%, rgba(249,247,242,1) 8%, rgba(249,247,242,0.76) 50%, rgba(249,247,242,1) 92%, rgba(249,247,242,1) 100%)',
@@ -1692,10 +1575,10 @@ function HeroSection() {
                 >
                   <div
                     ref={trioInnerRef}
-                    style={isMobile ? {
+                    style={{
                       transform: `translateY(${-trioIdx * 33.33}%)`,
                       transition: 'transform 320ms cubic-bezier(.22,1,.36,1)',
-                    } : undefined}
+                    }}
                   >
                     {TRIO_WORDS.map((word, i) => (
                       <div
@@ -1786,15 +1669,6 @@ function HeroSection() {
 
           </div>
         </div>
-      </div>
-
-      <div
-        ref={tickerDockRef}
-        className="absolute left-0 right-0 z-10 hidden lg:block"
-        style={{ top: '60px' }}
-        aria-hidden="true"
-      >
-        <VerticalsTicker />
       </div>
 
       <div
