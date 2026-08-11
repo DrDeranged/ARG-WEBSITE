@@ -329,6 +329,7 @@ export default function ContactPage() {
             src="/images/dog-support.jpg"
             alt="ARG office dog wearing a customer support headset at a desk"
             caption={dogCaption ?? 'Our Director of First Impressions is standing by.'}
+            depth
             aspectClassName="aspect-[4/5]"
             width={800}
             height={1000}

@@ -355,7 +355,7 @@ function WhyArgSection() {
   }, [reducedMotion]);
 
   return (
-    <section ref={sectionRef} className="relative bg-mist py-24 md:py-32 border-b border-rule">
+    <section ref={sectionRef} data-folio-n={2} className="relative bg-mist py-24 md:py-32 border-b border-rule">
       {/* Folio — scrambles 01→02 on enter */}
       <span
         ref={folioRef}
@@ -600,7 +600,7 @@ function ProcessSection() {
   }, [reducedMotion]);
 
   return (
-    <section ref={sectionRef} id="process" className="relative bg-paper py-24 md:py-32 border-b border-rule scroll-m-20">
+    <section ref={sectionRef} data-folio-n={3} id="process" className="relative bg-paper py-24 md:py-32 border-b border-rule scroll-m-20">
       <SectionFolio n={3} />
       <div className="max-w-6xl mx-auto px-6 md:px-8">
         <SectionRule />
@@ -873,7 +873,7 @@ function RecoveryEstimator() {
           aria-hidden="true"
         />
       )}
-      <section ref={sectionRef} className="relative bg-mist ledger-grid py-24 md:py-32 border-b border-rule" style={reducedMotion ? {} : { opacity: 0 }}>
+      <section ref={sectionRef} data-folio-n={4} className="relative bg-mist ledger-grid py-24 md:py-32 border-b border-rule" style={reducedMotion ? {} : { opacity: 0 }}>
         <SectionFolio n={4} />
         <div className="max-w-6xl mx-auto px-6 md:px-8">
           <SectionRule />
@@ -1058,7 +1058,7 @@ function IndustriesSection() {
   }, [reducedMotion]);
 
   return (
-    <section ref={sectionRef} className="relative bg-paper py-24 md:py-32 border-b border-rule">
+    <section ref={sectionRef} data-folio-n={5} className="relative bg-paper py-24 md:py-32 border-b border-rule">
       <SectionFolio n={5} />
       <div className="max-w-6xl mx-auto px-6 md:px-8">
         <SectionRule />
@@ -1181,7 +1181,7 @@ function GivingBackSection() {
   }, [reducedMotion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <section ref={sectionRef} className="relative bg-ink text-paper py-24 md:py-32 border-b border-ink">
+    <section ref={sectionRef} data-folio-n={6} className="relative bg-ink text-paper py-24 md:py-32 border-b border-ink">
       <SectionFolio n={6} />
       <div className="max-w-6xl mx-auto px-6 md:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -1220,6 +1220,7 @@ function GivingBackSection() {
                 aspectClassName="aspect-square"
                 width={400}
                 height={400}
+                depth
               />
             </div>
             <div ref={photo2Ref} style={reducedMotion ? {} : { filter: 'grayscale(1)' }}>
@@ -1230,6 +1231,7 @@ function GivingBackSection() {
                 aspectClassName="aspect-square"
                 width={400}
                 height={400}
+                depth
               />
             </div>
           </div>
@@ -1335,7 +1337,7 @@ function ClosingCTA() {
   }, [reducedMotion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <section ref={sectionRef} className="relative bg-ink text-paper py-24 md:py-32">
+    <section ref={sectionRef} data-folio-n={7} className="relative bg-ink text-paper py-24 md:py-32">
       <SectionFolio n={7} />
 
       {/* Animated top rule (replaces border-t border-recovered) */}
@@ -1654,6 +1656,7 @@ function HeroSection() {
   return (
     <section
       ref={sectionRef}
+      data-folio-n={1}
       className="relative bg-paper border-b border-rule overflow-hidden md:flex md:items-center hero-height"
     >
       <div className="absolute inset-0 pointer-events-none select-none" aria-hidden="true">

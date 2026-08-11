@@ -1,8 +1,9 @@
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Menu, X, Phone, Mail, ExternalLink, Search, Dog } from 'lucide-react';
 import { ScrambleText } from '@/components/ScrambleText';
 import { useMotion } from '@/motion';
+import { LedgerDust } from '@/components/LedgerDust';
 
 /* ── Office Status ──────────────────────────────────────── */
 type OfficeStatus = { open: boolean; label: string };
@@ -165,6 +166,147 @@ function CommandPalette({
   );
 }
 
+/* ── Global folio counter ────────────────────────────────
+   Fixed bottom-right indicator that shows which section
+   is in view (01 / 07 … 07 / 07). When the section changes,
+   the old number "decrements" out before the new one rises in,
+   giving the impression of pages turning.
+   Only shows on pages that have [data-folio-n] sections.
+   Hidden on mobile and reducedMotion.
+──────────────────────────────────────────────────────────*/
+const FOLIO_CHARS = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+
+function GlobalFolioCounter() {
+  const { reducedMotion } = useMotion();
+  const [location] = useLocation();
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const spanRef = useRef<HTMLSpanElement>(null);
+  const currentNRef = useRef(0);
+
+  useLayoutEffect(() => {
+    if (reducedMotion) return;
+    if (window.innerWidth < 768) return;
+
+    const wrap = wrapRef.current;
+    const span = spanRef.current;
+    if (!wrap || !span) return;
+
+    currentNRef.current = 0;
+    wrap.style.opacity = '0';
+
+    const fmt = (n: number) =>
+      `${String(n).padStart(2, '0')} / 07`;
+
+    const scrambleTo = (el: HTMLElement, text: string, ms = 240) => {
+      const frames = Math.max(6, Math.round(ms / 40));
+      let f = 0;
+      const tick = () => {
+        f++;
+        if (f >= frames) { el.textContent = text; return; }
+        el.textContent = Array.from({ length: text.length }, (_, i) => {
+          if (f / frames > i / text.length) return text[i];
+          if (text[i] === ' ' || text[i] === '/') return text[i];
+          return FOLIO_CHARS[Math.floor(Math.random() * FOLIO_CHARS.length)];
+        }).join('');
+        setTimeout(tick, 40);
+      };
+      tick();
+    };
+
+    const showFolio = (n: number) => {
+      const prev = currentNRef.current;
+      if (n === prev) return;
+      currentNRef.current = n;
+
+      wrap.style.transition = 'opacity 300ms ease';
+      wrap.style.opacity = '1';
+
+      if (prev === 0) {
+        // First entrance — just scramble in
+        span.style.transform = 'translateY(0)';
+        span.style.opacity   = '1';
+        scrambleTo(span, fmt(n), 300);
+        return;
+      }
+
+      // Phase 1: slide current number out (decrement display = prev-1 briefly)
+      span.style.transition = 'transform 90ms ease, opacity 90ms ease';
+      span.style.transform  = 'translateY(-5px)';
+      span.style.opacity    = '0.2';
+
+      // Phase 2: swap to decrement label, pull in from below
+      setTimeout(() => {
+        const decrementLabel = fmt(Math.max(1, prev - 1));
+        span.textContent     = decrementLabel;
+        span.style.transition = 'none';
+        span.style.transform  = 'translateY(6px)';
+        span.style.opacity    = '0';
+      }, 90);
+
+      // Phase 3: new number rises and scrambles in
+      setTimeout(() => {
+        span.style.transition = 'transform 130ms ease, opacity 130ms ease';
+        span.style.transform  = 'translateY(0)';
+        span.style.opacity    = '1';
+        scrambleTo(span, fmt(n), 220);
+      }, 190);
+    };
+
+    // Use IntersectionObserver to track which folio section is in view
+    let io: IntersectionObserver | null = null;
+
+    const setup = () => {
+      io?.disconnect();
+      const sections = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-folio-n]'),
+      );
+      if (!sections.length) {
+        wrap.style.transition = 'opacity 300ms ease';
+        wrap.style.opacity    = '0';
+        currentNRef.current   = 0;
+        return;
+      }
+      io = new IntersectionObserver(
+        entries => {
+          entries.forEach(e => {
+            if (!e.isIntersecting) return;
+            const n = parseInt(e.target.getAttribute('data-folio-n') ?? '0');
+            if (n > 0) showFolio(n);
+          });
+        },
+        { threshold: 0.25, rootMargin: '-10% 0px -10% 0px' },
+      );
+      sections.forEach(s => io!.observe(s));
+    };
+
+    // Small delay so page content is mounted before we query sections
+    const timer = setTimeout(setup, 250);
+    return () => {
+      clearTimeout(timer);
+      io?.disconnect();
+    };
+  // Re-run whenever the route changes so other pages hide the counter
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reducedMotion, location]);
+
+  if (reducedMotion) return null;
+
+  return (
+    <div
+      ref={wrapRef}
+      className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-20 pointer-events-none select-none hidden md:block"
+      style={{ opacity: 0, transition: 'opacity 300ms ease' }}
+      aria-hidden="true"
+    >
+      <span
+        ref={spanRef}
+        className="font-mono text-[9px] text-recovered/35 tabular-nums tracking-widest"
+        style={{ display: 'block', transition: 'transform 130ms ease, opacity 130ms ease' }}
+      />
+    </div>
+  );
+}
+
 /* ── Shell ──────────────────────────────────────────────── */
 export function Shell({ children }: { children: ReactNode }) {
   const [isScrolled, setIsScrolled]       = useState(false);
@@ -172,7 +314,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const [paletteOpen, setPaletteOpen]     = useState(false);   // controls DOM mounting
   const [paletteAnimated, setPaletteAnim] = useState(false);   // controls CSS state
   const [finaleRevealed, setFinale]       = useState(false);
-  const finaleRef  = useRef<HTMLDivElement>(null);
+  const finaleRef    = useRef<HTMLDivElement>(null);
+  const progressRef  = useRef<HTMLDivElement>(null);
   const [location, navigate] = useLocation();
   const isActive = (href: string) =>
     href === '/' ? (location === '/' || location === '') : location.startsWith(href.replace(/\/$/, ''));
@@ -222,6 +365,25 @@ export function Shell({ children }: { children: ReactNode }) {
     );
     io.observe(el);
     return () => io.disconnect();
+  }, []);
+
+  // ── Header scroll-progress rule (direct DOM, no re-render) ─────────────
+  // Drives a recovered-green scaleX 0→1 rule at the header bottom,
+  // reflecting total page scroll progress site-wide.
+  useEffect(() => {
+    const el = progressRef.current;
+    if (!el) return;
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) { el.style.transform = 'scaleX(1)'; return; }
+
+    const update = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const p   = max > 0 ? Math.min(window.scrollY / max, 1) : 0;
+      el.style.transform = `scaleX(${p})`;
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
   }, []);
 
   const openPalette = useCallback(() => {
@@ -290,6 +452,14 @@ export function Shell({ children }: { children: ReactNode }) {
             {mobileMenuOpen ? <X size={24} aria-hidden="true" /> : <Menu size={24} aria-hidden="true" />}
           </button>
         </div>
+
+        {/* ── Scroll progress rule (recovered green, scaleX 0→1) ── */}
+        <div
+          ref={progressRef}
+          aria-hidden="true"
+          className="absolute bottom-0 left-0 right-0 h-[2px] bg-recovered pointer-events-none"
+          style={{ transform: 'scaleX(0)', transformOrigin: 'left' }}
+        />
       </header>
 
       {/* ── Mobile Menu ───────────────────────────────── */}
@@ -402,6 +572,10 @@ export function Shell({ children }: { children: ReactNode }) {
       {paletteOpen && (
         <CommandPalette onClose={closePalette} navigate={navigate} animated={paletteAnimated} />
       )}
+
+      {/* ── Global ambient layers (behind content, pointer-events-none) ── */}
+      <LedgerDust />
+      <GlobalFolioCounter />
     </div>
   );
 }
