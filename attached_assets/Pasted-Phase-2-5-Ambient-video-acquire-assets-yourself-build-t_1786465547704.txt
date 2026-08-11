@@ -1,0 +1,101 @@
+Phase 2.5 — Ambient video: acquire assets yourself, build the
+infrastructure, integrate. Fully self-contained — do every step.
+
+STEP 0 — ASSET ACQUISITION (do this first):
+1. Create artifacts/arg-website/public/videos/.
+2. Download the licensed source clip (Pexels, free license) directly:
+   curl -L -o /tmp/broll-src.mp4 \
+   "https://videos.pexels.com/video-files/8201577/8201577-uhd_3840_2160_25fps.mp4"
+   Verify the file is >5MB and ffprobe reports 3840x2160 video. If
+   that URL 404s, fetch https://www.pexels.com/video/8201577/ and
+   extract the current uhd mp4 file URL from the page, then retry.
+3. Install ffmpeg in the workspace if not present (nix package or
+   apt, whichever this environment supports).
+4. Transcode three outputs into public/videos/:
+   ffmpeg -i /tmp/broll-src.mp4 -t 8 -vf "scale=1920:-2" \
+     -c:v libx264 -preset slow -crf 26 -an -movflags +faststart \
+     public/videos/careers-broll.mp4
+   ffmpeg -i /tmp/broll-src.mp4 -t 8 -vf "scale=1920:-2" \
+     -c:v libvpx-vp9 -crf 38 -b:v 0 -an \
+     public/videos/careers-broll.webm
+   ffmpeg -ss 2 -i /tmp/broll-src.mp4 -frames:v 1 \
+     -vf "scale=1920:-2" -q:v 3 public/videos/careers-broll-poster.jpg
+   Verify: mp4 under 2MB, webm under 1MB, poster exists. Delete
+   /tmp/broll-src.mp4 after. Do NOT commit any file over 3MB.
+5. FALLBACK if download is impossible in this environment: skip
+   video files, still build everything below (the component
+   degrades to poster/absent gracefully), generate a temporary
+   poster — a 1920x1080 mist-colored JPEG with the ledger baseline
+   pattern — save as careers-broll-poster.jpg, and print a clear
+   note that the two video files need manual upload.
+
+STEP 1 — Build src/components/AmbientVideo.tsx (reusable):
+Props: { mp4: string; webm?: string; poster: string; className?:
+string; overlayOpacity?: number (default 0.5); label?: string }
+Mandatory behaviors — each prevents a specific production bug:
+a. <video muted loop playsInline preload="none"
+   disablePictureInPicture controlsList="nodownload"> with webm
+   <source> first then mp4, poster set. NEVER set the autoplay
+   attribute. Set el.muted = true via ref effect as well as the
+   attribute (iOS Safari requires the property for programmatic
+   play()).
+b. IntersectionObserver on the wrapper: ≥25% visible →
+   video.play().catch(() => {}) — the .catch is mandatory (iOS
+   low-power mode rejects play()); <25% → pause().
+c. visibilitychange listener: pause on hidden tab; on return,
+   guarded play only if still intersecting. Clean up observer AND
+   listener on unmount.
+d. If prefers-reduced-motion matches OR navigator.connection?.
+   saveData is true OR the video element fires an error event:
+   render <img src={poster} alt=""> instead — no <video> in the
+   DOM at all in these cases. If poster also fails to load, render
+   a mist-colored div with the ledger baseline pattern so the
+   layout never collapses.
+e. Wrapper: aspect-ratio 16/9, overflow-hidden; media absolutely
+   positioned inset-0 object-cover. Zero layout shift.
+f. Ledger treatment: ink overlay at overlayOpacity
+   (pointer-events-none), 1px rule border, mono caption below when
+   label is provided (matching EditorialImage's caption style).
+g. aria-hidden="true" on the video (decorative); no interactive
+   semantics on the wrapper.
+h. No Lenis/GSAP imports — observer-driven only, so it works
+   regardless of motion-phase status.
+
+STEP 2 — Careers page integration:
+a. Full-width band directly under the careers page header:
+   <AmbientVideo mp4="/videos/careers-broll.mp4"
+   webm="/videos/careers-broll.webm"
+   poster="/videos/careers-broll-poster.jpg"
+   overlayOpacity={0.45} label="COLLECTIONS IN MOTION" />,
+   max-h-[420px] on desktop, 16/9 governing below.
+   HONESTY RULE: the label is exactly "COLLECTIONS IN MOTION" —
+   never any caption implying this is ARG's own office or team (it
+   is licensed b-roll). No "OUR FLOOR", no "THE ARG TEAM".
+b. Move the existing careers intro line onto the band: paper serif
+   bottom-left, mono eyebrow above it. Must stay AA-readable over
+   the clip's brightest (window) areas — raise overlay to 0.55 if
+   0.45 fails contrast.
+c. Mobile: band at 4/3 (object-cover crop fine), text one step
+   smaller; poster-only rendering on low-power devices must look
+   intentional (the overlay + caption ensure this).
+
+STEP 3 — Register future slots as a comment block at the top of
+AmbientVideo.tsx (no visible elements yet):
+  - Giving Back: /videos/giving-back.mp4 — real DR/charity footage
+    only, never stock
+  - Closing CTA: /videos/cta-texture.mp4 — abstract texture only
+
+STEP 4 — VERIFY EVERYTHING (report each result):
+a. Network tab on /careers/: video files do NOT download until the
+   band nears the viewport (preload="none" honored); Chrome picks
+   webm.
+b. Scroll away from the band → video pauses. Hide tab → pauses;
+   return → resumes.
+c. Emulate prefers-reduced-motion → poster <img> renders, zero
+   <video> elements in the DOM.
+d. 4x CPU throttle scroll → no jank attributable to the video.
+e. Lighthouse /careers/ ≥90 performance, zero CLS from the band.
+f. pnpm build passes, tsc --noEmit clean.
+Commit as "Phase 2.5: ambient video infra + careers band
+(self-acquired assets)". If Step 0's fallback path was taken, say
+so explicitly in your final summary.

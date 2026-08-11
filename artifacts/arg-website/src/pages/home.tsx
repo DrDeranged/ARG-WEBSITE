@@ -990,7 +990,7 @@ function IndustriesSection() {
   const sectionRef  = useRef<HTMLElement>(null);
   const listRef     = useRef<HTMLUListElement>(null);
   const itemRefs    = useRef<(HTMLLIElement | null)[]>([]);
-  const quoteRef    = useRef<HTMLBlockquoteElement>(null);
+  const quoteRef    = useRef<HTMLQuoteElement>(null);
   const wordRefs    = useRef<(HTMLSpanElement | null)[]>([]);
 
   useLayoutEffect(() => {
@@ -1167,12 +1167,12 @@ function GivingBackSection() {
         gsap.to(el, {
           filter: 'grayscale(0)',
           ease: 'power1.inOut',
+          delay: i * 0.15,
           scrollTrigger: {
             trigger: sectionRef.current,
             start: 'top center',
             end: 'center center',
             scrub: 0.8,
-            delay: i * 0.15,
           },
         });
       });

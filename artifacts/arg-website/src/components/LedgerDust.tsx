@@ -74,7 +74,7 @@ export function LedgerDust() {
       canvas.height = window.innerHeight;
     };
     resize();
-    let resizeTimer = 0;
+    let resizeTimer: ReturnType<typeof setTimeout> | undefined;
     const onResize = () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 120); };
     window.addEventListener('resize', onResize, { passive: true });
 

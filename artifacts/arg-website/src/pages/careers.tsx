@@ -1,5 +1,6 @@
 import { Shell } from '@/components/layout/Shell';
 import { EditorialImage } from '@/components/EditorialImage';
+import { AmbientVideo } from '@/components/AmbientVideo';
 import { Helmet } from 'react-helmet-async';
 
 export default function CareersPage() {
@@ -11,20 +12,56 @@ export default function CareersPage() {
         <meta property="og:url" content="https://advancedrecoverygroup.com/careers/" />
       </Helmet>
 
-      <section className="pt-32 pb-24 md:pt-48 md:pb-24 bg-paper border-b border-rule">
+      {/* ── Page header ─────────────────────────────────────────────── */}
+      <section className="pt-32 pb-10 md:pt-48 md:pb-10 bg-paper">
         <div className="max-w-6xl mx-auto px-6 md:px-8">
-          <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-4 uppercase">
-            Work at ARG
-          </p>
-          <h1 className="font-serif text-ink mb-12" style={{ fontSize: 'clamp(3.5rem, 8vw, 6rem)', lineHeight: 1.05 }}>
+          <h1 className="font-serif text-ink" style={{ fontSize: 'clamp(3.5rem, 8vw, 6rem)', lineHeight: 1.05 }}>
             Join the Team
           </h1>
-          <p className="text-xl text-slate max-w-prose leading-relaxed">
-            At Advanced Recovery Group, we operate in a fast-paced, results-driven environment. We value professionalism, integrity, and a team-oriented approach to solving complex financial challenges.
-          </p>
         </div>
       </section>
 
+      {/* ── Ambient b-roll band ──────────────────────────────────────
+          Full-width, no max-w container.
+          Mobile:  aspect-[4/3]
+          Desktop: aspect-video, height capped at 420px
+          HONESTY RULE: label is "COLLECTIONS IN MOTION" — this is
+          licensed b-roll, never captioned as ARG's own office/team.
+      ─────────────────────────────────────────────────────────────── */}
+      <section className="w-full border-b border-rule">
+        {/* Relative wrapper lets us layer intro text over the band */}
+        <div className="relative">
+          <AmbientVideo
+            mp4="/videos/careers-broll.mp4"
+            webm="/videos/careers-broll.webm"
+            poster="/videos/careers-broll-poster.jpg"
+            overlayOpacity={0.55}
+            label="COLLECTIONS IN MOTION"
+            aspectClassName="aspect-[4/3] md:aspect-video"
+            className="border-0 border-b-2 md:max-h-[420px] w-full"
+          />
+
+          {/* Intro text overlay — paper serif, bottom-left, AA-readable */}
+          <div
+            className="absolute bottom-0 left-0 right-0 px-6 py-6 md:px-10 md:py-8 pointer-events-none"
+            aria-hidden="false"
+          >
+            <p className="font-mono text-paper/60 text-[9px] tracking-[0.22em] uppercase mb-2">
+              Work at ARG
+            </p>
+            <p
+              className="font-serif text-paper leading-snug max-w-xl"
+              style={{ fontSize: 'clamp(1rem, 2vw, 1.35rem)' }}
+            >
+              At Advanced Recovery Group, we operate in a fast-paced, results-driven environment.
+              We value professionalism, integrity, and a team-oriented approach to solving
+              complex financial challenges.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Current openings ─────────────────────────────────────── */}
       <section className="bg-mist py-24 border-b border-rule">
         <div className="max-w-6xl mx-auto px-6 md:px-8">
           <h2 className="font-mono text-slate tracking-widest text-xs font-semibold mb-12 uppercase">
@@ -32,7 +69,7 @@ export default function CareersPage() {
           </h2>
 
           <div className="flex flex-col">
-            {/* Job listing row — list-row for accent bar, group for hover effects */}
+            {/* Job listing row */}
             <div className="list-row group relative border-t border-b border-rule py-12 flex flex-col md:flex-row gap-8 md:gap-16 items-start hover:bg-paper/50 transition-colors pl-4 md:pl-6">
               <div className="md:w-1/4 flex flex-col gap-2 pt-1">
                 <span className="font-mono text-sm font-semibold text-ink">ARG-001</span>
@@ -60,6 +97,7 @@ export default function CareersPage() {
         </div>
       </section>
 
+      {/* ── Office image ─────────────────────────────────────────── */}
       <section className="bg-paper py-24">
         <div className="max-w-6xl mx-auto px-6 md:px-8 flex flex-col gap-8">
           <EditorialImage
