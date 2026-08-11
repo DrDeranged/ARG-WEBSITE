@@ -60,6 +60,11 @@ const assistRateLimit = rateLimit({
 /* ── Router ─────────────────────────────────────────────────────────────── */
 const router = Router();
 
+/** GET /api/assist/status — matches the contact form's configuration check */
+router.get('/assist/status', (_req, res) => {
+  res.json({ configured: Boolean(process.env.ANTHROPIC_API_KEY) });
+});
+
 router.post('/assist', assistRateLimit, async (req, res) => {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) {

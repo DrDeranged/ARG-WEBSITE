@@ -45,9 +45,9 @@ function OfficeStatusIndicator({ dark = false }: { dark?: boolean }) {
 type PaletteAction = { id: string; label: string; sub: string; icon: ReactNode; action: () => void };
 
 function CommandPalette({
-  onClose, navigate, animated,
+  onClose, navigate, animated, showAssist,
 }: {
-  onClose: () => void; navigate: (path: string) => void; animated: boolean;
+  onClose: () => void; navigate: (path: string) => void; animated: boolean; showAssist: boolean;
 }) {
   const [query, setQuery]      = useState('');
   const [activeIdx, setActive] = useState(0);
@@ -59,7 +59,7 @@ function CommandPalette({
     { id: 'contact', label: 'Contact Us',  sub: 'Send an inquiry',      icon: <Search size={14} />, action: () => { navigate('/contact-us/'); onClose(); } },
     { id: 'careers', label: 'Careers',     sub: 'View open positions',  icon: <Search size={14} />, action: () => { navigate('/careers/'); onClose(); } },
     { id: 'blog',    label: 'Blog',        sub: 'Insights & updates',   icon: <Search size={14} />, action: () => { navigate('/blog/'); onClose(); } },
-    { id: 'assist',  label: 'ARG Assist',                                sub: 'AI placement concierge', icon: <Bot size={14} />, action: () => { window.dispatchEvent(new CustomEvent('arg:assist')); onClose(); } },
+    ...(showAssist ? [{ id: 'assist', label: 'ARG Assist', sub: 'AI placement concierge', icon: <Bot size={14} />, action: () => { window.dispatchEvent(new CustomEvent('arg:assist')); onClose(); } } as PaletteAction] : []),
     { id: 'call',    label: 'Call (877) 464-8470',                       sub: 'Talk to a specialist',   icon: <Phone size={14} />,        action: () => { window.location.href = 'tel:8774648470'; onClose(); } },
     { id: 'email',   label: 'Email collect@advancedrecoverygroup.com',   sub: 'Send us a message',      icon: <Mail size={14} />,         action: () => { window.location.href = 'mailto:collect@advancedrecoverygroup.com'; onClose(); } },
     { id: 'portal',  label: 'Open Client Portal',                        sub: 'Log in to your account', icon: <ExternalLink size={14} />, action: () => { window.open('https://app.simplicitycollect.com/Login.aspx', '_blank', 'noopener'); onClose(); } },
@@ -309,14 +309,17 @@ function GlobalFolioCounter() {
   );
 }
 
+const SHELL_API_BASE = (import.meta.env.BASE_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+
 /* ── Shell ──────────────────────────────────────────────── */
 export function Shell({ children }: { children: ReactNode }) {
-  const [isScrolled, setIsScrolled]       = useState(false);
-  const [mobileMenuOpen, setMobileMenu]   = useState(false);
-  const [paletteOpen, setPaletteOpen]     = useState(false);   // controls DOM mounting
-  const [paletteAnimated, setPaletteAnim] = useState(false);   // controls CSS state
-  const [assistOpen, setAssistOpen]       = useState(false);
-  const [finaleRevealed, setFinale]       = useState(false);
+  const [isScrolled, setIsScrolled]           = useState(false);
+  const [mobileMenuOpen, setMobileMenu]       = useState(false);
+  const [paletteOpen, setPaletteOpen]         = useState(false);   // controls DOM mounting
+  const [paletteAnimated, setPaletteAnim]     = useState(false);   // controls CSS state
+  const [assistOpen, setAssistOpen]           = useState(false);
+  const [assistConfigured, setAssistConfigured] = useState<boolean | null>(null);
+  const [finaleRevealed, setFinale]           = useState(false);
   const finaleRef    = useRef<HTMLDivElement>(null);
   const progressRef  = useRef<HTMLDivElement>(null);
   const [location, navigate] = useLocation();
@@ -356,12 +359,21 @@ export function Shell({ children }: { children: ReactNode }) {
     };
   }, [paletteOpen, mobileMenuOpen, assistOpen, lenis]);
 
+  // ── ARG Assist: check configuration once on mount ──────────────────────
+  useEffect(() => {
+    fetch(`${SHELL_API_BASE}/api/assist/status`)
+      .then(r => r.json())
+      .then((data: { configured: boolean }) => setAssistConfigured(data.configured))
+      .catch(() => setAssistConfigured(false));
+  }, []);
+
   // ── ARG Assist custom-event bridge (⌘K palette → open assist) ──────────
   useEffect(() => {
+    if (!assistConfigured) return;
     const h = () => setAssistOpen(true);
     window.addEventListener('arg:assist', h);
     return () => window.removeEventListener('arg:assist', h);
-  }, []);
+  }, [assistConfigured]);
 
   // Footer finale scroll reveal
   useEffect(() => {
@@ -444,15 +456,17 @@ export function Shell({ children }: { children: ReactNode }) {
               <Search size={14} aria-hidden="true" />
               <kbd className="font-mono text-xs border border-rule px-1.5 py-0.5 rounded-sm text-slate/50 hover:text-ink transition-colors">⌘K</kbd>
             </button>
-            {/* ASSIST chip */}
-            <button
-              onClick={() => setAssistOpen(true)}
-              aria-label="Open ARG Assist AI concierge"
-              className="flex items-center gap-1.5 font-mono text-[10px] tracking-widest text-slate/50 hover:text-recovered transition-colors border border-rule px-2.5 py-1 rounded-sm"
-            >
-              <Bot size={10} aria-hidden="true" />
-              ASSIST
-            </button>
+            {/* ASSIST chip — only when key is configured */}
+            {assistConfigured === true && (
+              <button
+                onClick={() => setAssistOpen(true)}
+                aria-label="Open ARG Assist AI concierge"
+                className="flex items-center gap-1.5 font-mono text-[10px] tracking-widest text-slate/50 hover:text-recovered transition-colors border border-rule px-2.5 py-1 rounded-sm"
+              >
+                <Bot size={10} aria-hidden="true" />
+                ASSIST
+              </button>
+            )}
             <a
               href="https://app.simplicitycollect.com/Login.aspx"
               target="_blank" rel="noopener"
@@ -500,12 +514,14 @@ export function Shell({ children }: { children: ReactNode }) {
               className="block text-center text-lg font-medium border border-ink bg-ink text-paper px-6 py-4 rounded-sm">
               Client Portal
             </a>
-            <button
-              onClick={() => { setMobileMenu(false); setAssistOpen(true); }}
-              className="flex items-center justify-center gap-2 border border-rule text-slate px-6 py-4 rounded-sm text-sm font-mono"
-            >
-              <Bot size={14} aria-hidden="true" /> ARG Assist
-            </button>
+            {assistConfigured === true && (
+              <button
+                onClick={() => { setMobileMenu(false); setAssistOpen(true); }}
+                className="flex items-center justify-center gap-2 border border-rule text-slate px-6 py-4 rounded-sm text-sm font-mono"
+              >
+                <Bot size={14} aria-hidden="true" /> ARG Assist
+              </button>
+            )}
             <button
               onClick={() => { setMobileMenu(false); openPalette(); }}
               className="flex items-center justify-center gap-2 border border-rule text-slate px-6 py-4 rounded-sm text-sm font-mono"
@@ -595,11 +611,13 @@ export function Shell({ children }: { children: ReactNode }) {
       </footer>
 
       {paletteOpen && (
-        <CommandPalette onClose={closePalette} navigate={navigate} animated={paletteAnimated} />
+        <CommandPalette onClose={closePalette} navigate={navigate} animated={paletteAnimated} showAssist={assistConfigured === true} />
       )}
 
-      {/* ── ARG Assist sheet ────────────────────────── */}
-      <ArgAssist open={assistOpen} onClose={() => setAssistOpen(false)} />
+      {/* ── ARG Assist sheet — only mounted when key is configured ── */}
+      {assistConfigured === true && (
+        <ArgAssist open={assistOpen} onClose={() => setAssistOpen(false)} />
+      )}
 
       {/* ── Global ambient layers (behind content, pointer-events-none) ── */}
       <LedgerDust />
