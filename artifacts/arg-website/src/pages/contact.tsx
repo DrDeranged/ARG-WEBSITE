@@ -299,6 +299,17 @@ export default function ContactPage() {
     defaultValues: { name: '', company: '', email: '', phone: '', category: undefined, balance: '', message: '', website: '' },
   });
 
+  /* Pre-fill message from ARG Assist handoff (sessionStorage) */
+  useEffect(() => {
+    const handoff = sessionStorage.getItem('arg:assist-handoff');
+    if (handoff) {
+      form.setValue('message', `[From ARG Assist]\n\n${handoff}`, { shouldDirty: true });
+      sessionStorage.removeItem('arg:assist-handoff');
+    }
+  // Only run once on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function onSubmit(values: FormValues) {
     setStatus('submitting');
     try {

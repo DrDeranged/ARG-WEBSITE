@@ -1,9 +1,10 @@
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Menu, X, Phone, Mail, ExternalLink, Search, Dog } from 'lucide-react';
+import { Menu, X, Phone, Mail, ExternalLink, Search, Dog, Bot } from 'lucide-react';
 import { ScrambleText } from '@/components/ScrambleText';
 import { useMotion } from '@/motion';
 import { LedgerDust } from '@/components/LedgerDust';
+import { ArgAssist } from '@/components/ArgAssist';
 
 /* ── Office Status ──────────────────────────────────────── */
 type OfficeStatus = { open: boolean; label: string };
@@ -58,6 +59,7 @@ function CommandPalette({
     { id: 'contact', label: 'Contact Us',  sub: 'Send an inquiry',      icon: <Search size={14} />, action: () => { navigate('/contact-us/'); onClose(); } },
     { id: 'careers', label: 'Careers',     sub: 'View open positions',  icon: <Search size={14} />, action: () => { navigate('/careers/'); onClose(); } },
     { id: 'blog',    label: 'Blog',        sub: 'Insights & updates',   icon: <Search size={14} />, action: () => { navigate('/blog/'); onClose(); } },
+    { id: 'assist',  label: 'ARG Assist',                                sub: 'AI placement concierge', icon: <Bot size={14} />, action: () => { window.dispatchEvent(new CustomEvent('arg:assist')); onClose(); } },
     { id: 'call',    label: 'Call (877) 464-8470',                       sub: 'Talk to a specialist',   icon: <Phone size={14} />,        action: () => { window.location.href = 'tel:8774648470'; onClose(); } },
     { id: 'email',   label: 'Email collect@advancedrecoverygroup.com',   sub: 'Send us a message',      icon: <Mail size={14} />,         action: () => { window.location.href = 'mailto:collect@advancedrecoverygroup.com'; onClose(); } },
     { id: 'portal',  label: 'Open Client Portal',                        sub: 'Log in to your account', icon: <ExternalLink size={14} />, action: () => { window.open('https://app.simplicitycollect.com/Login.aspx', '_blank', 'noopener'); onClose(); } },
@@ -313,6 +315,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const [mobileMenuOpen, setMobileMenu]   = useState(false);
   const [paletteOpen, setPaletteOpen]     = useState(false);   // controls DOM mounting
   const [paletteAnimated, setPaletteAnim] = useState(false);   // controls CSS state
+  const [assistOpen, setAssistOpen]       = useState(false);
   const [finaleRevealed, setFinale]       = useState(false);
   const finaleRef    = useRef<HTMLDivElement>(null);
   const progressRef  = useRef<HTMLDivElement>(null);
@@ -340,7 +343,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const { lenis } = useMotion();
 
   useEffect(() => {
-    const locked = paletteOpen || mobileMenuOpen;
+    const locked = paletteOpen || mobileMenuOpen || assistOpen;
     if (lenis) {
       // Stop/start Lenis instead of hiding overflow — prevents scroll fighting
       locked ? lenis.stop() : lenis.start();
@@ -351,7 +354,14 @@ export function Shell({ children }: { children: ReactNode }) {
       if (lenis) lenis.start();
       else document.body.style.overflow = '';
     };
-  }, [paletteOpen, mobileMenuOpen, lenis]);
+  }, [paletteOpen, mobileMenuOpen, assistOpen, lenis]);
+
+  // ── ARG Assist custom-event bridge (⌘K palette → open assist) ──────────
+  useEffect(() => {
+    const h = () => setAssistOpen(true);
+    window.addEventListener('arg:assist', h);
+    return () => window.removeEventListener('arg:assist', h);
+  }, []);
 
   // Footer finale scroll reveal
   useEffect(() => {
@@ -434,6 +444,15 @@ export function Shell({ children }: { children: ReactNode }) {
               <Search size={14} aria-hidden="true" />
               <kbd className="font-mono text-xs border border-rule px-1.5 py-0.5 rounded-sm text-slate/50 hover:text-ink transition-colors">⌘K</kbd>
             </button>
+            {/* ASSIST chip */}
+            <button
+              onClick={() => setAssistOpen(true)}
+              aria-label="Open ARG Assist AI concierge"
+              className="flex items-center gap-1.5 font-mono text-[10px] tracking-widest text-slate/50 hover:text-recovered transition-colors border border-rule px-2.5 py-1 rounded-sm"
+            >
+              <Bot size={10} aria-hidden="true" />
+              ASSIST
+            </button>
             <a
               href="https://app.simplicitycollect.com/Login.aspx"
               target="_blank" rel="noopener"
@@ -481,6 +500,12 @@ export function Shell({ children }: { children: ReactNode }) {
               className="block text-center text-lg font-medium border border-ink bg-ink text-paper px-6 py-4 rounded-sm">
               Client Portal
             </a>
+            <button
+              onClick={() => { setMobileMenu(false); setAssistOpen(true); }}
+              className="flex items-center justify-center gap-2 border border-rule text-slate px-6 py-4 rounded-sm text-sm font-mono"
+            >
+              <Bot size={14} aria-hidden="true" /> ARG Assist
+            </button>
             <button
               onClick={() => { setMobileMenu(false); openPalette(); }}
               className="flex items-center justify-center gap-2 border border-rule text-slate px-6 py-4 rounded-sm text-sm font-mono"
@@ -572,6 +597,9 @@ export function Shell({ children }: { children: ReactNode }) {
       {paletteOpen && (
         <CommandPalette onClose={closePalette} navigate={navigate} animated={paletteAnimated} />
       )}
+
+      {/* ── ARG Assist sheet ────────────────────────── */}
+      <ArgAssist open={assistOpen} onClose={() => setAssistOpen(false)} />
 
       {/* ── Global ambient layers (behind content, pointer-events-none) ── */}
       <LedgerDust />
