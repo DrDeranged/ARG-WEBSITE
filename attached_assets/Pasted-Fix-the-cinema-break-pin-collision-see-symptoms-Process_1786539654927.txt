@@ -1,0 +1,45 @@
+Fix the cinema-break pin collision (see symptoms: Process section
+text overlapping the pinned bw-skyline section, file chip covering
+step labels, section re-appearing after scrolling past).
+
+1. OPAQUE STACKING CONTRACT — every homepage section must be an
+   opaque, isolated layer:
+   a. Every section gets an explicit background (bg-paper, bg-mist,
+      or bg-ink — none transparent) and CSS isolation: isolate.
+   b. The cinema-break section's pinned element must be the ENTIRE
+      section wrapper (video + overlay + content together), never
+      an inner div — pinning an inner element while the bg sits
+      outside is what lets neighbors bleed through.
+   c. While pinned, the cinema section gets z-index 10; all
+      non-pinned sections z-index 1. Set/unset via the
+      ScrollTrigger's onToggle.
+   d. The cinema section's base layer is solid bg-ink UNDER the
+      video, so even before the video paints nothing shows through.
+2. PIN GEOMETRY:
+   a. pinSpacing: true (verify the spacer is actually created —
+      inspect for .pin-spacer in the DOM), anticipatePin: 1.
+   b. Lock the cinema section's height to exactly 100vh with the
+      pull-line content absolutely centered — a fixed-height pin
+      cannot be corrupted by late media loads.
+   c. The pin's scrub timeline (pull-line word reveal + tiles)
+      lasts end: '+=120%'. After unpinning, the section must
+      scroll away normally — test scrolling down past it AND back
+      up through it 3 times: zero re-appearances, zero jumps.
+3. REFRESH CORRECTNESS: ScrollTrigger.refresh() must fire after
+   the bw-skyline video's loadeddata (it's inside a pin — its
+   load previously shifted trigger math). With the fixed 100vh
+   height from 2b this becomes belt-and-suspenders, but keep it.
+4. PROCESS SECTION CHIP FIX: the file chip currently overlaps
+   step labels and the ✓ COMPLETE badges. Give the chip a
+   dedicated slot: it renders INSIDE each step's row, left of the
+   title in its own fixed-width column — never absolutely
+   positioned over text. Status badge sits right-aligned in the
+   same row. Verify at 1440px and 375px that no element in the
+   process section overlaps any other.
+5. FULL-PAGE REGRESSION SWEEP: with the stacking contract in
+   place, scroll the entire homepage down and back up at slow,
+   normal, and fast speeds — report any section boundary where
+   content from two sections is simultaneously visible in a
+   broken way (crossfades through the ink bands are fine; text
+   through text is not).
+Commit as "Fix cinema pin stacking + process chip layout".

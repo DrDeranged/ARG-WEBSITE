@@ -272,7 +272,7 @@ function WhyArgSection() {
   }, [reducedMotion, ready]);
 
   return (
-    <section ref={sectionRef} data-folio-n={2} className="relative bg-mist py-24 md:py-32 border-b border-rule">
+    <section ref={sectionRef} data-folio-n={2} className="relative isolate bg-mist py-24 md:py-32 border-b border-rule">
       <SectionFolio n={2} />
 
       <div className="max-w-6xl mx-auto px-6 md:px-8">
@@ -352,8 +352,7 @@ function ProcessSection() {
   const { reducedMotion, ready } = useMotion();
   const sectionRef   = useRef<HTMLElement>(null);
   const timelineRef  = useRef<HTMLDivElement>(null);
-  const chipRef      = useRef<HTMLDivElement>(null);
-  const chipLabelRef = useRef<HTMLSpanElement>(null);
+  const stepChipRefs = useRef<(HTMLDivElement | null)[]>([]);
   const ruleInkRef   = useRef<HTMLDivElement>(null);
   const stepRefs     = useRef<(HTMLDivElement | null)[]>([]);
   const dotRefs      = useRef<(HTMLDivElement | null)[]>([]);
@@ -408,7 +407,9 @@ function ProcessSection() {
             }
             const status = CHIP_STATUSES[i];
             if (mobileChipRef.current)  mobileChipRef.current.textContent  = status;
-            if (chipLabelRef.current)   chipLabelRef.current.textContent   = status;
+            // Activate the inline step chip on desktop
+            const chip = stepChipRefs.current[i];
+            if (chip) gsap.to(chip, { opacity: 1, duration: 0.3, ease: 'power2.out' });
           },
         });
       });
@@ -417,7 +418,7 @@ function ProcessSection() {
   }, [reducedMotion, ready]);
 
   return (
-    <section ref={sectionRef} data-folio-n={3} id="process" className="relative bg-paper py-24 md:py-32 border-b border-rule scroll-m-20">
+    <section ref={sectionRef} data-folio-n={3} id="process" className="relative isolate bg-paper py-24 md:py-32 border-b border-rule scroll-m-20">
       <SectionFolio n={3} />
       <div className="max-w-6xl mx-auto px-6 md:px-8">
         <SectionRule />
@@ -447,27 +448,6 @@ function ProcessSection() {
               style={{ height: reducedMotion ? 'calc(100% - 1.5rem)' : '0px' }}
             />
 
-            {/* Desktop chip: absolutely positioned, travels on y-axis */}
-            {!reducedMotion && (
-              <div
-                ref={chipRef}
-                className="hidden lg:block absolute z-20"
-                style={{ left: '28px', top: '3px' }}
-                aria-hidden="true"
-              >
-                {/* Horizontal connector line back to rule */}
-                <div
-                  className="absolute bg-ink"
-                  style={{ left: '-17px', top: '50%', transform: 'translateY(-50%)', width: '17px', height: '1px' }}
-                />
-                <div className="flex items-center gap-2 bg-ink text-paper px-3 py-1.5 font-mono text-[10px] leading-none whitespace-nowrap">
-                  <span className="text-paper/50">FILE №</span>
-                  <span className="font-semibold tracking-wider">2026-0847</span>
-                  <span className="w-[1px] h-3 bg-paper/20 mx-0.5" />
-                  <span ref={chipLabelRef} className="text-recovered tracking-wide">{CHIP_STATUSES[0]}</span>
-                </div>
-              </div>
-            )}
 
             {PROCESS_STEPS.map((p, i) => (
               <div
@@ -500,17 +480,30 @@ function ProcessSection() {
                   className="flex-1"
                   style={reducedMotion ? {} : { opacity: 0, transform: 'translateY(10px)' }}
                 >
-                  <div className="flex items-baseline gap-3 mb-2 flex-wrap">
+                  {/* Row header: title + ✓ badge right-aligned */}
+                  <div className="flex items-start justify-between gap-4 mb-2">
                     <h3 className="text-xl font-serif text-ink">{p.title}</h3>
                     {i < 2 && (
                       <span
                         ref={el => { checkRefs.current[i] = el; }}
-                        className="font-mono text-xs text-recovered font-semibold"
+                        className="font-mono text-xs text-recovered font-semibold whitespace-nowrap mt-1 flex-shrink-0"
                         style={reducedMotion ? {} : { opacity: 0, transition: 'opacity 0.35s ease' }}
                       >
                         ✓ COMPLETE
                       </span>
                     )}
+                  </div>
+                  {/* Inline chip — fixed-width slot, never overlaps text */}
+                  <div
+                    ref={el => { stepChipRefs.current[i] = el; }}
+                    className="hidden lg:inline-flex items-center gap-2 border border-rule bg-mist px-2.5 py-1 font-mono text-[9px] whitespace-nowrap mb-3"
+                    style={reducedMotion ? {} : { opacity: 0 }}
+                    aria-hidden="true"
+                  >
+                    <span className="text-slate/50">FILE №</span>
+                    <span className="font-semibold tracking-wider text-ink">2026-0847</span>
+                    <span className="w-[1px] h-2.5 bg-rule mx-0.5" />
+                    <span className="text-recovered tracking-wide">{CHIP_STATUSES[i]}</span>
                   </div>
                   <p className="text-slate leading-relaxed max-w-prose">{p.desc}</p>
                 </div>
@@ -686,7 +679,7 @@ function RecoveryEstimator() {
           aria-hidden="true"
         />
       )}
-      <section ref={sectionRef} data-folio-n={4} className="relative bg-mist ledger-grid py-24 md:py-32 border-b border-rule" style={reducedMotion ? {} : { opacity: 0 }}>
+      <section ref={sectionRef} data-folio-n={4} className="relative isolate bg-mist ledger-grid py-24 md:py-32 border-b border-rule" style={reducedMotion ? {} : { opacity: 0 }}>
         <SectionFolio n={4} />
         <div className="max-w-6xl mx-auto px-6 md:px-8">
           <SectionRule />
@@ -806,6 +799,12 @@ function IndustriesSection() {
 
   useLayoutEffect(() => {
     if (reducedMotion || !ready) return;
+
+    // Belt-and-suspenders: refresh ST after the cinema video loads so
+    // pin math is correct even if the video shifts layout.
+    const onVideoReady = () => ScrollTrigger.refresh();
+    window.addEventListener('arg:video-ready', onVideoReady, { once: true });
+
     const ctx = gsap.context(() => {
       const isMobile = window.innerWidth < 1024;
       const words = wordRefs.current.filter(Boolean) as HTMLSpanElement[];
@@ -828,22 +827,33 @@ function IndustriesSection() {
         return;
       }
 
-      // Desktop: pin 140vh — words reveal 0→0.65, panel rises 0.58→1.0
+      // Desktop: pin 120vh cinema — words reveal 0→0.65, panel fades 0.58→1.0
       gsap.set(words, { opacity: 0.12 });
-      if (panelRef.current) gsap.set(panelRef.current, { opacity: 0, y: 40 });
+      if (panelRef.current) gsap.set(panelRef.current, { opacity: 0 });
 
-      // Cinema pin #2 — wired through director
+      // Cinema pin #2 — 120vh, onToggle manages z-index so no section bleeds through
       const tl = createCinema(sectionRef.current, {
-          end: '+=140%',
-          onEnter: () => {
-            if (sectionRef.current) sectionRef.current.style.willChange = 'transform';
-          },
-          onLeave: () => {
-            if (sectionRef.current) sectionRef.current.style.willChange = '';
-          },
-          onLeaveBack: () => {
-            if (sectionRef.current) sectionRef.current.style.willChange = '';
-          },
+        end: '+=120%',
+        onToggle: (self) => {
+          if (sectionRef.current) {
+            sectionRef.current.style.zIndex = self.isActive ? '10' : '1';
+          }
+        },
+        onEnter: () => {
+          if (sectionRef.current) sectionRef.current.style.willChange = 'transform';
+        },
+        onLeave: () => {
+          if (sectionRef.current) {
+            sectionRef.current.style.willChange = '';
+            sectionRef.current.style.zIndex = '1';
+          }
+        },
+        onLeaveBack: () => {
+          if (sectionRef.current) {
+            sectionRef.current.style.willChange = '';
+            sectionRef.current.style.zIndex = '1';
+          }
+        },
       });
 
       tl.to({}, { duration: 1 }); // anchor total to 1.0s
@@ -853,20 +863,35 @@ function IndustriesSection() {
         tl.to(word, { opacity: 1, duration: 0.012, ease: 'none' }, (i / words.length) * 0.65);
       });
 
-      // Industry panel rises across last 40% of scrub
+      // Industry panel fades in at 0.58
       if (panelRef.current) {
-        tl.to(panelRef.current, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.35 }, 0.58);
+        tl.to(panelRef.current, { opacity: 1, ease: 'power2.out', duration: 0.35 }, 0.58);
       }
     }, sectionRef);
-    return () => ctx.revert();
+
+    return () => {
+      window.removeEventListener('arg:video-ready', onVideoReady);
+      ctx.revert();
+    };
   }, [reducedMotion, ready]);
 
   return (
-    <section ref={sectionRef} data-folio-n={5} className="relative overflow-hidden">
+    /* Opaque, isolated stacking layer — height locked to 100vh so pin math
+       is stable regardless of media load timing. bg-ink sits under the video
+       so nothing shows through before the first frame paints. */
+    <section
+      ref={sectionRef}
+      data-folio-n={5}
+      className="relative bg-ink isolate overflow-hidden"
+      style={{ height: '100vh' }}
+    >
       <SectionFolio n={5} />
 
-      {/* bw-skyline cinema background — overlay 0.55 */}
-      <div className="absolute inset-0 z-0">
+      {/* Solid ink base — absolute below video, so neighbours never bleed through */}
+      <div className="absolute inset-0 z-0 bg-ink" />
+
+      {/* bw-skyline cinema background */}
+      <div className="absolute inset-0 z-[1]">
         <AmbientVideo
           mp4="/videos/bw-skyline.mp4"
           webm="/videos/bw-skyline.webm"
@@ -878,9 +903,9 @@ function IndustriesSection() {
         />
       </div>
 
-      {/* Pull-quote centrepiece — word-by-word over the film */}
-      <div className="relative z-10 min-h-screen flex flex-col justify-center px-6 md:px-8 py-32 md:py-40">
-        <div className="max-w-5xl mx-auto w-full">
+      {/* Pull-quote centrepiece — absolutely centred within the locked 100vh */}
+      <div className="absolute inset-0 z-10 flex flex-col justify-center px-6 md:px-8">
+        <div className="max-w-5xl mx-auto w-full pb-28 md:pb-32">
           <p className="font-mono text-paper/50 tracking-widest text-xs font-semibold mb-8 uppercase">
             Trusted Partners
           </p>
@@ -906,17 +931,17 @@ function IndustriesSection() {
         </div>
       </div>
 
-      {/* Industry tiles panel — translucent paper/95, rises over the film */}
+      {/* Industry tiles panel — anchored to bottom of the 100vh section */}
       <div
         ref={panelRef}
-        className="relative z-10 bg-paper/95 border-t border-rule py-14 md:py-16"
-        style={reducedMotion ? {} : { opacity: 0, transform: 'translateY(40px)' }}
+        className="absolute bottom-0 left-0 right-0 z-10 bg-paper border-t border-rule py-8 md:py-10"
+        style={reducedMotion ? {} : { opacity: 0 }}
       >
         <div className="max-w-6xl mx-auto px-6 md:px-8">
-          <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-8 uppercase">
+          <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-5 uppercase">
             Industries we serve
           </p>
-          <ul ref={listRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 font-mono text-sm text-slate">
+          <ul ref={listRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 font-mono text-sm text-slate">
             {INDUSTRIES.map((industry) => (
               <li key={industry} className="flex items-center gap-4">
                 <span className="w-4 h-[1px] bg-recovered block flex-shrink-0" />
@@ -937,7 +962,7 @@ function IndustriesSection() {
 ───────────────────────────────────────────────────────── */
 function TrustStrip() {
   return (
-    <section className="relative bg-ink overflow-hidden py-12 md:py-16 border-b border-ink/20">
+    <section className="relative isolate bg-ink overflow-hidden py-12 md:py-16 border-b border-ink/20">
       {/* office-floor: barely-there ambient beneath the ink */}
       <div className="absolute inset-0 z-0">
         <AmbientVideo
@@ -1042,7 +1067,7 @@ function GivingBackSection() {
   }, [reducedMotion, ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <section ref={sectionRef} data-folio-n={6} className="relative bg-ink text-paper py-24 md:py-32 border-b border-ink">
+    <section ref={sectionRef} data-folio-n={6} className="relative isolate bg-ink text-paper py-24 md:py-32 border-b border-ink">
       <SectionFolio n={6} />
       <div className="max-w-6xl mx-auto px-6 md:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -1213,7 +1238,7 @@ function ClosingCTA() {
   }, [reducedMotion, ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <section ref={sectionRef} data-folio-n={7} className="relative bg-ink text-paper py-24 md:py-32 overflow-hidden">
+    <section ref={sectionRef} data-folio-n={7} className="relative isolate bg-ink text-paper py-24 md:py-32 overflow-hidden">
       {/* dusk-skyline ambient video — barely-there motion behind the ink band */}
       <div className="absolute inset-0 z-0">
         <AmbientVideo
@@ -1482,7 +1507,7 @@ function HeroSection() {
     <section
       ref={sectionRef}
       data-folio-n={1}
-      className="relative bg-paper border-b border-rule overflow-hidden md:flex md:items-center hero-height"
+      className="relative isolate bg-paper border-b border-rule overflow-hidden md:flex md:items-center hero-height"
     >
       {/* hero-film: subtle ambient motion behind paper content */}
       {!reducedMotion && (
@@ -1723,7 +1748,7 @@ export default function HomePage() {
       <GivingBackSection />
 
       {/* BLOG TEASER */}
-      <section className="bg-mist py-24 md:py-32 border-b border-rule">
+      <section className="relative isolate bg-mist py-24 md:py-32 border-b border-rule">
         <div className="max-w-6xl mx-auto px-6 md:px-8">
           <Reveal>
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
