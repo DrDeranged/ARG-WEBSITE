@@ -11,4 +11,4 @@ export type { PinnedSceneOpts } from './usePinnedScene';
 export { useSplitLines } from './useSplitLines';
 
 // V2 director — single source of truth for homepage ScrollTrigger creation
-export { createReveal, createPinScrub, createCinema, SCENE_DEFAULTS } from './director';
+export { createReveal, createPinScrub, createCinema, safeRefresh, SCENE_DEFAULTS } from './director';

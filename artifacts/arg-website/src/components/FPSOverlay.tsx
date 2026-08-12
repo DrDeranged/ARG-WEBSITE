@@ -25,6 +25,25 @@ export function FPSOverlay() {
   const frameRef  = useRef<number | null>(null);
   const timesRef  = useRef<number[]>([]);
 
+  // One-shot duplicate trigger ID assertion — fires 2s after mount so all
+  // sections' useLayoutEffects have had time to create their ScrollTriggers.
+  useEffect(() => {
+    if (!active) return;
+    const timer = setTimeout(() => {
+      const triggers = ScrollTrigger.getAll();
+      const ids = triggers
+        .map(t => t.vars.id as string | undefined)
+        .filter((id): id is string => Boolean(id));
+      const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
+      console.log(
+        `[debugfps] ST triggers: ${triggers.length}, named: ${ids.length}` +
+        (dupes.length ? `, ⚠️ DUPES: ${dupes.join(', ')}` : ', ✓ no duplicates'),
+      );
+      if (dupes.length) console.error('[debugfps] Duplicate trigger IDs:', dupes);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [active]);
+
   useEffect(() => {
     if (!active) return;
 

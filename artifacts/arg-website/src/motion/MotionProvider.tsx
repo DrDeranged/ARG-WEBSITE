@@ -6,8 +6,8 @@
  *   have passed, whichever comes first). Until then the page uses native
  *   scroll and all content is visible via CSS defaults — no GSAP sets run.
  * • After `ready`: creates Lenis, syncs it to GSAP ticker, does a single
- *   ScrollTrigger.refresh(), then wires ongoing arg:video-ready and
- *   arg:route-change refresh listeners.
+ *   ScrollTrigger.refresh(), then wires a debounced resize safeRefresh and
+ *   an arg:route-change refresh listener.
  * • Exposes { reducedMotion, lenis, ready } via useMotion().
  * • prefers-reduced-motion: Lenis is NOT created, ready fires immediately,
  *   every timeline snaps to its end state.
@@ -22,6 +22,7 @@ import {
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
+import { safeRefresh } from './director';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -133,9 +134,15 @@ export function MotionProvider({ children }: { children: ReactNode }) {
     // Single refresh after all scenes have mounted with the ready flag
     ScrollTrigger.refresh();
 
-    // Re-refresh after any subsequent video load (layout may shift)
-    const onVideoReady = () => ScrollTrigger.refresh();
-    window.addEventListener('arg:video-ready', onVideoReady);
+    // Re-refresh on resize — debounced 200ms, position-preserving via safeRefresh.
+    // Videos and AmbientVideo wrappers have fixed heights so video-load no
+    // longer needs a refresh; only resize and route-change do.
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+    const onResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => safeRefresh(), 200);
+    };
+    window.addEventListener('resize', onResize);
 
     // Re-refresh after route changes (Shell dispatches arg:route-change)
     const onRouteChange = () => {
@@ -147,7 +154,8 @@ export function MotionProvider({ children }: { children: ReactNode }) {
       gsap.ticker.remove(tick);
       l.destroy();
       setLenis(null);
-      window.removeEventListener('arg:video-ready', onVideoReady);
+      if (resizeTimer) clearTimeout(resizeTimer);
+      window.removeEventListener('resize', onResize);
       window.removeEventListener('arg:route-change', onRouteChange);
     };
   }, [ready, reducedMotion]);

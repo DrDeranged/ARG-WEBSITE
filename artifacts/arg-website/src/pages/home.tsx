@@ -6,7 +6,6 @@ import { Link } from 'wouter';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Helmet } from 'react-helmet-async';
 import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useMotion, useSplitLines, createReveal, createPinScrub, createCinema } from '@/motion';
 
 /* ─────────────────────────────────────────────────────────
@@ -258,6 +257,7 @@ function WhyArgSection() {
       WHY_FEATURES.forEach((_, i) => {
         const row = ruleRefs.current[i]?.parentElement?.parentElement;
         createReveal(row ?? null, {
+          id: `why-reveal-${i}`,
           onEnter: () => {
             gsap.timeline()
               .to(ruleRefs.current[i],  { scaleX: 1, duration: 0.4, ease: 'power2.out' })
@@ -386,6 +386,7 @@ function ProcessSection() {
 
       // Section enter: draw rule + slide image in
       createReveal(sectionRef.current, {
+        id: 'process-section',
         start: 'top 70%',
         onEnter: () => {
           gsap.to(ruleInkRef.current, { scaleY: 1, duration: 1.2, ease: 'power2.inOut' });
@@ -397,6 +398,7 @@ function ProcessSection() {
       PROCESS_STEPS.forEach((_, i) => {
         const el = stepRefs.current[i];
         createReveal(el ?? null, {
+          id: `process-step-${i}`,
           start: 'top 78%',
           onEnter: () => {
             if (dotRefs.current[i]) dotRefs.current[i]!.style.backgroundColor = 'hsl(212 50% 12.5%)';
@@ -639,6 +641,7 @@ function RecoveryEstimator() {
     const ctx = gsap.context(() => {
       gsap.set(sectionRef.current, { opacity: 0, y: 24 });
       createReveal(sectionRef.current, {
+        id: 'estimator-reveal',
         start: 'top 85%',
         onEnter: () => {
           gsap.to(sectionRef.current, { opacity: 1, y: 0, duration: 0.65, ease: 'power2.out' });
@@ -800,11 +803,6 @@ function IndustriesSection() {
   useLayoutEffect(() => {
     if (reducedMotion || !ready) return;
 
-    // Belt-and-suspenders: refresh ST after the cinema video loads so
-    // pin math is correct even if the video shifts layout.
-    const onVideoReady = () => ScrollTrigger.refresh();
-    window.addEventListener('arg:video-ready', onVideoReady, { once: true });
-
     const ctx = gsap.context(() => {
       const isMobile = window.innerWidth < 1024;
       const words = wordRefs.current.filter(Boolean) as HTMLSpanElement[];
@@ -814,12 +812,14 @@ function IndustriesSection() {
         if (quoteRef.current) {
           gsap.set(quoteRef.current, { opacity: 0, y: 12 });
           createReveal(quoteRef.current, {
+            id: 'industries-quote',
             onEnter: () => gsap.to(quoteRef.current, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }),
           });
         }
         if (panelRef.current) {
           gsap.set(panelRef.current, { opacity: 0, y: 24 });
           createReveal(panelRef.current, {
+            id: 'industries-panel',
             start: 'top 80%',
             onEnter: () => gsap.to(panelRef.current, { opacity: 1, y: 0, duration: 0.65, ease: 'power2.out' }),
           });
@@ -833,6 +833,7 @@ function IndustriesSection() {
 
       // Cinema pin #2 — 120vh, onToggle manages z-index so no section bleeds through
       const tl = createCinema(sectionRef.current, {
+        id: 'cinema-pin',
         end: '+=120%',
         onToggle: (self) => {
           if (sectionRef.current) {
@@ -869,10 +870,7 @@ function IndustriesSection() {
       }
     }, sectionRef);
 
-    return () => {
-      window.removeEventListener('arg:video-ready', onVideoReady);
-      ctx.revert();
-    };
+    return () => { ctx.revert(); };
   }, [reducedMotion, ready]);
 
   return (
@@ -1025,6 +1023,7 @@ function GivingBackSection() {
       if (lineEls.length) {
         gsap.set(lineEls, { y: '105%', opacity: 0 });
         createReveal(headlineRef.current, {
+          id: 'giving-headline',
           onEnter: () => {
             gsap.to(lineEls, {
               y: '0%', opacity: 1,
@@ -1040,6 +1039,7 @@ function GivingBackSection() {
       if (copyRef.current) {
         gsap.set(copyRef.current, { opacity: 0, y: 14 });
         createReveal(copyRef.current, {
+          id: 'giving-copy',
           start: 'top 80%',
           onEnter: () => gsap.to(copyRef.current, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }),
         });
@@ -1055,6 +1055,7 @@ function GivingBackSection() {
           ease: 'power1.inOut',
           delay: i * 0.15,
           scrollTrigger: {
+            id: `giving-photo-${i}`,
             trigger: sectionRef.current,
             start: 'top center',
             end: 'center center',
@@ -1210,6 +1211,7 @@ function ClosingCTA() {
       if (underlineRef.current) gsap.set(underlineRef.current, { scaleX: 0, transformOrigin: 'left' });
 
       createReveal(sectionRef.current, {
+        id: 'closing-cta',
         start: 'top 75%',
         onEnter: () => {
           const tl = gsap.timeline();
@@ -1411,6 +1413,7 @@ function HeroSection() {
     let scrubTl: gsap.core.Timeline | null = null;
     const buildScrubTl = () => {
       scrubTl = createPinScrub(sectionRef.current, {
+        id: 'hero-pin',
         end: '+=150%',
         onEnter:     () => { if (sectionRef.current) sectionRef.current.style.willChange = 'transform'; },
         onLeave:     () => { if (sectionRef.current) sectionRef.current.style.willChange = ''; },
@@ -1435,11 +1438,15 @@ function HeroSection() {
     if (!isMobile && window.scrollY > 200) {
       settleAll();
       buildScrubTl();
-      ScrollTrigger.refresh();
       return () => { scrubTl?.kill(); };
     }
 
     // ── Normal path: hidden → 1.8s entrance → (desktop) pin ──────────────
+    // Create pin at init — BEFORE the entrance — so document height is fixed
+    // before the user can scroll. Lazy FROM capture in GSAP means the scrub
+    // reads the post-entrance values when the user first scrolls past the hero,
+    // so entrance and scrub compose cleanly without fighting each other.
+    if (!isMobile) buildScrubTl();
     if (lineEls.length)         gsap.set(lineEls, { y: 40, opacity: 0 });
     if (eyebrowRef.current)     gsap.set(eyebrowRef.current, { opacity: 0 });
     if (trioOuterRef.current)   gsap.set(trioOuterRef.current, { opacity: 0 });
@@ -1449,13 +1456,7 @@ function HeroSection() {
     if (mobileCtasRef.current)  gsap.set(mobileCtasRef.current, { opacity: 0, y: 6 });
     if (heroFilmRef.current)    gsap.set(heroFilmRef.current, { opacity: 0 });
 
-    const entrance = gsap.timeline({
-      onComplete: !isMobile ? () => {
-        if (!sectionRef.current) return;
-        buildScrubTl();
-        ScrollTrigger.refresh();
-      } : undefined,
-    });
+    const entrance = gsap.timeline();
 
     // Beat 1 — film fades in (0 → 0.6s)
     if (heroFilmRef.current) {
