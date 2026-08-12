@@ -588,7 +588,7 @@ export default function ContactPage() {
         <div className="absolute inset-0 z-0">
           <AmbientVideo
             mp4="/videos/hands-ledger.mp4"
-            poster="/videos/hands-ledger.jpg"
+            poster="/videos/hands-ledger-poster.jpg"
             overlayOpacity={0.6}
            overlayVariant="gradient"
             aspectClassName=""

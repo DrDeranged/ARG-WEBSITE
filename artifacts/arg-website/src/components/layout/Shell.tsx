@@ -357,6 +357,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const [location, navigate] = useLocation();
   const isActive = (href: string) =>
     href === '/' ? (location === '/' || location === '') : location.startsWith(href.replace(/\/$/, ''));
+  const isDarkHero = (location === '/' || location === '') && !isScrolled;
 
   useEffect(() => {
     const h = () => setIsScrolled(window.scrollY > 20);
@@ -480,12 +481,12 @@ export function Shell({ children }: { children: ReactNode }) {
       <header
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
         className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-          isScrolled ? 'bg-paper/95 backdrop-blur-md border-b border-rule py-3' : 'bg-paper py-4 md:py-5'
+          isScrolled ? 'bg-paper/95 backdrop-blur-md border-b border-rule py-3' : isDarkHero ? 'bg-transparent py-4 md:py-5' : 'bg-paper py-4 md:py-5'
         }`}
       >
         <div className="max-w-6xl mx-auto px-6 md:px-8 flex items-center justify-between gap-6">
           <Link href="/" className="flex items-center gap-3 relative z-50 flex-shrink-0">
-            <img src="/images/logo-dark.png" alt="Advanced Recovery Group" className="h-8 w-auto object-contain" />
+            <img src={isDarkHero ? '/images/logo-light.png' : '/images/logo-dark.png'} alt="Advanced Recovery Group" className="h-8 w-auto object-contain" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-6" aria-label="Main navigation">
@@ -494,7 +495,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 <Link
                   key={href}
                   href={href}
-                  className={`link-draw text-sm font-medium transition-colors ${isActive(href) ? 'text-recovered' : 'text-slate hover:text-recovered'}`}
+                  className={`link-draw text-sm font-medium transition-colors ${isActive(href) ? 'text-recovered' : isDarkHero ? 'text-paper/80 hover:text-paper' : 'text-slate hover:text-recovered'}`}
                 >
                   {label}
                 </Link>
@@ -507,17 +508,17 @@ export function Shell({ children }: { children: ReactNode }) {
             <button
               onClick={openPalette}
               aria-label="Open command palette (⌘K)"
-              className="flex items-center gap-1.5 text-slate/60 hover:text-ink transition-colors"
+              className={`flex items-center gap-1.5 transition-colors ${isDarkHero ? 'text-paper/60 hover:text-paper' : 'text-slate/60 hover:text-ink'}`}
             >
               <Search size={14} aria-hidden="true" />
-              <kbd className="font-mono text-xs border border-rule px-1.5 py-0.5 rounded-sm text-slate/50 hover:text-ink transition-colors">⌘K</kbd>
+              <kbd className={`font-mono text-xs border px-1.5 py-0.5 rounded-sm transition-colors ${isDarkHero ? 'border-paper/30 text-paper/50' : 'border-rule text-slate/50 hover:text-ink'}`}>⌘K</kbd>
             </button>
             {/* ASSIST chip — only when key is configured */}
             {assistConfigured === true && (
               <button
                 onClick={() => setAssistOpen(true)}
                 aria-label="Open ARG Assist AI concierge"
-                className="flex items-center gap-1.5 font-mono text-[10px] tracking-widest text-slate/50 hover:text-recovered transition-colors border border-rule px-2.5 py-1 rounded-sm"
+                className={`flex items-center gap-1.5 font-mono text-[10px] tracking-widest transition-colors border px-2.5 py-1 rounded-sm ${isDarkHero ? 'border-paper/30 text-paper/60 hover:text-paper' : 'border-rule text-slate/50 hover:text-recovered'}`}
               >
                 <Bot size={10} aria-hidden="true" />
                 ASSIST
@@ -526,14 +527,14 @@ export function Shell({ children }: { children: ReactNode }) {
             <a
               href="https://app.simplicitycollect.com/Login.aspx"
               target="_blank" rel="noopener"
-              className="text-sm font-medium border border-ink text-ink px-5 py-2 hover:bg-ink hover:text-paper transition-colors rounded-sm"
+              className={`text-sm font-medium border px-5 py-2 transition-colors rounded-sm ${isDarkHero ? 'border-paper/60 text-paper hover:bg-paper hover:text-ink' : 'border-ink text-ink hover:bg-ink hover:text-paper'}`}
             >
               Client Portal
             </a>
           </div>
 
           <button
-            className="md:hidden relative z-50 text-ink p-2 -mr-2"
+            className={`md:hidden relative z-50 p-2 -mr-2 ${isDarkHero ? 'text-paper' : 'text-ink'}`}
             onClick={() => setMobileMenu(v => !v)}
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileMenuOpen}

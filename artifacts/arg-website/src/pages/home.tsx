@@ -1507,32 +1507,26 @@ function HeroSection() {
     <section
       ref={sectionRef}
       data-folio-n={1}
-      className="relative isolate bg-paper border-b border-rule overflow-hidden md:flex md:items-center hero-height"
+      className="relative isolate bg-ink border-b border-ink/20 overflow-hidden md:flex md:items-center hero-height"
     >
-      {/* hero-film: subtle ambient motion behind paper content */}
+      {/* hero-film: AmbientVideo — observer-driven play/pause, poster fallback, save-data */}
       {!reducedMotion && (
         <div ref={heroFilmRef} className="absolute inset-0 z-0" aria-hidden="true">
-          <video
-            muted
-            autoPlay
-            loop
-            playsInline
-            preload="none"
-            poster="/videos/hero-film.jpg"
-            className="absolute inset-0 w-full h-full object-cover"
-            ref={el => { if (el) el.muted = true; }}
-            onLoadedData={() => window.dispatchEvent(new CustomEvent('arg:video-ready'))}
-          >
-            <source src="/videos/hero-film.webm" type="video/webm" />
-            <source src="/videos/hero-film.mp4" type="video/mp4" />
-          </video>
-          {/* Paper overlay: gradient vignette — full at edges, film glows through centre */}
+          <AmbientVideo
+            mp4="/videos/hero-film.mp4"
+            webm="/videos/hero-film.webm"
+            poster="/videos/hero-film-poster.jpg"
+            overlayOpacity={0}
+            aspectClassName=""
+            className="w-full h-full"
+          />
+          {/* Ink gradient overlay — GSAP deepens opacity during hero scrub */}
           <div
             ref={heroOverlayRef}
             className="absolute inset-0"
             style={{
-              background: 'linear-gradient(to bottom, rgba(249,247,242,1) 0%, rgba(249,247,242,1) 8%, rgba(249,247,242,0.76) 50%, rgba(249,247,242,1) 92%, rgba(249,247,242,1) 100%)',
-              opacity: 0.85,
+              background: 'linear-gradient(to bottom, rgba(16,31,48,0.52) 0%, rgba(16,31,48,0.52) 8%, rgba(16,31,48,0.40) 50%, rgba(16,31,48,0.52) 92%, rgba(16,31,48,0.52) 100%)',
+              opacity: 0.88,
             }}
           />
         </div>
@@ -1547,7 +1541,7 @@ function HeroSection() {
             style={{
               top: `${(i + 1) * BASELINE_GAP}px`,
               height: '1px',
-              backgroundColor: 'rgba(0,0,0,0.04)',
+              backgroundColor: 'rgba(255,255,255,0.06)',
             }}
           />
         ))}
@@ -1556,9 +1550,9 @@ function HeroSection() {
           style={{
             backgroundImage:
               'linear-gradient(to right,' +
-              ' transparent 25%, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.05) calc(25% + 1px), transparent calc(25% + 1px),' +
-              ' transparent 50%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.05) calc(50% + 1px), transparent calc(50% + 1px),' +
-              ' transparent 75%, rgba(0,0,0,0.05) 75%, rgba(0,0,0,0.05) calc(75% + 1px), transparent calc(75% + 1px))',
+              ' transparent 25%, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.06) calc(25% + 1px), transparent calc(25% + 1px),' +
+              ' transparent 50%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.06) calc(50% + 1px), transparent calc(50% + 1px),' +
+              ' transparent 75%, rgba(255,255,255,0.06) 75%, rgba(255,255,255,0.06) calc(75% + 1px), transparent calc(75% + 1px))',
           }}
         />
       </div>
@@ -1570,7 +1564,7 @@ function HeroSection() {
         aria-hidden="true"
         style={{ writingMode: 'vertical-rl' }}
       >
-        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-slate/25 select-none">
+        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-paper/20 select-none">
           ADVANCED RECOVERY GROUP — COMMERCIAL COLLECTIONS — FAIRFIELD NJ
         </span>
       </div>
@@ -1623,14 +1617,14 @@ function HeroSection() {
 
               <h1
                 ref={headlineRef}
-                className="text-hero font-serif text-ink tracking-tight mb-8"
+                className="text-hero font-serif text-paper tracking-tight mb-8"
               >
                 We recover what you&rsquo;re owed.
               </h1>
 
               <p
                 ref={subheadRef}
-                className="text-lg md:text-xl text-slate font-sans max-w-prose leading-relaxed"
+                className="text-lg md:text-xl text-paper/80 font-sans max-w-prose leading-relaxed"
               >
                 Advanced Recovery Group specializes exclusively in B2B debt recovery.
                 Operating on a strict contingency basis, we deploy professional, firm,
@@ -1641,19 +1635,19 @@ function HeroSection() {
                 <div className="flex flex-row gap-4 mb-5">
                   <Link
                     href="/contact-us/"
-                    className="bg-ink text-paper px-8 py-4 text-sm font-medium rounded-sm hover:bg-ink/90 transition-colors text-center inline-block"
+                    className="bg-paper text-ink px-8 py-4 text-sm font-medium rounded-sm hover:bg-paper/90 transition-colors text-center inline-block"
                   >
                     Get a Free Consultation
                   </Link>
                   <a
                     href="#process"
-                    className="link-draw border border-ink text-ink px-8 py-4 text-sm font-medium rounded-sm hover:bg-mist transition-colors text-center"
+                    className="border border-paper/50 text-paper px-8 py-4 text-sm font-medium rounded-sm hover:bg-paper/10 transition-colors text-center"
                   >
                     See How It Works
                   </a>
                 </div>
-                <div className="flex items-center gap-2 font-mono text-xs text-slate/55">
-                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${heroStatus.open ? 'bg-recovered' : 'bg-slate/30'}`} />
+                <div className="flex items-center gap-2 font-mono text-xs text-paper/60">
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${heroStatus.open ? 'bg-recovered' : 'bg-paper/30'}`} />
                   {heroStatus.label}
                 </div>
               </div>
@@ -1676,18 +1670,18 @@ function HeroSection() {
             <div ref={mobileCtasRef} className="lg:hidden flex flex-col gap-3">
               <Link
                 href="/contact-us/"
-                className="bg-ink text-paper px-8 py-4 text-sm font-medium rounded-sm hover:bg-ink/90 transition-colors text-center block w-full"
+                className="bg-paper text-ink px-8 py-4 text-sm font-medium rounded-sm hover:bg-paper/90 transition-colors text-center block w-full"
               >
                 Get a Free Consultation
               </Link>
               <a
                 href="#process"
-                className="link-draw border border-ink text-ink px-8 py-4 text-sm font-medium rounded-sm hover:bg-mist transition-colors text-center block w-full"
+                className="border border-paper/50 text-paper px-8 py-4 text-sm font-medium rounded-sm hover:bg-paper/10 transition-colors text-center block w-full"
               >
                 See How It Works
               </a>
-              <div className="flex items-center gap-2 font-mono text-xs text-slate/55 pt-1">
-                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${heroStatus.open ? 'bg-recovered' : 'bg-slate/30'}`} />
+              <div className="flex items-center gap-2 font-mono text-xs text-paper/60 pt-1">
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${heroStatus.open ? 'bg-recovered' : 'bg-paper/30'}`} />
                 {heroStatus.label}
               </div>
             </div>
@@ -1698,7 +1692,7 @@ function HeroSection() {
 
       <div
         ref={scrollCueRef}
-        className="absolute bottom-8 left-8 hidden md:flex items-center gap-2 font-mono text-[10px] text-slate/30 uppercase tracking-widest select-none pointer-events-none"
+        className="absolute bottom-8 left-8 hidden md:flex items-center gap-2 font-mono text-[10px] text-paper/30 uppercase tracking-widest select-none pointer-events-none"
         style={isMobile ? {
           opacity: scrollCueVisible && !reducedMotion ? 1 : 0,
           transition: 'opacity 400ms ease',
