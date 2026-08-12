@@ -1,0 +1,44 @@
+Fix the "section reverts back after scrolling past" bug — root
+cause: late-created pins change document height above the user's
+scroll position.
+
+1. CREATE ALL PINS AT INIT, NEVER LATER: the hero pin must be
+   created during the director's single init pass (along with
+   every other trigger), NOT after the entrance completes. The
+   entrance-vs-pin conflict is solved differently: the pin exists
+   from init, and the entrance timeline simply plays within the
+   pinned hero's first frame (scrub timeline's progress 0 state =
+   entrance's end state, so they compose instead of fight). The
+   "skip entrance if already scrolled" path stays, but it only
+   skips the entrance animation — it never creates or defers
+   layout.
+2. NO POST-INIT HEIGHT CHANGES, enforced: after the director's
+   init + single refresh, nothing may change document height:
+   a. Every AmbientVideo wrapper and cinema section already has
+      fixed aspect/height — audit every remaining media element,
+      dynamic section, and lazy component on the homepage for
+      unset dimensions and fix any found.
+   b. The video-loadeddata refresh listeners are now unnecessary
+      by design (heights are fixed) — REMOVE them. Refresh happens
+      exactly twice ever: at init, and on window resize
+      (debounced 200ms).
+   c. If any future refresh is unavoidable, it must preserve
+      position: capture the nearest section anchor's
+      getBoundingClientRect before, refresh, then restore scroll
+      so the same content stays under the viewport. Implement this
+      as the director's ONLY refresh method and route all
+      refreshes through it.
+3. DUPLICATE-TRIGGER ASSERTION: give every director-created
+   trigger an explicit id (hero-pin, cinema-pin, reveal-02, etc.);
+   at the end of init, assert no duplicate ids and log the total
+   trigger count under the ?debugfps flag. React StrictMode
+   double-invocation must not produce doubled triggers — verify
+   cleanup runs correctly (gsap.context revert on unmount).
+4. VERIFY THE EXACT REPRO: load the homepage and IMMEDIATELY
+   scroll fast to the cinema break before init could complete —
+   the section must not snap back or shift. Then scroll past it,
+   pause 3s, continue — no revert. Then bottom-to-top through it.
+   Then resize the window mid-page — position preserved. Report
+   the trigger count and min FPS from ?debugfps for the full run.
+Commit as "Fix pin height stability: all triggers at init, no
+post-init reflow".

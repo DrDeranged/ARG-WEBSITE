@@ -1,0 +1,44 @@
+Contact page motion pass — bring it to homepage-level flow.
+
+1. CINEMATIC HEADER BAND: the page header ("CONTACT — FAIRFIELD,
+   NJ" / "Let's talk." / subline / status) becomes a dark cinema
+   band matching the hero's language: office-floor video behind
+   (AmbientVideo: /videos/office-floor.mp4 + .webm + poster), ink
+   gradient overlay (0.55 edges → 0.45 middle), paper serif
+   headline, paper/80 subline, recovered eyebrow, paper status
+   line. Band height ~52vh desktop / auto mobile. Remove the
+   current ledger-grid backdrop from this page entirely (it's
+   rendering as stray full-width stripes through the header
+   whitespace — visible bug) and remove the dead vertical gap
+   between the status line and the grid below.
+2. ENTRANCE (once, on load, 1.2s total, overlapping beats): film
+   fades in → headline rises via the split-lines pattern → subline
+   + status fade. Reduced-motion: settled states.
+3. SCROLL REVEALS (register with the ScrollDirector, reveal type
+   only — no pins on this page): the two columns' blocks stagger in
+   as they enter; each direct-line row's top rule draws just before
+   its content fades; the WHAT HAPPENS NEXT rows draw sequentially
+   like entries being written (rule → number inks → text fades),
+   100ms apart.
+4. LOCALITY CARD (new, right column under What Happens Next): a
+   ledger-bordered card titled "THE OFFICE — FAIRFIELD, NJ" in
+   mono, containing an abstract minimal map mark: a 1px rule
+   crosshair grid with a pulsing recovered dot at center (pure
+   SVG/CSS, no map library, no external tiles), and beneath it a
+   LIVE line in mono driven by the office-status hook's clock:
+   "4:19 PM at our office — Open now" (or closed state), updating
+   each minute. Pulse respects reduced-motion (static dot).
+5. MICRO-MOTION CONSISTENCY: direct-line rows get the established
+   hover (recovered accent bar scaleY + 6px title shift) and the
+   desktop copy-toast on tel/mailto; the dog photo uses
+   EditorialImage's hover color behavior; the status dots pulse on
+   the same 2s interval as the assist tab.
+6. MOBILE: header band ~40vh with the film still playing
+   (poster on low-power per AmbientVideo), columns stack, locality
+   card full-width, all touch targets ≥44px. Verify no horizontal
+   scroll at 375px.
+7. Verify the closer band's hands-ledger video still plays and the
+   page's total video count playing simultaneously never exceeds
+   two (header + closer at extremes shouldn't overlap —
+   AmbientVideo's hysteresis handles it; confirm).
+Commit as "Contact page: cinematic header + motion pass".

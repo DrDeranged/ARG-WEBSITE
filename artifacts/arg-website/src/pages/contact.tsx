@@ -4,9 +4,12 @@ import { AmbientVideo } from '@/components/AmbientVideo';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { ChevronRight, ChevronDown } from 'lucide-react';
+import gsap from 'gsap';
+import { createReveal } from '@/motion/director';
+import { useMotion } from '@/motion/MotionProvider';
 import {
   Form,
   FormControl,
@@ -18,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-/* ── Office status (ET clock) ───────────────────────────── */
+/* ── Office status (ET clock) ───────────────────────────────────────── */
 type ActiveRow = 'weekday' | 'friday' | null;
 interface OfficeStatus { open: boolean; label: string; activeRow: ActiveRow; }
 
@@ -48,7 +51,20 @@ function useOfficeStatus() {
   return st;
 }
 
-/* ── FAQ ────────────────────────────────────────────────── */
+function useNowET() {
+  const fmt = () => {
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    return now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  };
+  const [t, setT] = useState(fmt);
+  useEffect(() => {
+    const id = setInterval(() => setT(fmt()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  return t;
+}
+
+/* ── FAQ ────────────────────────────────────────────────────────────── */
 const FAQ_ITEMS = [
   {
     q: "What does it cost?",
@@ -123,7 +139,7 @@ function FaqAccordion() {
   );
 }
 
-/* ── vCard download ─────────────────────────────────────── */
+/* ── vCard download ─────────────────────────────────────────────────── */
 function downloadVCard() {
   const vcf = [
     'BEGIN:VCARD',
@@ -150,14 +166,16 @@ function VCardRow() {
   return (
     <button
       onClick={downloadVCard}
-      className="group relative flex items-center justify-between w-full min-h-[72px] px-0 border-b border-rule transition-colors hover:bg-mist cursor-pointer"
+      className="group relative flex items-center justify-between w-full min-h-[44px] px-0 py-3 transition-colors hover:bg-mist cursor-pointer"
     >
       <span
         className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r-sm bg-recovered opacity-0 group-hover:opacity-100"
         style={{ transition: 'opacity 150ms ease' }}
         aria-hidden="true"
       />
-      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate select-none">Save Contact</span>
+      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate select-none transition-transform duration-200 group-hover:translate-x-[6px]">
+        Save Contact
+      </span>
       <span className="flex items-center gap-2 font-mono text-sm text-ink group-hover:text-recovered transition-colors tabular-nums">
         Save our contact ↓
       </span>
@@ -165,53 +183,54 @@ function VCardRow() {
   );
 }
 
-/* ── Form schema ────────────────────────────────────────── */
-const CATEGORIES = [
-  'MCA funder', 'Factor', 'Equipment lessor', 'Lender', 'Law firm', 'Other',
-] as const;
-const BALANCES = ['<$50k', '$50k–$250k', '$250k–$1M', '$1M+'] as const;
-
-const formSchema = z.object({
-  name:     z.string().min(2, 'Full name is required.'),
-  company:  z.string().min(2, 'Company name is required.'),
-  email:    z.string().email('Please enter a valid email address.'),
-  phone:    z.string().optional(),
-  category: z.enum(CATEGORIES, { required_error: 'Please select a category.' }),
-  balance:  z.string().optional(),
-  message:  z.string().min(10, 'Message must be at least 10 characters.').max(5000, 'Message cannot exceed 5000 characters.'),
-  website:  z.string().optional(),
-});
-type FormValues = z.infer<typeof formSchema>;
-type Status = 'idle' | 'submitting' | 'success' | 'error';
-
-const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') || '';
-
-/* ── Shared sub-components ──────────────────────────────── */
+/* ── ContactRow ─────────────────────────────────────────────────────── */
 function ContactRow({
-  label, value, href, type,
-}: { label: string; value: string; href?: string; type: 'phone' | 'email' | 'fax' }) {
+  label, value, href, type, noBorder = false,
+}: { label: string; value: string; href?: string; type: 'phone' | 'email' | 'fax'; noBorder?: boolean }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (!href || type === 'fax') return;
+    const isDesktop = typeof window !== 'undefined' &&
+      window.matchMedia('(pointer: fine)').matches;
+    if (isDesktop) {
+      e.preventDefault();
+      navigator.clipboard.writeText(value).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }).catch(() => {});
+    }
+  };
+
   const inner = (
-    <span className="group relative flex items-center justify-between min-h-[72px] px-0 border-b border-rule transition-colors hover:bg-mist cursor-pointer">
+    <span className={`group relative flex items-center justify-between min-h-[44px] px-0 py-3 ${noBorder ? '' : 'border-b border-rule'} transition-colors hover:bg-mist cursor-pointer`}>
       <span
         className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r-sm bg-recovered opacity-0 group-hover:opacity-100"
         style={{ transition: 'opacity 150ms ease' }}
         aria-hidden="true"
       />
-      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate select-none">{label}</span>
+      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate select-none transition-transform duration-200 group-hover:translate-x-[6px]">
+        {label}
+      </span>
       <span className="flex items-center gap-2">
-        <span className={`font-mono tabular-nums text-ink ${type === 'email' ? 'text-sm md:text-base break-all' : 'text-base md:text-lg'}`}>
-          {value}
-        </span>
-        {href && (
+        {copied ? (
+          <span className="font-mono text-sm text-recovered">Copied ✓</span>
+        ) : (
+          <span className={`font-mono tabular-nums text-ink ${type === 'email' ? 'text-sm md:text-base break-all' : 'text-base md:text-lg'}`}>
+            {value}
+          </span>
+        )}
+        {href && !copied && (
           <ChevronRight size={13} className="text-slate/30 group-hover:text-recovered flex-shrink-0" style={{ transition: 'color 150ms ease' }} aria-hidden="true" />
         )}
       </span>
     </span>
   );
   if (!href) return <div>{inner}</div>;
-  return <a href={href}>{inner}</a>;
+  return <a href={href} onClick={handleClick}>{inner}</a>;
 }
 
+/* ── HoursLedger ────────────────────────────────────────────────────── */
 function HoursLedger({ activeRow }: { activeRow: ActiveRow }) {
   const rows: { id: ActiveRow; label: string; time: string }[] = [
     { id: 'weekday', label: 'Monday – Thursday', time: '9AM – 5PM' },
@@ -238,33 +257,96 @@ function HoursLedger({ activeRow }: { activeRow: ActiveRow }) {
   );
 }
 
-function WhatHappensNext() {
-  const steps = [
-    { n: '01', text: 'We review your portfolio or file details' },
-    { n: '02', text: 'A specialist calls to scope strategy and terms' },
-    { n: '03', text: 'Placement goes live — recovery work begins' },
-  ];
+/* ── LocalityCard ───────────────────────────────────────────────────── */
+function LocalityCard({ status }: { status: OfficeStatus }) {
+  const nowET = useNowET();
   return (
-    <div>
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate mb-3">What Happens Next</p>
-      <div className="border border-rule rounded-sm overflow-hidden divide-y divide-rule">
-        {steps.map((s) => (
-          <div key={s.n} className="flex items-start gap-4 px-4 py-3">
-            <span className="font-mono text-[10px] text-slate/40 tabular-nums pt-0.5 flex-shrink-0">{s.n}</span>
-            <span className="font-mono text-xs text-ink leading-relaxed">{s.text}</span>
-          </div>
-        ))}
+    <div className="border border-rule rounded-sm overflow-hidden">
+      <div className="px-4 py-3 border-b border-rule">
+        <p className="font-mono text-[10px] uppercase tracking-widest text-slate">
+          The Office — Fairfield, NJ
+        </p>
+      </div>
+      {/* Abstract crosshair map mark — pure SVG/CSS, no external library */}
+      <div className="flex items-center justify-center bg-mist/30 py-6 px-4">
+        <svg
+          viewBox="0 0 160 100"
+          className="w-full max-w-[220px] h-auto text-ink"
+          aria-hidden="true"
+        >
+          {/* Background grid */}
+          <line x1="0" y1="25"  x2="160" y2="25"  stroke="currentColor" strokeOpacity="0.06" strokeWidth="0.5" />
+          <line x1="0" y1="50"  x2="160" y2="50"  stroke="currentColor" strokeOpacity="0.10" strokeWidth="0.5" />
+          <line x1="0" y1="75"  x2="160" y2="75"  stroke="currentColor" strokeOpacity="0.06" strokeWidth="0.5" />
+          <line x1="40"  y1="0" x2="40"  y2="100" stroke="currentColor" strokeOpacity="0.06" strokeWidth="0.5" />
+          <line x1="80"  y1="0" x2="80"  y2="100" stroke="currentColor" strokeOpacity="0.10" strokeWidth="0.5" />
+          <line x1="120" y1="0" x2="120" y2="100" stroke="currentColor" strokeOpacity="0.06" strokeWidth="0.5" />
+          {/* Crosshair tick marks at center */}
+          <line x1="69" y1="50" x2="77" y2="50" stroke="var(--color-recovered, #2d9c6e)" strokeWidth="1" strokeLinecap="round" />
+          <line x1="83" y1="50" x2="91" y2="50" stroke="var(--color-recovered, #2d9c6e)" strokeWidth="1" strokeLinecap="round" />
+          <line x1="80" y1="39" x2="80" y2="47" stroke="var(--color-recovered, #2d9c6e)" strokeWidth="1" strokeLinecap="round" />
+          <line x1="80" y1="53" x2="80" y2="61" stroke="var(--color-recovered, #2d9c6e)" strokeWidth="1" strokeLinecap="round" />
+          {/* Outer ring — motion-safe animate-ping at 2s */}
+          <circle
+            cx="80" cy="50" r="5"
+            fill="var(--color-recovered, #2d9c6e)"
+            fillOpacity="0.25"
+            className="motion-safe:animate-ping"
+            style={{ animationDuration: '2s' }}
+          />
+          {/* Solid center dot */}
+          <circle cx="80" cy="50" r="2.5" fill="var(--color-recovered, #2d9c6e)" />
+        </svg>
+      </div>
+      {/* Live ET clock — updates each minute */}
+      <div className="px-4 py-3 border-t border-rule bg-mist/20">
+        <p className="font-mono text-xs text-slate">
+          {nowET} at our office —{' '}
+          <span className={status.open ? 'text-recovered' : 'text-slate/60'}>
+            {status.open ? 'Open now' : 'Closed'}
+          </span>
+        </p>
       </div>
     </div>
   );
 }
 
+/* ── WhatHappensNext steps ──────────────────────────────────────────── */
+const STEPS = [
+  { n: '01', text: 'We review your portfolio or file details' },
+  { n: '02', text: 'A specialist calls to scope strategy and terms' },
+  { n: '03', text: 'Placement goes live — recovery work begins' },
+];
+
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate mb-5">{children}</p>;
 }
 
-/* ── Main page ──────────────────────────────────────────── */
+/* ── Form schema ────────────────────────────────────────────────────── */
+const CATEGORIES = [
+  'MCA funder', 'Factor', 'Equipment lessor', 'Lender', 'Law firm', 'Other',
+] as const;
+const BALANCES = ['<$50k', '$50k–$250k', '$250k–$1M', '$1M+'] as const;
+
+const formSchema = z.object({
+  name:     z.string().min(2, 'Full name is required.'),
+  company:  z.string().min(2, 'Company name is required.'),
+  email:    z.string().email('Please enter a valid email address.'),
+  phone:    z.string().optional(),
+  category: z.enum(CATEGORIES, { required_error: 'Please select a category.' }),
+  balance:  z.string().optional(),
+  message:  z.string().min(10, 'Message must be at least 10 characters.').max(5000, 'Message cannot exceed 5000 characters.'),
+  website:  z.string().optional(),
+});
+type FormValues = z.infer<typeof formSchema>;
+type Status = 'idle' | 'submitting' | 'success' | 'error';
+
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') || '';
+
+/* ── Main page ──────────────────────────────────────────────────────── */
 export default function ContactPage() {
+  const { reducedMotion, ready } = useMotion();
+
   const [status, setStatus]               = useState<Status>('idle');
   const [successTime, setSuccessTime]     = useState('');
   const [emailConfigured, setEmailConfigured] = useState<boolean | null>(null);
@@ -272,6 +354,145 @@ export default function ContactPage() {
   const [dogCaption, setDogCaption]           = useState<string | null>(null);
   const officeStatus = useOfficeStatus();
 
+  /* ── Animation refs ──────────────────────────────────────────────── */
+  // Cinematic header entrance
+  const headerFilmRef = useRef<HTMLDivElement>(null);
+  const eyebrowRef    = useRef<HTMLParagraphElement>(null);
+  const headlineRef   = useRef<HTMLHeadingElement>(null);
+  const sublineRef    = useRef<HTMLParagraphElement>(null);
+  const statusRef     = useRef<HTMLDivElement>(null);
+
+  // Two-column body scroll reveals
+  const leftColRef  = useRef<HTMLDivElement>(null);
+  const rightColRef = useRef<HTMLDivElement>(null);
+
+  // Contact rows rule-draw reveal
+  const contactBlockRef = useRef<HTMLDivElement>(null);
+
+  // WhatHappensNext step refs
+  const step1Ref = useRef<HTMLDivElement>(null);
+  const step2Ref = useRef<HTMLDivElement>(null);
+  const step3Ref = useRef<HTMLDivElement>(null);
+
+  // Locality card
+  const localityCardRef = useRef<HTMLDivElement>(null);
+
+  /* ── Entrance animation (fire once on load) ──────────────────────── */
+  useLayoutEffect(() => {
+    if (!ready) return;
+
+    if (reducedMotion) {
+      // Settled states — no animation
+      [headerFilmRef, eyebrowRef, headlineRef, sublineRef, statusRef].forEach(r => {
+        if (r.current) gsap.set(r.current, { opacity: 1, y: 0 });
+      });
+      return;
+    }
+
+    const ctx = gsap.context(() => {
+      gsap.set(headerFilmRef.current, { opacity: 0 });
+      gsap.set(eyebrowRef.current,   { opacity: 0 });
+      gsap.set(headlineRef.current,  { opacity: 0, y: 24 });
+      gsap.set(sublineRef.current,   { opacity: 0 });
+      gsap.set(statusRef.current,    { opacity: 0 });
+
+      const tl = gsap.timeline({ delay: 0.1 });
+      // Beat 1 — film fades in
+      tl.to(headerFilmRef.current, { opacity: 1, duration: 0.6, ease: 'power2.out' }, 0);
+      // Beat 2 — eyebrow + headline rise (overlapping with film)
+      tl.to(eyebrowRef.current,  { opacity: 1, duration: 0.35, ease: 'power2.out' }, 0.3);
+      tl.to(headlineRef.current, { opacity: 1, y: 0, duration: 0.65, ease: 'power3.out' }, 0.35);
+      // Beat 3 — subline + status
+      tl.to(sublineRef.current, { opacity: 1, duration: 0.45, ease: 'power2.out' }, 0.65);
+      tl.to(statusRef.current,  { opacity: 1, duration: 0.35, ease: 'power2.out' }, 0.80);
+      // Total ≈ 1.2s
+    });
+
+    return () => ctx.revert();
+  }, [ready, reducedMotion]);
+
+  /* ── Scroll reveals ──────────────────────────────────────────────── */
+  useLayoutEffect(() => {
+    if (!ready || reducedMotion) return;
+
+    const ctx = gsap.context(() => {
+      // Left column
+      if (leftColRef.current) {
+        gsap.set(leftColRef.current, { opacity: 0, y: 18 });
+        createReveal(leftColRef.current, {
+          onEnter: () =>
+            gsap.to(leftColRef.current, { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' }),
+        });
+      }
+
+      // Right column (slight offset)
+      if (rightColRef.current) {
+        gsap.set(rightColRef.current, { opacity: 0, y: 18 });
+        createReveal(rightColRef.current, {
+          onEnter: () =>
+            gsap.to(rightColRef.current, {
+              opacity: 1, y: 0, duration: 0.55, ease: 'power2.out', delay: 0.1,
+            }),
+        });
+      }
+
+      // Contact rows — rule draws then row content fades
+      if (contactBlockRef.current) {
+        const rules = gsap.utils.toArray<HTMLElement>('[data-rule]', contactBlockRef.current);
+        const rows  = gsap.utils.toArray<HTMLElement>('[data-row]',  contactBlockRef.current);
+        gsap.set(rules, { scaleX: 0, transformOrigin: 'left center' });
+        gsap.set(rows,  { opacity: 0 });
+        createReveal(contactBlockRef.current, {
+          onEnter: () => {
+            const tl = gsap.timeline();
+            tl.to(rules, { scaleX: 1, duration: 0.28, ease: 'power2.out', stagger: 0.055 }, 0);
+            tl.to(rows,  { opacity: 1, duration: 0.28, stagger: 0.065 }, 0.06);
+          },
+        });
+      }
+
+      // WhatHappensNext — sequential: rule → number → text, 100ms apart
+      const stepRefs = [step1Ref, step2Ref, step3Ref];
+      stepRefs.forEach((stepRef, i) => {
+        const el = stepRef.current;
+        if (!el) return;
+        const ruleEl = el.querySelector<HTMLElement>('[data-rule]');
+        const numEl  = el.querySelector<HTMLElement>('[data-num]');
+        const textEl = el.querySelector<HTMLElement>('[data-text]');
+
+        gsap.set(el, { opacity: 0 });
+        if (ruleEl) gsap.set(ruleEl, { scaleX: 0, transformOrigin: 'left center' });
+        if (numEl)  gsap.set(numEl,  { opacity: 0 });
+        if (textEl) gsap.set(textEl, { opacity: 0 });
+
+        createReveal(el, {
+          start: 'top 88%',
+          onEnter: () => {
+            gsap.set(el, { opacity: 1 });
+            const tl = gsap.timeline({ delay: i * 0.1 });
+            if (ruleEl) tl.to(ruleEl, { scaleX: 1, duration: 0.22, ease: 'power2.out' }, 0);
+            tl.to(numEl,  { opacity: 1, duration: 0.2 }, ruleEl ? 0.18 : 0);
+            tl.to(textEl, { opacity: 1, duration: 0.28 }, ruleEl ? 0.28 : 0.1);
+          },
+        });
+      });
+
+      // Locality card
+      if (localityCardRef.current) {
+        gsap.set(localityCardRef.current, { opacity: 0, y: 14 });
+        createReveal(localityCardRef.current, {
+          onEnter: () =>
+            gsap.to(localityCardRef.current, {
+              opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', delay: 0.15,
+            }),
+        });
+      }
+    });
+
+    return () => ctx.revert();
+  }, [ready, reducedMotion]);
+
+  /* ── Data effects ────────────────────────────────────────────────── */
   useEffect(() => {
     fetch(`${API_BASE}/api/contact/status`)
       .then((r) => r.json())
@@ -297,7 +518,10 @@ export default function ContactPage() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: '', company: '', email: '', phone: '', category: undefined, balance: '', message: '', website: '' },
+    defaultValues: {
+      name: '', company: '', email: '', phone: '',
+      category: undefined, balance: '', message: '', website: '',
+    },
   });
 
   /* Pre-fill message from ARG Assist handoff (sessionStorage) */
@@ -307,7 +531,6 @@ export default function ContactPage() {
       form.setValue('message', `[From ARG Assist]\n\n${handoff}`, { shouldDirty: true });
       sessionStorage.removeItem('arg:assist-handoff');
     }
-  // Only run once on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -320,7 +543,9 @@ export default function ContactPage() {
         body: JSON.stringify(values),
       });
       if (res.ok) {
-        setSuccessTime(new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }));
+        setSuccessTime(new Date().toLocaleTimeString('en-US', {
+          timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+        }));
         setStatus('success'); form.reset();
       } else if (res.status === 503) { setShowDirectCard(true); setStatus('idle'); }
       else if (res.status === 429) {
@@ -331,9 +556,66 @@ export default function ContactPage() {
     } catch { setStatus('error'); }
   }
 
-  /* ── RIGHT column — always the same ───────────────────── */
+  /* ── Contact rows block (rule-draw animated) ─────────────────────── */
+  const contactRowsBlock = (
+    <div ref={contactBlockRef}>
+      {/* Phone */}
+      <div data-row className="relative">
+        <div data-rule className="absolute top-0 left-0 right-0 h-[1px] bg-rule" aria-hidden="true" />
+        <ContactRow label="Phone" value="(877) 464-8470" href="tel:8774648470" type="phone" noBorder />
+      </div>
+      <div data-row className="relative">
+        <div data-rule className="absolute top-0 left-0 right-0 h-[1px] bg-rule" aria-hidden="true" />
+        <ContactRow label="Email" value="collect@advancedrecoverygroup.com" href="mailto:collect@advancedrecoverygroup.com" type="email" noBorder />
+      </div>
+      <div data-row className="relative">
+        <div data-rule className="absolute top-0 left-0 right-0 h-[1px] bg-rule" aria-hidden="true" />
+        <ContactRow label="Fax" value="(888) 881-8211" type="fax" noBorder />
+      </div>
+      <div data-row className="relative">
+        <div data-rule className="absolute top-0 left-0 right-0 h-[1px] bg-rule" aria-hidden="true" />
+        <VCardRow />
+      </div>
+      {/* ARG Assist row */}
+      <div data-row className="relative">
+        <div data-rule className="absolute top-0 left-0 right-0 h-[1px] bg-rule" aria-hidden="true" />
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent('arg:assist'))}
+          className="w-full flex items-center justify-between py-3 min-h-[44px] group hover:bg-mist/40 transition-colors text-left"
+        >
+          <span className="font-mono text-[10px] uppercase tracking-widest text-slate/50 transition-transform duration-200 group-hover:translate-x-[6px]">
+            AI Concierge
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="font-mono text-sm text-ink group-hover:text-recovered transition-colors">
+              Ask ARG Assist →
+            </span>
+          </span>
+        </button>
+      </div>
+      {/* Bottom rule */}
+      <div className="h-[1px] bg-rule" aria-hidden="true" />
+    </div>
+  );
+
+  const footerNote = (
+    <p className="font-mono text-xs text-slate/55 leading-relaxed">
+      Placements can also be initiated through the{' '}
+      <a
+        href="https://portal.advancedrecoverygroup.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-ink underline underline-offset-2 hover:text-recovered transition-colors"
+      >
+        Client Portal
+      </a>.
+    </p>
+  );
+
+  /* ── Right column ────────────────────────────────────────────────── */
   const rightColumn = (
-    <div className="flex flex-col gap-8">
+    <div ref={rightColRef} className="flex flex-col gap-8">
       <div>
         <SectionLabel>The Office</SectionLabel>
         <div id="arg-dog-photo">
@@ -347,44 +629,45 @@ export default function ContactPage() {
           />
         </div>
       </div>
-      <WhatHappensNext />
+
+      {/* What Happens Next — sequential draw animation */}
+      <div>
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate mb-3">
+          What Happens Next
+        </p>
+        <div className="border border-rule rounded-sm overflow-hidden">
+          {STEPS.map((s, i) => {
+            const stepRef = [step1Ref, step2Ref, step3Ref][i];
+            return (
+              <div key={s.n} ref={stepRef} className="relative flex items-start gap-4 px-4 py-3">
+                {/* Rule between steps — animated scaleX by GSAP (not for first step) */}
+                {i > 0 && (
+                  <div
+                    data-rule
+                    className="absolute top-0 left-0 right-0 h-[1px] bg-rule origin-left"
+                    aria-hidden="true"
+                  />
+                )}
+                <span data-num className="font-mono text-[10px] text-slate/40 tabular-nums pt-0.5 flex-shrink-0">
+                  {s.n}
+                </span>
+                <span data-text className="font-mono text-xs text-ink leading-relaxed">
+                  {s.text}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Locality card */}
+      <div ref={localityCardRef}>
+        <LocalityCard status={officeStatus} />
+      </div>
     </div>
   );
 
-  /* ── Shared contact rows block ─────────────────────────── */
-  const contactRowsBlock = (
-    <div className="flex flex-col gap-0 border-t border-rule">
-      <ContactRow label="Phone" value="(877) 464-8470"                   href="tel:8774648470"                             type="phone" />
-      <ContactRow label="Email" value="collect@advancedrecoverygroup.com" href="mailto:collect@advancedrecoverygroup.com"  type="email" />
-      <ContactRow label="Fax"   value="(888) 881-8211"                                                                     type="fax"   />
-      <VCardRow />
-      {/* ARG Assist ledger row — opens the AI concierge sheet */}
-      <button
-        type="button"
-        onClick={() => window.dispatchEvent(new CustomEvent('arg:assist'))}
-        className="w-full flex items-center justify-between py-4 border-t border-rule group hover:bg-mist/40 transition-colors text-left"
-      >
-        <span className="font-mono text-[10px] uppercase tracking-widest text-slate/50">
-          AI Concierge
-        </span>
-        <span className="flex items-center gap-2">
-          <span className="font-mono text-sm text-ink group-hover:text-recovered transition-colors">
-            Ask ARG Assist →
-          </span>
-        </span>
-      </button>
-    </div>
-  );
-
-  const footerNote = (
-    <p className="font-mono text-xs text-slate/55 leading-relaxed">
-      Placements can also be initiated through the{' '}
-      <a href="https://portal.advancedrecoverygroup.com" target="_blank" rel="noopener noreferrer" className="text-ink underline underline-offset-2 hover:text-recovered transition-colors">
-        Client Portal
-      </a>.
-    </p>
-  );
-
+  /* ── Loading state ───────────────────────────────────────────────── */
   if (emailConfigured === null) {
     return (
       <Shell>
@@ -398,7 +681,7 @@ export default function ContactPage() {
     );
   }
 
-  /* ── Form left column (email configured) ────────────────── */
+  /* ── Form left column ────────────────────────────────────────────── */
   const formLeftContent = (
     <div className="flex flex-col gap-10">
       <div className="flex flex-col gap-4">
@@ -412,7 +695,10 @@ export default function ContactPage() {
           <h2 className="text-3xl font-serif text-ink">Received.</h2>
           <p className="text-slate text-lg leading-relaxed">A specialist will contact you within one business day.</p>
           {successTime && <p className="font-mono text-xs text-slate/60">Submitted at {successTime}</p>}
-          <button onClick={() => setStatus('idle')} className="w-fit font-mono text-sm text-slate border border-rule px-4 py-2 hover:bg-mist transition-colors rounded-sm mt-2">
+          <button
+            onClick={() => setStatus('idle')}
+            className="w-fit font-mono text-sm text-slate border border-rule px-4 py-2 hover:bg-mist transition-colors rounded-sm mt-2 min-h-[44px]"
+          >
             Submit another inquiry
           </button>
         </div>
@@ -460,7 +746,12 @@ export default function ContactPage() {
                 <FormItem>
                   <FormLabel className="font-mono text-xs uppercase tracking-wider text-slate" htmlFor="field-category">Business Type *</FormLabel>
                   <FormControl>
-                    <select id="field-category" className="w-full border border-rule bg-paper text-ink font-sans text-base px-3 py-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered h-11" disabled={status === 'submitting'} {...field}>
+                    <select
+                      id="field-category"
+                      className="w-full border border-rule bg-paper text-ink font-sans text-base px-3 py-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered h-11"
+                      disabled={status === 'submitting'}
+                      {...field}
+                    >
                       <option value="">Select category…</option>
                       {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
@@ -472,7 +763,12 @@ export default function ContactPage() {
                 <FormItem>
                   <FormLabel className="font-mono text-xs uppercase tracking-wider text-slate" htmlFor="field-balance">Approximate Balance</FormLabel>
                   <FormControl>
-                    <select id="field-balance" className="w-full border border-rule bg-paper text-ink font-sans text-base px-3 py-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered h-11" disabled={status === 'submitting'} {...field}>
+                    <select
+                      id="field-balance"
+                      className="w-full border border-rule bg-paper text-ink font-sans text-base px-3 py-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered h-11"
+                      disabled={status === 'submitting'}
+                      {...field}
+                    >
                       <option value="">Select range…</option>
                       {BALANCES.map((b) => <option key={b} value={b}>{b}</option>)}
                     </select>
@@ -484,23 +780,56 @@ export default function ContactPage() {
             <FormField control={form.control} name="message" render={({ field }) => (
               <FormItem>
                 <FormLabel className="font-mono text-xs uppercase tracking-wider text-slate" htmlFor="field-message">Message *</FormLabel>
-                <FormControl><Textarea id="field-message" rows={5} className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans resize-y min-h-[120px] text-base" disabled={status === 'submitting'} {...field} /></FormControl>
+                <FormControl>
+                  <Textarea
+                    id="field-message"
+                    rows={5}
+                    className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans resize-y min-h-[120px] text-base"
+                    disabled={status === 'submitting'}
+                    {...field}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )} />
-            {form.formState.errors.root && <p className="font-mono text-xs text-destructive">{form.formState.errors.root.message}</p>}
+            {form.formState.errors.root && (
+              <p className="font-mono text-xs text-destructive">{form.formState.errors.root.message}</p>
+            )}
             {status === 'error' && (
               <div className="border border-rule bg-mist px-5 py-4 rounded-sm text-sm text-slate leading-relaxed">
-                Something went wrong. Call <a href="tel:8774648470" className="text-ink font-medium hover:text-recovered transition-colors">(877) 464-8470</a> or email <a href="mailto:collect@advancedrecoverygroup.com" className="text-ink font-medium hover:text-recovered transition-colors">collect@advancedrecoverygroup.com</a>.
+                Something went wrong. Call{' '}
+                <a href="tel:8774648470" className="text-ink font-medium hover:text-recovered transition-colors">(877) 464-8470</a>{' '}
+                or email{' '}
+                <a href="mailto:collect@advancedrecoverygroup.com" className="text-ink font-medium hover:text-recovered transition-colors">
+                  collect@advancedrecoverygroup.com
+                </a>.
               </div>
             )}
             <div className="flex items-center gap-4">
-              <button type="submit" disabled={status === 'submitting'} className="bg-ink text-paper hover:bg-ink/90 disabled:opacity-60 disabled:cursor-not-allowed rounded-sm px-10 py-4 h-auto text-sm font-medium transition-colors inline-flex items-center gap-2">
+              <button
+                type="submit"
+                disabled={status === 'submitting'}
+                className="bg-ink text-paper hover:bg-ink/90 disabled:opacity-60 disabled:cursor-not-allowed rounded-sm px-10 py-4 min-h-[44px] text-sm font-medium transition-colors inline-flex items-center gap-2"
+              >
                 {status === 'submitting' ? (
-                  <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>Sending…</>
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    Sending…
+                  </>
                 ) : 'Submit Inquiry'}
               </button>
-              {status === 'error' && <button type="button" onClick={() => setStatus('idle')} className="text-sm font-mono text-slate hover:text-ink transition-colors">Try again</button>}
+              {status === 'error' && (
+                <button
+                  type="button"
+                  onClick={() => setStatus('idle')}
+                  className="text-sm font-mono text-slate hover:text-ink transition-colors"
+                >
+                  Try again
+                </button>
+              )}
             </div>
           </form>
         </Form>
@@ -509,7 +838,7 @@ export default function ContactPage() {
     </div>
   );
 
-  /* ── Direct line left column (no form) ────────────────── */
+  /* ── Direct line left column ─────────────────────────────────────── */
   const directLeftContent = (
     <div className="flex flex-col gap-10">
       <div>
@@ -535,31 +864,75 @@ export default function ContactPage() {
         <script type="application/ld+json">{FAQ_JSON_LD}</script>
       </Helmet>
 
-      {/* ── PAGE HEADER ──────────────────────────────────── */}
-      <section className="relative bg-paper border-b border-rule overflow-hidden pt-32 pb-14 md:pt-44 md:pb-20">
-        <div
-          className="absolute inset-0 pointer-events-none select-none"
-          aria-hidden="true"
-          style={{ backgroundImage: 'repeating-linear-gradient(to bottom, transparent 0px, transparent 55px, rgba(0,0,0,0.04) 55px, rgba(0,0,0,0.04) 56px)' }}
-        />
-        <div className="relative max-w-6xl mx-auto px-6 md:px-8">
-          <p className="font-mono text-recovered tracking-widest text-xs font-semibold mb-5 uppercase">Contact — Fairfield, NJ</p>
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-ink tracking-tight mb-6 leading-none">Let&rsquo;s talk.</h1>
-          <p className="text-lg md:text-xl text-slate font-sans max-w-2xl leading-relaxed mb-6">
+      {/* ── CINEMATIC HEADER BAND ─────────────────────────────────── */}
+      <section
+        className="relative bg-ink border-b border-ink/20 overflow-hidden min-h-[40vh] md:min-h-[52vh] flex flex-col justify-end"
+        aria-label="Contact page header"
+      >
+        {/* office-floor ambient video + ink gradient overlay */}
+        <div ref={headerFilmRef} className="absolute inset-0 z-0" aria-hidden="true">
+          <AmbientVideo
+            mp4="/videos/office-floor.mp4"
+            webm="/videos/office-floor.webm"
+            poster="/videos/office-floor-poster.jpg"
+            overlayOpacity={0}
+            aspectClassName=""
+            className="w-full h-full"
+          />
+          {/* Ink gradient — 0.55 edges, 0.45 middle */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(to bottom,' +
+                ' rgba(16,31,48,0.55) 0%,' +
+                ' rgba(16,31,48,0.45) 50%,' +
+                ' rgba(16,31,48,0.55) 100%)',
+            }}
+          />
+        </div>
+
+        {/* Header content — anchored to bottom of band */}
+        <div className="relative z-10 max-w-6xl mx-auto w-full px-6 md:px-8 pt-32 pb-12 md:pt-40 md:pb-14">
+          <p
+            ref={eyebrowRef}
+            className="font-mono text-recovered tracking-widest text-xs font-semibold mb-5 uppercase"
+          >
+            Contact — Fairfield, NJ
+          </p>
+          <h1
+            ref={headlineRef}
+            className="text-5xl md:text-7xl lg:text-8xl font-serif text-paper tracking-tight mb-6 leading-none"
+          >
+            Let&rsquo;s talk.
+          </h1>
+          <p
+            ref={sublineRef}
+            className="text-lg md:text-xl text-paper/80 font-sans max-w-2xl leading-relaxed mb-6"
+          >
             Tell us what you&rsquo;re owed. A recovery specialist responds within one business day.
           </p>
-          <div className="flex items-center gap-2 font-mono text-xs text-slate/60">
-            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${officeStatus.open ? 'bg-recovered' : 'bg-slate/30'}`} />
+          <div ref={statusRef} className="flex items-center gap-2.5 font-mono text-xs text-paper/70">
+            {/* Pulsing status dot — 2s interval, respects reduced-motion */}
+            <span className="relative flex-shrink-0 w-2 h-2" aria-hidden="true">
+              {officeStatus.open && (
+                <span
+                  className="absolute inset-0 rounded-full bg-recovered motion-safe:animate-ping"
+                  style={{ animationDuration: '2s' }}
+                />
+              )}
+              <span className={`absolute inset-0 rounded-full ${officeStatus.open ? 'bg-recovered' : 'bg-paper/30'}`} />
+            </span>
             {officeStatus.label}
           </div>
         </div>
       </section>
 
-      {/* ── TWO-COLUMN BODY ──────────────────────────────── */}
-      <section className="bg-paper py-16 md:py-20 border-b border-rule">
+      {/* ── TWO-COLUMN BODY ───────────────────────────────────────── */}
+      <section className="bg-paper pt-14 pb-16 md:pt-16 md:pb-20 border-b border-rule">
         <div className="max-w-6xl mx-auto px-6 md:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 lg:gap-16">
-            <div className="lg:col-span-3">
+            <div ref={leftColRef} className="lg:col-span-3">
               {showDirectCard ? directLeftContent : formLeftContent}
             </div>
             <div className="lg:col-span-2">
@@ -569,7 +942,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* ── FAQ ──────────────────────────────────────────── */}
+      {/* ── FAQ ──────────────────────────────────────────────────── */}
       <section className="bg-mist py-16 md:py-20 border-b border-rule">
         <div className="max-w-6xl mx-auto px-6 md:px-8">
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate mb-3">Common Questions</p>
@@ -582,26 +955,36 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* ── CLOSER BAND ─────────────────────────────────── */}
+      {/* ── CLOSER BAND ──────────────────────────────────────────── */}
       <section className="relative bg-ink overflow-hidden py-14 md:py-16">
-        {/* hands-ledger ambient background */}
+        {/* hands-ledger ambient background — mp4 + poster only (no webm prop) */}
         <div className="absolute inset-0 z-0">
           <AmbientVideo
             mp4="/videos/hands-ledger.mp4"
             poster="/videos/hands-ledger-poster.jpg"
             overlayOpacity={0.6}
-           overlayVariant="gradient"
+            overlayVariant="gradient"
             aspectClassName=""
             className="w-full h-full"
           />
         </div>
         <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8 flex flex-col md:flex-row md:items-center md:justify-between gap-8">
-          <h2 className="text-2xl md:text-3xl font-serif text-paper leading-snug">Have documents ready to send?</h2>
+          <h2 className="text-2xl md:text-3xl font-serif text-paper leading-snug">
+            Have documents ready to send?
+          </h2>
           <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-            <a href="mailto:collect@advancedrecoverygroup.com" className="inline-flex items-center justify-center gap-2 bg-recovered text-paper font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-sm hover:bg-recovered/90 transition-colors min-h-[44px]">
+            <a
+              href="mailto:collect@advancedrecoverygroup.com"
+              className="inline-flex items-center justify-center gap-2 bg-recovered text-paper font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-sm hover:bg-recovered/90 transition-colors min-h-[44px]"
+            >
               Email the file to collect@
             </a>
-            <a href="https://portal.advancedrecoverygroup.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-sm border border-paper/30 text-paper hover:bg-paper/10 transition-colors min-h-[44px]">
+            <a
+              href="https://portal.advancedrecoverygroup.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-sm border border-paper/30 text-paper hover:bg-paper/10 transition-colors min-h-[44px]"
+            >
               Client Portal
             </a>
           </div>
