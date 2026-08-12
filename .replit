@@ -18,3 +18,8 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+GITHUB_TOKEN = "Yk3Hd71xQIlfy7qNYD0AZ4mnE7DOe7K5lyQzsrvY/f+dt0425z5NWyFUthHiYSjX2Pu8fgPk74foUr1Nb4rIUA=="
