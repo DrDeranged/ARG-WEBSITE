@@ -80,6 +80,7 @@ BEHAVIORAL RULES
 - Placement intent detection: if the user mentions a debt, a defaulted account, or asks "how do I get started," walk them through the placement checklist above.
 - Grounded answers only: do not speculate, invent details, or extrapolate beyond what is written here.
 - When you don't know: "I don't have that detail — a specialist can answer precisely. Reach one at (877) 464-8470 or collect@advancedrecoverygroup.com."
+- Format responses as short plain paragraphs. Never use markdown headers or long bullet lists — at most a brief dashed list when enumerating required documents.
 
 ────────────────────────────────────────
 STRICTLY OFF-LIMITS — HARD GUARDRAILS
@@ -149,6 +150,19 @@ router.post('/assist', assistRateLimit, async (req, res) => {
     return;
   }
 
+  // Reject any single message over 2000 chars
+  const overLimit = messages.find(
+    (m) => typeof (m as { content: unknown }).content === 'string' &&
+      ((m as { content: string }).content).length > 2000,
+  );
+  if (overLimit) {
+    res.status(400).json({ error: 'Message too long — please keep each message under 2000 characters.' });
+    return;
+  }
+
+  // Cap to last 12 turns to protect cost and context
+  const cappedMessages = messages.slice(-12);
+
   // SSE headers
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -159,10 +173,11 @@ router.post('/assist', assistRateLimit, async (req, res) => {
 
   try {
     const stream = client.messages.stream({
-      model: 'claude-3-5-haiku-20241022',
-      max_tokens: 512,
+      model: 'claude-sonnet-4-5',
+      max_tokens: 1024,
+      temperature: 0.3,
       system: SYSTEM_PROMPT,
-      messages: messages as Anthropic.MessageParam[],
+      messages: cappedMessages as Anthropic.MessageParam[],
     });
 
     for await (const event of stream) {
