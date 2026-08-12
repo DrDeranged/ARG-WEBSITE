@@ -603,7 +603,7 @@ export default function ContactPage() {
     <p className="font-mono text-xs text-slate/55 leading-relaxed">
       Placements can also be initiated through the{' '}
       <a
-        href="https://portal.advancedrecoverygroup.com"
+        href="https://app.simplicitycollect.com/Login.aspx"
         target="_blank"
         rel="noopener noreferrer"
         className="text-ink underline underline-offset-2 hover:text-recovered transition-colors"
@@ -980,7 +980,7 @@ export default function ContactPage() {
               Email the file to collect@
             </a>
             <a
-              href="https://portal.advancedrecoverygroup.com"
+              href="https://app.simplicitycollect.com/Login.aspx"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-sm border border-paper/30 text-paper hover:bg-paper/10 transition-colors min-h-[44px]"

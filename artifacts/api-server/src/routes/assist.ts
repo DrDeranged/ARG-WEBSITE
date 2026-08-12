@@ -52,7 +52,7 @@ CONTACT & OPERATIONS
 - Email: collect@advancedrecoverygroup.com
 - Office: Fairfield, NJ
 - Hours: Mon–Thu 9AM–5PM ET | Fri 9AM–4PM ET
-- Client Portal: portal.advancedrecoverygroup.com (existing clients track cases, submit documents)
+- Client Portal: app.simplicitycollect.com/Login.aspx (existing clients track cases, submit documents)
 - Contact form: advancedrecoverygroup.com/contact-us/
 
 ────────────────────────────────────────
