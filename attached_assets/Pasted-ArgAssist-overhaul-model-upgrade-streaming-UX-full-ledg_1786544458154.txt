@@ -1,0 +1,64 @@
+ArgAssist overhaul — model upgrade, streaming UX, full ledger
+redesign of the sheet. The system prompt's knowledge and guardrails
+are good — do not weaken them.
+
+PART A — THE BRAIN (assist.ts):
+1. Model: change 'claude-3-5-haiku-20241022' to 'claude-sonnet-4-6'.
+   max_tokens: 1024. Add temperature: 0.3 (factual concierge, not
+   creative writing).
+2. History discipline: cap the messages array server-side to the
+   last 12 turns before sending (protects cost + context); reject
+   any single message over 2000 chars with a friendly 400.
+3. Add to the system prompt's behavior section: "Format responses
+   as short plain paragraphs. Never use markdown headers or long
+   bullet lists — at most a brief dashed list when enumerating
+   required documents."
+4. Keep the SSE streaming exactly as is server-side.
+
+PART B — SPEED FEEL (the sheet's consumer):
+1. Verify the frontend consumes the SSE stream PROGRESSIVELY —
+   tokens must render as they arrive, not after completion. If
+   it currently buffers the full response, rewrite the consumer
+   with a streaming reader (fetch + ReadableStream) appending
+   text deltas to the active turn.
+2. Instant feedback: the user's message appears in the thread
+   immediately on send; the assistant turn appears within 100ms
+   as an empty turn with the thin recovered caret, which streams
+   fill.
+3. If first token hasn't arrived in 8s, show a mono status line
+   "Still working…" inside the turn; hard timeout at 25s renders
+   the calm ledger-row error with phone/email fallback.
+
+PART C — THE SHEET, REBUILT TO SPEC (replace whatever generic UI
+exists with exactly this):
+1. Right-side sheet, 420px desktop / full-screen mobile with
+   safe-area insets. Paper background, 1px rule left border. NO
+   rounded chat bubbles anywhere.
+2. Header: ink bar, "ARG ASSIST" in mono paper letters, beneath
+   it in mono 10px paper/60: "AI assistant — for placement
+   questions. A human specialist handles every actual file."
+   Close button ≥44px.
+3. Turns as ledger entries, not bubbles: user turns — mono text,
+   right-aligned block on mist with a 1px rule top; assistant
+   turns — serif body text, left-aligned with a 2px ink left
+   rule; every turn gets a mono 10px ET timestamp. Rule-separated,
+   generous line height, max measure 60ch.
+4. Empty state: four suggestion chips (mono, rule-bordered,
+   sharp corners): "What do you need to place a file?", "How
+   does contingency work?", "What industries do you serve?",
+   "How fast can you start?"
+5. Composer: bottom-fixed within the sheet, mono input on paper
+   with 1px rule top, send button as a recovered-green square
+   with a mono arrow, disabled state at rule-gray. Enter sends,
+   Shift+Enter newlines.
+6. Footer above the composer: persistent "SEND TO A SPECIALIST →"
+   mono text action (the existing handoff), and the rate-limit
+   state renders as a ledger row, never a toast.
+7. Motion: 150ms scale/fade open (existing pattern), stream caret
+   blinks at 1s; reduced-motion = no caret, chunked text.
+PART D — VERIFY: ask "What do you need to place a file?" — answer
+must stream visibly word-by-word, arrive complete (not truncated),
+formatted as short paragraphs; ask a fee-percentage question —
+exact specialist redirect still fires; test on mobile; build + tsc
+clean. Commit as "ArgAssist overhaul: Sonnet upgrade + streaming
+UX + ledger sheet".
