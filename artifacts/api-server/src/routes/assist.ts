@@ -173,7 +173,7 @@ router.post('/assist', assistRateLimit, async (req, res) => {
 
   try {
     const stream = client.messages.stream({
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1024,
       temperature: 0.3,
       system: SYSTEM_PROMPT,
