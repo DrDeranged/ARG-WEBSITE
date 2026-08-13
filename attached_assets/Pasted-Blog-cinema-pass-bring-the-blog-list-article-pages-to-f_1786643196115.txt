@@ -1,0 +1,42 @@
+Blog cinema pass — bring the blog (list + article pages) to full
+motion-picture parity with the rest of the site. Use the pattern-kit
+components (CinemaBand, PageHeader) where they exist.
+
+1. BLOG LIST HEADER (/blog/): replace the static mist header with a
+   dark cinema band matching the contact page's pattern:
+   hands-ledger film behind (/videos/hands-ledger.mp4 + .webm +
+   poster — the writing-hands clip is the blog's thematic match),
+   ink gradient overlay 0.55→0.45, recovered mono eyebrow
+   "INSIGHTS", paper serif headline, paper/80 subline. Headline
+   text becomes sentence case: "Insights & updates". Band ~44vh
+   desktop / auto mobile, svh units, entrance choreography
+   matching the contact header (film fade → headline rise →
+   subline).
+2. BLOG LIST ROWS — return to the ledger-row system: remove the
+   card background treatment; each article is a full-width
+   rule-separated row (mono date + reading time, SERIF INK title —
+   never recovered-colored text for titles; recovered appears only
+   as the hover accent bar + the Read More arrow), excerpt in
+   slate. Rows register enter-once reveals with the
+   ScrollDirector, staggered.
+3. ARTICLE PAGES (/blog/[slug]/): each article opens with a dark
+   cinematic header built from ITS OWN cover image (not video):
+   the cover full-bleed behind an ink gradient 0.6→0.5, mono
+   eyebrow with date + reading time, paper serif title, byline in
+   mono paper/70. Height ~50svh. The reading-progress bar and
+   article body below are unchanged. Subtle entrance: image
+   fade + title rise. (Cover-image headers keep each article
+   visually distinct — video here would make every article
+   identical.)
+4. 404 PAGE: give it the ink treatment for consistency — full
+   dark page using the hero-film POSTER only (static, no video on
+   an error page), ink overlay, serif "This file isn't in our
+   ledger." with a paper CTA home. 
+5. MOBILE + RULES: svh everywhere, posters on low-power, ≤2 videos
+   playing site-rule still holds (the list header is the page's
+   only video), reduced-motion renders settled, AA contrast over
+   brightest frames.
+6. Verify: /blog/ shows the film header and ledger rows; both
+   article pages show their cover headers; share/copy-link row and
+   FAQ/JSON-LD untouched; build + tsc clean.
+Commit as "Blog cinema pass + 404 treatment".

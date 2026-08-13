@@ -1,10 +1,11 @@
 import { Shell } from '@/components/layout/Shell';
-import { EditorialImage } from '@/components/EditorialImage';
 import { Link, useRoute } from 'wouter';
 import NotFound from '@/pages/not-found';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useMotion } from '@/motion';
+import gsap from 'gsap';
+import { SITE_ORIGIN } from '@/routes';
 
 const articleData: Record<string, {
   title: string;
@@ -121,7 +122,7 @@ function ReadingProgress() {
 /* ── Share row ──────────────────────────────────────────── */
 function ShareRow({ slug, title }: { slug: string; title: string }) {
   const [copied, setCopied] = useState(false);
-  const url = `https://advancedrecoverygroup.com/blog/${slug}/`;
+  const url = `${SITE_ORIGIN}/blog/${slug}/`;
 
   const handleWebShare = async () => {
     try {
@@ -179,6 +180,110 @@ function ShareRow({ slug, title }: { slug: string; title: string }) {
   );
 }
 
+/* ── Cinematic article header ───────────────────────────── */
+function ArticleHeader({
+  title,
+  date,
+  readTime,
+  author,
+  coverImage,
+}: {
+  title: string;
+  date: string;
+  readTime: string;
+  author?: string;
+  coverImage: string;
+}) {
+  const { ready, reducedMotion } = useMotion();
+  const coverRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  /* Entrance — cover image fades in, title rises. Total ≈ 1.0s */
+  useLayoutEffect(() => {
+    if (!ready) return;
+
+    if (reducedMotion) {
+      if (coverRef.current) gsap.set(coverRef.current, { opacity: 1 });
+      if (titleRef.current) gsap.set(titleRef.current, { opacity: 1, y: 0 });
+      return;
+    }
+
+    const ctx = gsap.context(() => {
+      gsap.set(coverRef.current, { opacity: 0 });
+      gsap.set(titleRef.current, { opacity: 0, y: 24 });
+
+      const tl = gsap.timeline({ delay: 0.1 });
+      // Beat 1 — cover image fades in
+      tl.to(coverRef.current, { opacity: 1, duration: 0.7, ease: 'power2.out' }, 0);
+      // Beat 2 — title rises
+      tl.to(titleRef.current, { opacity: 1, y: 0, duration: 0.65, ease: 'power3.out' }, 0.35);
+    });
+
+    return () => ctx.revert();
+  }, [ready, reducedMotion]);
+
+  return (
+    <header
+      className="relative bg-ink overflow-hidden flex flex-col justify-end"
+      style={{ minHeight: '50svh' }}
+      aria-label="Article header"
+    >
+      {/* Cover image — full-bleed background with ink gradient */}
+      <div ref={coverRef} className="absolute inset-0 z-0" aria-hidden="true">
+        <img
+          src={coverImage}
+          alt=""
+          className="w-full h-full object-cover"
+          loading="eager"
+          decoding="async"
+        />
+        {/* Ink gradient overlay 0.6→0.5 (heavier at top for nav legibility) */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              'linear-gradient(to bottom,' +
+              ' rgba(16,31,48,0.65) 0%,' +
+              ' rgba(16,31,48,0.50) 45%,' +
+              ' rgba(16,31,48,0.70) 100%)',
+          }}
+        />
+      </div>
+
+      {/* Header content — anchored to bottom of band */}
+      <div className="relative z-10 max-w-3xl mx-auto w-full px-6 md:px-8 pt-32 pb-10 md:pt-40 md:pb-14">
+        {/* Back link */}
+        <Link
+          href="/blog/"
+          className="inline-flex items-center font-mono text-xs text-paper/60 hover:text-paper/90 transition-colors mb-8 uppercase tracking-widest"
+        >
+          ← Insights
+        </Link>
+
+        {/* Eyebrow: date · read time */}
+        <p className="font-mono text-recovered tracking-widest text-[10px] font-semibold mb-5 uppercase">
+          {date} · {readTime}
+        </p>
+
+        {/* Title — paper serif */}
+        <h1
+          ref={titleRef}
+          className="text-4xl md:text-5xl lg:text-6xl font-serif text-paper leading-tight mb-6"
+        >
+          {title}
+        </h1>
+
+        {/* Byline — mono paper/70 */}
+        {author && (
+          <p className="font-mono text-xs text-paper/70 uppercase tracking-widest">
+            By {author}
+          </p>
+        )}
+      </div>
+    </header>
+  );
+}
+
 /* ── Page ───────────────────────────────────────────────── */
 export default function BlogArticlePage() {
   const [, params] = useRoute('/blog/:slug');
@@ -198,54 +303,26 @@ export default function BlogArticlePage() {
         <meta name="description" content={article.description} />
         <meta property="og:title" content={article.title} />
         <meta property="og:description" content={article.description} />
-        <meta property="og:url" content={`https://advancedrecoverygroup.com/blog/${slug}/`} />
-        {article.coverImage && <meta property="og:image" content={`https://advancedrecoverygroup.com${article.coverImage}`} />}
-        {article.coverImage && <meta name="twitter:image" content={`https://advancedrecoverygroup.com${article.coverImage}`} />}
+        <meta property="og:url" content={`${SITE_ORIGIN}/blog/${slug}/`} />
+        {article.coverImage && <meta property="og:image" content={`${SITE_ORIGIN}${article.coverImage}`} />}
+        {article.coverImage && <meta name="twitter:image" content={`${SITE_ORIGIN}${article.coverImage}`} />}
         <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
 
       <ReadingProgress />
 
       <article className="pb-24">
-        {/* Header */}
-        <header className="pt-32 pb-16 md:pt-48 md:pb-24 bg-mist border-b border-rule">
-          <div className="max-w-3xl mx-auto px-6 md:px-8 text-center">
-            <Link href="/blog/" className="inline-flex items-center gap-2 font-mono text-sm text-slate hover:text-recovered transition-colors mb-8 group uppercase tracking-widest">
-              ← Back to Insights
-            </Link>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif text-ink mb-8 leading-tight">
-              {article.title}
-            </h1>
-            {/* Date + reading time badge */}
-            <div className="flex items-center justify-center gap-3 font-mono text-sm text-slate">
-              <time className="tabular-nums">{article.date}</time>
-              <span className="text-slate/30" aria-hidden="true">·</span>
-              <span className="text-slate/60 uppercase tracking-widest text-xs">{readTime}</span>
-            </div>
-            {article.author && (
-              <p className="font-mono text-xs text-slate/60 mt-2 uppercase tracking-widest">
-                By {article.author}
-              </p>
-            )}
-          </div>
-        </header>
+        {/* ── Dark cinematic header — cover image full-bleed, ~50svh ── */}
+        <ArticleHeader
+          title={article.title}
+          date={article.date}
+          readTime={readTime}
+          author={article.author}
+          coverImage={article.coverImage}
+        />
 
-        {/* Cover image */}
-        {article.coverImage && (
-          <div className="max-w-5xl mx-auto px-6 md:px-8 -mt-8 md:-mt-12 relative z-10 mb-16 md:mb-24">
-            <EditorialImage
-              src={article.coverImage}
-              alt={article.title}
-              aspectClassName="aspect-video md:aspect-[21/9]"
-              width={1200}
-              height={514}
-              loading="eager"
-            />
-          </div>
-        )}
-
-        {/* Body */}
-        <div className="max-w-3xl mx-auto px-5 md:px-8">
+        {/* ── Article body — unchanged ─────────────────────────────── */}
+        <div className="max-w-3xl mx-auto px-5 md:px-8 pt-16">
           {article.placeholder ? (
             <p className="text-2xl text-slate italic font-serif text-center py-16">
               Full article being migrated — check back soon.

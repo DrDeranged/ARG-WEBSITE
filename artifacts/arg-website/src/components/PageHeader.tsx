@@ -119,11 +119,12 @@ function CinemaHeader({
     }
 
     const ctx = gsap.context(() => {
-      gsap.set(filmRef.current,     { opacity: 0 });
-      gsap.set(eyebrowRef.current,  { opacity: 0 });
-      gsap.set(headlineRef.current, { opacity: 0, y: 24 });
-      gsap.set(sublineRef.current,  { opacity: 0 });
-      gsap.set(footerRef.current,   { opacity: 0 });
+      // Guard each set against null (optional slots like footer may have no DOM node)
+      if (filmRef.current)     gsap.set(filmRef.current,     { opacity: 0 });
+      if (eyebrowRef.current)  gsap.set(eyebrowRef.current,  { opacity: 0 });
+      if (headlineRef.current) gsap.set(headlineRef.current, { opacity: 0, y: 24 });
+      if (sublineRef.current)  gsap.set(sublineRef.current,  { opacity: 0 });
+      if (footerRef.current)   gsap.set(footerRef.current,   { opacity: 0 });
 
       const tl = gsap.timeline({ delay: 0.1 });
       // Beat 1 — film fades in
