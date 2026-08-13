@@ -1,9 +1,10 @@
-import { type ReactNode, useEffect, useRef, useState, type ComponentProps } from 'react';
+import { type ReactNode, type ComponentType, useEffect, useRef, useState, type ComponentProps } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
+import { ROUTES } from '@/routes';
 import {
   Route,
   Switch,
@@ -20,6 +21,17 @@ import BlogListPage from '@/pages/blog-list';
 import BlogArticlePage from '@/pages/blog-article';
 
 const queryClient = new QueryClient();
+
+/**
+ * Page component map — keyed by canonical path matching routes.ts.
+ * To add a page: register in routes.ts + add an entry here.
+ */
+const PAGE_COMPONENTS: Record<string, ComponentType> = {
+  '/':            HomePage,
+  '/contact-us/': ContactPage,
+  '/careers/':    CareersPage,
+  '/blog/':       BlogListPage,
+};
 
 /** Client-side redirect — replaces history entry so back-button works correctly */
 function Redirect({ to }: { to: string }) {
@@ -109,13 +121,18 @@ function Router() {
 
       <div style={pageStyle}>
         <Switch>
-          <Route path="/"            component={HomePage} />
-          <Route path="/contact-us"  component={ContactPage} />
-          <Route path="/contact-us/" component={ContactPage} />
-          <Route path="/careers"     component={CareersPage} />
-          <Route path="/careers/"    component={CareersPage} />
-          <Route path="/blog"        component={BlogListPage} />
-          <Route path="/blog/"       component={BlogListPage} />
+          {/* Primary page routes — paths registered in src/routes.ts.
+              Both trailing-slash and bare forms are generated from the registry. */}
+          {ROUTES.flatMap(r => {
+            const Comp = PAGE_COMPONENTS[r.path];
+            if (!Comp) return [];
+            if (r.path === '/') return [<Route key="/" path="/" component={Comp} />];
+            const bare = r.path.slice(0, -1); // e.g. '/contact-us/' → '/contact-us'
+            return [
+              <Route key={r.path} path={r.path} component={Comp} />,
+              <Route key={bare}    path={bare}    component={Comp} />,
+            ];
+          })}
           <Route path="/blog/:slug"  component={BlogArticlePage} />
           <Route path="/blog/:slug/" component={BlogArticlePage} />
           {/* ── Legacy URL redirects (old site served articles at root level) ── */}

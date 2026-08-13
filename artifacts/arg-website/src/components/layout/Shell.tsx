@@ -5,6 +5,7 @@ import { ScrambleText } from '@/components/ScrambleText';
 import { useMotion } from '@/motion';
 import { ArgAssist } from '@/components/ArgAssist';
 import { FPSOverlay } from '@/components/FPSOverlay';
+import { NAV_LINKS } from '@/routes';
 
 /* ── Office Status ──────────────────────────────────────── */
 type OfficeStatus = { open: boolean; label: string };
@@ -490,17 +491,15 @@ export function Shell({ children }: { children: ReactNode }) {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6" aria-label="Main navigation">
-            {[['Home', '/'], ['Contact Us', '/contact-us/'], ['Careers', '/careers/'], ['Blog', '/blog/']].map(
-              ([label, href]) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`link-draw text-sm font-medium transition-colors ${isActive(href) ? 'text-recovered' : isDarkHero ? 'text-paper/80 hover:text-paper' : 'text-slate hover:text-recovered'}`}
-                >
-                  {label}
-                </Link>
-              )
-            )}
+            {NAV_LINKS.map(({ label, path }) => (
+              <Link
+                key={path}
+                href={path}
+                className={`link-draw text-sm font-medium transition-colors ${isActive(path) ? 'text-recovered' : isDarkHero ? 'text-paper/80 hover:text-paper' : 'text-slate hover:text-recovered'}`}
+              >
+                {label}
+              </Link>
+            ))}
           </nav>
 
           <div className="hidden md:flex items-center gap-4 flex-shrink-0">
@@ -558,13 +557,11 @@ export function Shell({ children }: { children: ReactNode }) {
           style={{ paddingTop: 'max(6rem, calc(env(safe-area-inset-top, 0px) + 4rem))' }}
         >
           <nav className="flex flex-col gap-6 text-2xl font-serif" aria-label="Mobile navigation">
-            {[['Home', '/'], ['Contact Us', '/contact-us/'], ['Careers', '/careers/'], ['Blog', '/blog/']].map(
-              ([label, href]) => (
-                <Link key={href} href={href} className="text-ink hover:text-recovered border-b border-rule pb-4">
-                  {label}
-                </Link>
-              )
-            )}
+            {NAV_LINKS.map(({ label, path }) => (
+              <Link key={path} href={path} className="text-ink hover:text-recovered border-b border-rule pb-4">
+                {label}
+              </Link>
+            ))}
           </nav>
           <div className="mt-8 flex flex-col gap-4">
             <a href="https://app.simplicitycollect.com/Login.aspx" target="_blank" rel="noopener"
@@ -634,13 +631,11 @@ export function Shell({ children }: { children: ReactNode }) {
             <div className="order-3 md:order-none">
               <h4 className="font-mono text-xs tracking-widest text-paper/50 mb-6 uppercase">Navigation</h4>
               <nav className="flex flex-col gap-4" aria-label="Footer navigation">
-                {[['Home', '/'], ['Contact Us', '/contact-us/'], ['Careers', '/careers/'], ['Blog', '/blog/']].map(
-                  ([label, href]) => (
-                    <Link key={href} href={href} className="link-draw text-sm hover:text-white transition-colors w-fit">
-                      {label}
-                    </Link>
-                  )
-                )}
+                {NAV_LINKS.map(({ label, path }) => (
+                  <Link key={path} href={path} className="link-draw text-sm hover:text-white transition-colors w-fit">
+                    {label}
+                  </Link>
+                ))}
               </nav>
             </div>
 

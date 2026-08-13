@@ -1,7 +1,11 @@
 import { Shell } from '@/components/layout/Shell';
 import { EditorialImage } from '@/components/EditorialImage';
-import { AmbientVideo } from '@/components/AmbientVideo';
 import { useForm } from 'react-hook-form';
+import { PageHeader } from '@/components/PageHeader';
+import { LedgerRow } from '@/components/LedgerRow';
+import { MiniLedgerList } from '@/components/MiniLedgerList';
+import { CloserBand } from '@/components/CloserBand';
+import { SITE_ORIGIN } from '@/routes';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
@@ -183,52 +187,6 @@ function VCardRow() {
   );
 }
 
-/* ── ContactRow ─────────────────────────────────────────────────────── */
-function ContactRow({
-  label, value, href, type, noBorder = false,
-}: { label: string; value: string; href?: string; type: 'phone' | 'email' | 'fax'; noBorder?: boolean }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleClick = (e: React.MouseEvent) => {
-    if (!href || type === 'fax') return;
-    const isDesktop = typeof window !== 'undefined' &&
-      window.matchMedia('(pointer: fine)').matches;
-    if (isDesktop) {
-      e.preventDefault();
-      navigator.clipboard.writeText(value).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }).catch(() => {});
-    }
-  };
-
-  const inner = (
-    <span className={`group relative flex items-center justify-between min-h-[44px] px-0 py-3 ${noBorder ? '' : 'border-b border-rule'} transition-colors hover:bg-mist cursor-pointer`}>
-      <span
-        className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r-sm bg-recovered opacity-0 group-hover:opacity-100"
-        style={{ transition: 'opacity 150ms ease' }}
-        aria-hidden="true"
-      />
-      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate select-none transition-transform duration-200 group-hover:translate-x-[6px]">
-        {label}
-      </span>
-      <span className="flex items-center gap-2">
-        {copied ? (
-          <span className="font-mono text-sm text-recovered">Copied ✓</span>
-        ) : (
-          <span className={`font-mono tabular-nums text-ink ${type === 'email' ? 'text-sm md:text-base break-all' : 'text-base md:text-lg'}`}>
-            {value}
-          </span>
-        )}
-        {href && !copied && (
-          <ChevronRight size={13} className="text-slate/30 group-hover:text-recovered flex-shrink-0" style={{ transition: 'color 150ms ease' }} aria-hidden="true" />
-        )}
-      </span>
-    </span>
-  );
-  if (!href) return <div>{inner}</div>;
-  return <a href={href} onClick={handleClick}>{inner}</a>;
-}
 
 /* ── HoursLedger ────────────────────────────────────────────────────── */
 function HoursLedger({ activeRow }: { activeRow: ActiveRow }) {
@@ -354,62 +312,17 @@ export default function ContactPage() {
   const [dogCaption, setDogCaption]           = useState<string | null>(null);
   const officeStatus = useOfficeStatus();
 
-  /* ── Animation refs ──────────────────────────────────────────────── */
-  // Cinematic header entrance
-  const headerFilmRef = useRef<HTMLDivElement>(null);
-  const eyebrowRef    = useRef<HTMLParagraphElement>(null);
-  const headlineRef   = useRef<HTMLHeadingElement>(null);
-  const sublineRef    = useRef<HTMLParagraphElement>(null);
-  const statusRef     = useRef<HTMLDivElement>(null);
-
-  // Two-column body scroll reveals
+  /* ── Scroll reveal refs ─────────────────────────────────────────── */
+  // Two-column body
   const leftColRef  = useRef<HTMLDivElement>(null);
   const rightColRef = useRef<HTMLDivElement>(null);
 
   // Contact rows rule-draw reveal
   const contactBlockRef = useRef<HTMLDivElement>(null);
 
-  // WhatHappensNext step refs
-  const step1Ref = useRef<HTMLDivElement>(null);
-  const step2Ref = useRef<HTMLDivElement>(null);
-  const step3Ref = useRef<HTMLDivElement>(null);
-
   // Locality card
   const localityCardRef = useRef<HTMLDivElement>(null);
 
-  /* ── Entrance animation (fire once on load) ──────────────────────── */
-  useLayoutEffect(() => {
-    if (!ready) return;
-
-    if (reducedMotion) {
-      // Settled states — no animation
-      [headerFilmRef, eyebrowRef, headlineRef, sublineRef, statusRef].forEach(r => {
-        if (r.current) gsap.set(r.current, { opacity: 1, y: 0 });
-      });
-      return;
-    }
-
-    const ctx = gsap.context(() => {
-      gsap.set(headerFilmRef.current, { opacity: 0 });
-      gsap.set(eyebrowRef.current,   { opacity: 0 });
-      gsap.set(headlineRef.current,  { opacity: 0, y: 24 });
-      gsap.set(sublineRef.current,   { opacity: 0 });
-      gsap.set(statusRef.current,    { opacity: 0 });
-
-      const tl = gsap.timeline({ delay: 0.1 });
-      // Beat 1 — film fades in
-      tl.to(headerFilmRef.current, { opacity: 1, duration: 0.6, ease: 'power2.out' }, 0);
-      // Beat 2 — eyebrow + headline rise (overlapping with film)
-      tl.to(eyebrowRef.current,  { opacity: 1, duration: 0.35, ease: 'power2.out' }, 0.3);
-      tl.to(headlineRef.current, { opacity: 1, y: 0, duration: 0.65, ease: 'power3.out' }, 0.35);
-      // Beat 3 — subline + status
-      tl.to(sublineRef.current, { opacity: 1, duration: 0.45, ease: 'power2.out' }, 0.65);
-      tl.to(statusRef.current,  { opacity: 1, duration: 0.35, ease: 'power2.out' }, 0.80);
-      // Total ≈ 1.2s
-    });
-
-    return () => ctx.revert();
-  }, [ready, reducedMotion]);
 
   /* ── Scroll reveals ──────────────────────────────────────────────── */
   useLayoutEffect(() => {
@@ -450,32 +363,6 @@ export default function ContactPage() {
           },
         });
       }
-
-      // WhatHappensNext — sequential: rule → number → text, 100ms apart
-      const stepRefs = [step1Ref, step2Ref, step3Ref];
-      stepRefs.forEach((stepRef, i) => {
-        const el = stepRef.current;
-        if (!el) return;
-        const ruleEl = el.querySelector<HTMLElement>('[data-rule]');
-        const numEl  = el.querySelector<HTMLElement>('[data-num]');
-        const textEl = el.querySelector<HTMLElement>('[data-text]');
-
-        gsap.set(el, { opacity: 0 });
-        if (ruleEl) gsap.set(ruleEl, { scaleX: 0, transformOrigin: 'left center' });
-        if (numEl)  gsap.set(numEl,  { opacity: 0 });
-        if (textEl) gsap.set(textEl, { opacity: 0 });
-
-        createReveal(el, {
-          start: 'top 88%',
-          onEnter: () => {
-            gsap.set(el, { opacity: 1 });
-            const tl = gsap.timeline({ delay: i * 0.1 });
-            if (ruleEl) tl.to(ruleEl, { scaleX: 1, duration: 0.22, ease: 'power2.out' }, 0);
-            tl.to(numEl,  { opacity: 1, duration: 0.2 }, ruleEl ? 0.18 : 0);
-            tl.to(textEl, { opacity: 1, duration: 0.28 }, ruleEl ? 0.28 : 0.1);
-          },
-        });
-      });
 
       // Locality card
       if (localityCardRef.current) {
@@ -562,15 +449,15 @@ export default function ContactPage() {
       {/* Phone */}
       <div data-row className="relative">
         <div data-rule className="absolute top-0 left-0 right-0 h-[1px] bg-rule" aria-hidden="true" />
-        <ContactRow label="Phone" value="(877) 464-8470" href="tel:8774648470" type="phone" noBorder />
+        <LedgerRow label="Phone" value="(877) 464-8470" href="tel:8774648470" type="phone" noBorder />
       </div>
       <div data-row className="relative">
         <div data-rule className="absolute top-0 left-0 right-0 h-[1px] bg-rule" aria-hidden="true" />
-        <ContactRow label="Email" value="collect@advancedrecoverygroup.com" href="mailto:collect@advancedrecoverygroup.com" type="email" noBorder />
+        <LedgerRow label="Email" value="collect@advancedrecoverygroup.com" href="mailto:collect@advancedrecoverygroup.com" type="email" noBorder />
       </div>
       <div data-row className="relative">
         <div data-rule className="absolute top-0 left-0 right-0 h-[1px] bg-rule" aria-hidden="true" />
-        <ContactRow label="Fax" value="(888) 881-8211" type="fax" noBorder />
+        <LedgerRow label="Fax" value="(888) 881-8211" type="fax" noBorder />
       </div>
       <div data-row className="relative">
         <div data-rule className="absolute top-0 left-0 right-0 h-[1px] bg-rule" aria-hidden="true" />
@@ -630,35 +517,12 @@ export default function ContactPage() {
         </div>
       </div>
 
-      {/* What Happens Next — sequential draw animation */}
-      <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate mb-3">
-          What Happens Next
-        </p>
-        <div className="border border-rule rounded-sm overflow-hidden">
-          {STEPS.map((s, i) => {
-            const stepRef = [step1Ref, step2Ref, step3Ref][i];
-            return (
-              <div key={s.n} ref={stepRef} className="relative flex items-start gap-4 px-4 py-3">
-                {/* Rule between steps — animated scaleX by GSAP (not for first step) */}
-                {i > 0 && (
-                  <div
-                    data-rule
-                    className="absolute top-0 left-0 right-0 h-[1px] bg-rule origin-left"
-                    aria-hidden="true"
-                  />
-                )}
-                <span data-num className="font-mono text-[10px] text-slate/40 tabular-nums pt-0.5 flex-shrink-0">
-                  {s.n}
-                </span>
-                <span data-text className="font-mono text-xs text-ink leading-relaxed">
-                  {s.text}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* What Happens Next — sequential draw animation managed by MiniLedgerList */}
+      <MiniLedgerList
+        steps={STEPS}
+        label="What Happens Next"
+        revealIdPrefix="contact-steps"
+      />
 
       {/* Locality card */}
       <div ref={localityCardRef}>
@@ -860,59 +724,23 @@ export default function ContactPage() {
         <meta name="description" content="Place an account or request a consultation with Advanced Recovery Group, a commercial collections agency serving MCA funders, factors, lessors, and lenders." />
         <meta property="og:title" content="Contact Us | Advanced Recovery Group" />
         <meta property="og:description" content="Place an account or request a consultation with Advanced Recovery Group, a commercial collections agency serving MCA funders, factors, lessors, and lenders." />
-        <meta property="og:url" content="https://advancedrecoverygroup.com/contact-us/" />
+        <meta property="og:url" content={`${SITE_ORIGIN}/contact-us/`} />
         <script type="application/ld+json">{FAQ_JSON_LD}</script>
       </Helmet>
 
       {/* ── CINEMATIC HEADER BAND ─────────────────────────────────── */}
-      <section
-        className="relative bg-ink border-b border-ink/20 overflow-hidden min-h-[40vh] md:min-h-[52vh] flex flex-col justify-end"
-        aria-label="Contact page header"
-      >
-        {/* office-floor ambient video + ink gradient overlay */}
-        <div ref={headerFilmRef} className="absolute inset-0 z-0" aria-hidden="true">
-          <AmbientVideo
-            mp4="/videos/office-floor.mp4"
-            webm="/videos/office-floor.webm"
-            poster="/videos/office-floor-poster.jpg"
-            overlayOpacity={0}
-            aspectClassName=""
-            className="w-full h-full"
-          />
-          {/* Ink gradient — 0.55 edges, 0.45 middle */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                'linear-gradient(to bottom,' +
-                ' rgba(16,31,48,0.55) 0%,' +
-                ' rgba(16,31,48,0.45) 50%,' +
-                ' rgba(16,31,48,0.55) 100%)',
-            }}
-          />
-        </div>
-
-        {/* Header content — anchored to bottom of band */}
-        <div className="relative z-10 max-w-6xl mx-auto w-full px-6 md:px-8 pt-32 pb-12 md:pt-40 md:pb-14">
-          <p
-            ref={eyebrowRef}
-            className="font-mono text-recovered tracking-widest text-xs font-semibold mb-5 uppercase"
-          >
-            Contact — Fairfield, NJ
-          </p>
-          <h1
-            ref={headlineRef}
-            className="text-5xl md:text-7xl lg:text-8xl font-serif text-paper tracking-tight mb-6 leading-none"
-          >
-            Let&rsquo;s talk.
-          </h1>
-          <p
-            ref={sublineRef}
-            className="text-lg md:text-xl text-paper/80 font-sans max-w-2xl leading-relaxed mb-6"
-          >
-            Tell us what you&rsquo;re owed. A recovery specialist responds within one business day.
-          </p>
-          <div ref={statusRef} className="flex items-center gap-2.5 font-mono text-xs text-paper/70">
+      {/* Entrance animation is managed inside PageHeader — no refs needed here */}
+      <PageHeader
+        variant="cinema"
+        mp4="/videos/office-floor.mp4"
+        webm="/videos/office-floor.webm"
+        poster="/videos/office-floor-poster.jpg"
+        eyebrow="Contact — Fairfield, NJ"
+        headline="Let's talk."
+        subline="Tell us what you're owed. A recovery specialist responds within one business day."
+        ariaLabel="Contact page header"
+        footer={
+          <div className="flex items-center gap-2.5 font-mono text-xs text-paper/70">
             {/* Pulsing status dot — 2s interval, respects reduced-motion */}
             <span className="relative flex-shrink-0 w-2 h-2" aria-hidden="true">
               {officeStatus.open && (
@@ -925,8 +753,8 @@ export default function ContactPage() {
             </span>
             {officeStatus.label}
           </div>
-        </div>
-      </section>
+        }
+      />
 
       {/* ── TWO-COLUMN BODY ───────────────────────────────────────── */}
       <section className="bg-paper pt-14 pb-16 md:pt-16 md:pb-20 border-b border-rule">
@@ -956,40 +784,28 @@ export default function ContactPage() {
       </section>
 
       {/* ── CLOSER BAND ──────────────────────────────────────────── */}
-      <section className="relative bg-ink overflow-hidden py-14 md:py-16">
-        {/* hands-ledger ambient background — mp4 + poster only (no webm prop) */}
-        <div className="absolute inset-0 z-0">
-          <AmbientVideo
-            mp4="/videos/hands-ledger.mp4"
-            poster="/videos/hands-ledger-poster.jpg"
-            overlayOpacity={0.6}
-            overlayVariant="gradient"
-            aspectClassName=""
-            className="w-full h-full"
-          />
-        </div>
-        <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8 flex flex-col md:flex-row md:items-center md:justify-between gap-8">
-          <h2 className="text-2xl md:text-3xl font-serif text-paper leading-snug">
-            Have documents ready to send?
-          </h2>
-          <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-            <a
-              href="mailto:collect@advancedrecoverygroup.com"
-              className="inline-flex items-center justify-center gap-2 bg-recovered text-paper font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-sm hover:bg-recovered/90 transition-colors min-h-[44px]"
-            >
-              Email the file to collect@
-            </a>
-            <a
-              href="https://app.simplicitycollect.com/Login.aspx"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-sm border border-paper/30 text-paper hover:bg-paper/10 transition-colors min-h-[44px]"
-            >
-              Client Portal
-            </a>
-          </div>
-        </div>
-      </section>
+      {/* hands-ledger: mp4 + poster only — no webm (corrupt file, see memory) */}
+      <CloserBand
+        headline="Have documents ready to send?"
+        mp4="/videos/hands-ledger.mp4"
+        poster="/videos/hands-ledger-poster.jpg"
+        overlayOpacity={0.6}
+      >
+        <a
+          href="mailto:collect@advancedrecoverygroup.com"
+          className="inline-flex items-center justify-center gap-2 bg-recovered text-paper font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-sm hover:bg-recovered/90 transition-colors min-h-[44px]"
+        >
+          Email the file to collect@
+        </a>
+        <a
+          href="https://app.simplicitycollect.com/Login.aspx"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-sm border border-paper/30 text-paper hover:bg-paper/10 transition-colors min-h-[44px]"
+        >
+          Client Portal
+        </a>
+      </CloserBand>
     </Shell>
   );
 }

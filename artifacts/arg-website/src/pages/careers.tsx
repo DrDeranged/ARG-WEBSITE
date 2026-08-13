@@ -1,7 +1,9 @@
 import { Shell } from '@/components/layout/Shell';
 import { EditorialImage } from '@/components/EditorialImage';
-import { AmbientVideo } from '@/components/AmbientVideo';
 import { Helmet } from 'react-helmet-async';
+import { PageHeader } from '@/components/PageHeader';
+import { CinemaBand } from '@/components/CinemaBand';
+import { SITE_ORIGIN } from '@/routes';
 
 export default function CareersPage() {
   return (
@@ -9,57 +11,36 @@ export default function CareersPage() {
       <Helmet>
         <title>Careers | Advanced Recovery Group</title>
         <meta name="description" content="Join Advanced Recovery Group — a fast-paced, results-driven commercial collections firm in Fairfield, NJ. Current opening: Collections Recovery Specialist." />
-        <meta property="og:url" content="https://advancedrecoverygroup.com/careers/" />
+        <meta property="og:url" content={`${SITE_ORIGIN}/careers/`} />
       </Helmet>
 
       {/* ── Page header ─────────────────────────────────────────────── */}
-      <section className="pt-32 pb-10 md:pt-48 md:pb-10 bg-paper">
-        <div className="max-w-6xl mx-auto px-6 md:px-8">
-          <h1 className="font-serif text-ink" style={{ fontSize: 'clamp(3.5rem, 8vw, 6rem)', lineHeight: 1.05 }}>
-            Join the Team
-          </h1>
-        </div>
-      </section>
+      <PageHeader variant="light" headline="Join the Team" />
 
       {/* ── Ambient b-roll band ──────────────────────────────────────
-          Full-width, no max-w container.
-          Mobile:  aspect-[4/3]
-          Desktop: aspect-video, height capped at 420px
           HONESTY RULE: label is "COLLECTIONS IN MOTION" — this is
           licensed b-roll, never captioned as ARG's own office/team.
       ─────────────────────────────────────────────────────────────── */}
-      <section className="w-full border-b border-rule">
-        {/* Relative wrapper lets us layer intro text over the band */}
-        <div className="relative">
-          <AmbientVideo
-            mp4="/videos/careers-broll.mp4"
-            webm="/videos/careers-broll.webm"
-            poster="/videos/careers-broll-poster.jpg"
-            overlayOpacity={0.55}
-            label="COLLECTIONS IN MOTION"
-            aspectClassName="aspect-[4/3] md:aspect-video"
-            className="border-0 border-b-2 md:max-h-[420px] w-full"
-          />
-
-          {/* Intro text overlay — paper serif, bottom-left, AA-readable */}
-          <div
-            className="absolute bottom-0 left-0 right-0 px-6 py-6 md:px-10 md:py-8 pointer-events-none"
-            aria-hidden="false"
-          >
-            <p className="font-mono text-paper/60 text-[9px] tracking-[0.22em] uppercase mb-2">
-              Work at ARG
-            </p>
-            <p
-              className="font-serif text-paper leading-snug max-w-xl"
-              style={{ fontSize: 'clamp(1rem, 2vw, 1.35rem)' }}
-            >
-              At Advanced Recovery Group, we operate in a fast-paced, results-driven environment.
-              We value professionalism, integrity, and a team-oriented approach to solving
-              complex financial challenges.
-            </p>
-          </div>
-        </div>
-      </section>
+      <CinemaBand
+        mp4="/videos/careers-broll.mp4"
+        webm="/videos/careers-broll.webm"
+        poster="/videos/careers-broll-poster.jpg"
+        overlayOpacity={0.55}
+        label="COLLECTIONS IN MOTION"
+        aspectClassName="aspect-[4/3] md:aspect-video"
+      >
+        <p className="font-mono text-paper/60 text-[9px] tracking-[0.22em] uppercase mb-2">
+          Work at ARG
+        </p>
+        <p
+          className="font-serif text-paper leading-snug max-w-xl"
+          style={{ fontSize: 'clamp(1rem, 2vw, 1.35rem)' }}
+        >
+          At Advanced Recovery Group, we operate in a fast-paced, results-driven environment.
+          We value professionalism, integrity, and a team-oriented approach to solving
+          complex financial challenges.
+        </p>
+      </CinemaBand>
 
       {/* ── Current openings ─────────────────────────────────────── */}
       <section className="bg-mist py-24 border-b border-rule">

@@ -1,0 +1,45 @@
+Create the ARG design system pattern kit — infrastructure for adding
+future pages without design drift. No visual changes to existing
+pages.
+
+1. DESIGN-SYSTEM.md at the arg-website root — the constitution.
+   Document concisely with code references:
+   - Tokens: the 6 colors + signal amber + recovered-bright, the
+     three typefaces and their roles (serif display / Public Sans
+     body / mono for numbers-labels-eyebrows, always tabular-nums)
+   - Layout laws: max-w-6xl, section padding scale, 1px rules not
+     shadows, ≤4px radii, sentence-case marketing headlines,
+     opaque isolated sections, svh not vh
+   - Motion laws: reveals via the ScrollDirector only, pins are
+     desktop-only via gsap.matchMedia and require justification
+     (site max: 2 on any page), transform/opacity only, geometry
+     fixed at init, reduced-motion renders settled states
+   - Media laws: all video through AmbientVideo, poster required,
+     honesty rules for captions, ≤4MB per clip
+   - Content laws: no invented facts/URLs/hours/stats; unknown =
+     ask; [CONFIRM] flags for unverified claims
+   - The STANDING RULES: no refactors outside prompt scope, no
+     model-string substitutions, push via Git pane
+2. PAGE SCAFFOLD TEMPLATE: src/pages/_template.tsx (excluded from
+   routing) — a fully-commented skeleton page wired correctly:
+   Helmet meta block with og:url pattern, eyebrow+headline header
+   in both light and dark-cinema variants (commented alternatives),
+   a ScrollDirector reveal registration example, an AmbientVideo
+   slot example, section folio usage, and the footer/closer band
+   pattern. A new page starts as a copy of this file.
+3. EXTRACT SHARED SECTION COMPONENTS (refactor-in-place, zero
+   visual change — verify pixel parity): PageHeader (light and
+   cinema variants), LedgerRow (the tappable contact-row pattern),
+   MiniLedgerList (the numbered what-happens-next pattern),
+   CinemaBand (full-bleed video + overlay + content slot), and
+   CloserBand (ink CTA band). Refactor contact + careers to
+   consume them where they currently duplicate markup.
+4. ROUTE REGISTRY: centralize routes in src/routes.ts (path, title,
+   component, og fields) consumed by App.tsx, the sitemap, and the
+   header nav — adding a page becomes one registry entry. Keep
+   trailing-slash behavior and the legacy redirects intact.
+5. Update the README with a "Adding a new page" section: copy
+   _template → register in routes.ts → follow DESIGN-SYSTEM.md →
+   audit checklist (meta present, reveals registered, mobile 375px
+   check, no new pins without justification).
+Commit as "Design system pattern kit + page scaffolding".
