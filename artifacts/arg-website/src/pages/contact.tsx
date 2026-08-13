@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ChevronRight, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import gsap from 'gsap';
 import { createReveal } from '@/motion/director';
 import { useMotion } from '@/motion/MotionProvider';
