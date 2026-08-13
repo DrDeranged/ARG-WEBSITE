@@ -481,7 +481,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <header
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
         className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-          isScrolled ? 'bg-paper/95 backdrop-blur-md border-b border-rule py-3' : isDarkHero ? 'bg-transparent py-4 md:py-5' : 'bg-paper py-4 md:py-5'
+          isScrolled ? 'bg-paper/95 md:backdrop-blur-md border-b border-rule py-3' : isDarkHero ? 'bg-transparent py-4 md:py-5' : 'bg-paper py-4 md:py-5'
         }`}
       >
         <div className="max-w-6xl mx-auto px-6 md:px-8 flex items-center justify-between gap-6">

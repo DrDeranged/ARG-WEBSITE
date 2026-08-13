@@ -477,16 +477,36 @@
   }
 }
 
-/* ── Global horizontal overflow guard ────────────────────── */
-html, body {
+/* ── Global horizontal overflow guard + ink paint backstop ───────────── */
+/* ink backstop: any overscroll rubber-band, paint lag, or viewport
+   mismatch shows ink (#101F30), never white. body stays bg-paper. */
+html {
+  overflow-x: hidden;
+  background-color: #101F30;
+  overscroll-behavior-y: none;
+}
+body {
   overflow-x: hidden;
 }
 
-/* ── Hero section: natural height on mobile, min(92vh, 900px) on desktop ── */
+/* ── Hero section: natural height on mobile, min(92svh, 900px) on desktop ── */
 @media (min-width: 768px) {
   .hero-height {
-    min-height: min(92vh, 900px);
+    min-height: min(92vh, 900px);   /* fallback for older browsers */
+    min-height: min(92svh, 900px);  /* small-viewport-height: excludes browser chrome */
   }
+}
+
+/* ── SVH utilities with 100vh fallback ────────────────────────────────── */
+/* Used for full-screen cinema sections and loading states.
+   Two-value cascade: 100svh overrides 100vh in supporting browsers. */
+.h-svh {
+  height: 100vh;
+  height: 100svh;
+}
+.min-h-svh {
+  min-height: 100vh;
+  min-height: 100svh;
 }
 
 /* ── Ticker: pan-y so horizontal animation doesn't hijack vertical scroll ── */

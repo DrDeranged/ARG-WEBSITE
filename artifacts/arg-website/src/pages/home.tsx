@@ -803,31 +803,33 @@ function IndustriesSection() {
   useLayoutEffect(() => {
     if (reducedMotion || !ready) return;
 
-    const ctx = gsap.context(() => {
-      const isMobile = window.innerWidth < 1024;
-      const words = wordRefs.current.filter(Boolean) as HTMLSpanElement[];
+    const words = wordRefs.current.filter(Boolean) as HTMLSpanElement[];
 
-      if (isMobile) {
-        // Mobile: IO-based entrance for quote + panel
-        if (quoteRef.current) {
-          gsap.set(quoteRef.current, { opacity: 0, y: 12 });
-          createReveal(quoteRef.current, {
-            id: 'industries-quote',
-            onEnter: () => gsap.to(quoteRef.current, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }),
-          });
-        }
-        if (panelRef.current) {
-          gsap.set(panelRef.current, { opacity: 0, y: 24 });
-          createReveal(panelRef.current, {
-            id: 'industries-panel',
-            start: 'top 80%',
-            onEnter: () => gsap.to(panelRef.current, { opacity: 1, y: 0, duration: 0.65, ease: 'power2.out' }),
-          });
-        }
-        return;
+    // gsap.matchMedia enforces pin boundary structurally:
+    // zero .pin-spacer elements exist in the DOM below 768px.
+    const mm = gsap.matchMedia();
+
+    // ≤767px — enter-once reveals, no pin, no pin-spacers
+    mm.add('(max-width: 767px)', () => {
+      if (quoteRef.current) {
+        gsap.set(quoteRef.current, { opacity: 0, y: 12 });
+        createReveal(quoteRef.current, {
+          id: 'industries-quote',
+          onEnter: () => gsap.to(quoteRef.current, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }),
+        });
       }
+      if (panelRef.current) {
+        gsap.set(panelRef.current, { opacity: 0, y: 24 });
+        createReveal(panelRef.current, {
+          id: 'industries-panel',
+          start: 'top 80%',
+          onEnter: () => gsap.to(panelRef.current, { opacity: 1, y: 0, duration: 0.65, ease: 'power2.out' }),
+        });
+      }
+    });
 
-      // Desktop: pin 120vh cinema — words reveal 0→0.65, panel fades 0.58→1.0
+    // ≥768px — pin cinema: words reveal 0→0.65, panel fades 0.58→1.0
+    mm.add('(min-width: 768px)', () => {
       gsap.set(words, { opacity: 0.12 });
       if (panelRef.current) gsap.set(panelRef.current, { opacity: 0 });
 
@@ -868,20 +870,20 @@ function IndustriesSection() {
       if (panelRef.current) {
         tl.to(panelRef.current, { opacity: 1, ease: 'power2.out', duration: 0.35 }, 0.58);
       }
-    }, sectionRef);
+    });
 
-    return () => { ctx.revert(); };
+    return () => { mm.revert(); };
   }, [reducedMotion, ready]);
 
   return (
-    /* Opaque, isolated stacking layer — height locked to 100vh so pin math
-       is stable regardless of media load timing. bg-ink sits under the video
-       so nothing shows through before the first frame paints. */
+    /* Opaque, isolated stacking layer — height locked to 100svh (with 100vh
+       fallback) so pin math is stable and browser chrome is excluded on mobile.
+       bg-ink sits under the video so nothing shows through before first paint. */
     <section
       ref={sectionRef}
       data-folio-n={5}
-      className="relative bg-ink isolate overflow-hidden"
-      style={{ height: '100vh' }}
+      className="relative bg-ink isolate overflow-hidden h-svh"
+      style={{ transform: 'translateZ(0)' }}
     >
       <SectionFolio n={5} />
 
@@ -893,7 +895,7 @@ function IndustriesSection() {
         <AmbientVideo
           mp4="/videos/bw-skyline.mp4"
           webm="/videos/bw-skyline.webm"
-          poster="/videos/bw-skyline.jpg"
+          poster="/videos/bw-skyline-poster.jpg"
           overlayOpacity={0.48}
           overlayVariant="gradient"
           aspectClassName=""
@@ -966,7 +968,7 @@ function TrustStrip() {
         <AmbientVideo
           mp4="/videos/office-floor.mp4"
           webm="/videos/office-floor.webm"
-          poster="/videos/office-floor.jpg"
+          poster="/videos/office-floor-poster.jpg"
           overlayOpacity={0.72}
           overlayVariant="gradient"
           aspectClassName=""
@@ -1246,7 +1248,7 @@ function ClosingCTA() {
         <AmbientVideo
           mp4="/videos/dusk-skyline.mp4"
           webm="/videos/dusk-skyline.webm"
-          poster="/videos/dusk-skyline.jpg"
+          poster="/videos/dusk-skyline-poster.jpg"
           overlayOpacity={0.62}
           overlayVariant="gradient"
           aspectClassName=""
@@ -1353,7 +1355,7 @@ function HeroSection() {
   const heroStatus = useHeroStatus();
 
   const [isMobile] = useState<boolean>(() =>
-    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
 
   const sectionRef     = useRef<HTMLElement>(null);
@@ -1437,16 +1439,23 @@ function HeroSection() {
     // ── Fast path: skip entrance if already scrolled ───────────────────────
     if (!isMobile && window.scrollY > 200) {
       settleAll();
-      buildScrubTl();
-      return () => { scrubTl?.kill(); };
+      const mmFast = gsap.matchMedia();
+      mmFast.add('(min-width: 768px)', () => {
+        buildScrubTl();
+        return () => { scrubTl?.kill(); scrubTl = null; };
+      });
+      return () => { mmFast.revert(); };
     }
 
     // ── Normal path: hidden → 1.8s entrance → (desktop) pin ──────────────
-    // Create pin at init — BEFORE the entrance — so document height is fixed
-    // before the user can scroll. Lazy FROM capture in GSAP means the scrub
-    // reads the post-entrance values when the user first scrolls past the hero,
-    // so entrance and scrub compose cleanly without fighting each other.
-    if (!isMobile) buildScrubTl();
+    // Pin via gsap.matchMedia: created only at ≥768px, auto-reverted below
+    // that breakpoint so zero .pin-spacer elements exist on mobile.
+    // Lazy FROM capture means the scrub reads post-entrance values on first scroll.
+    const mm = gsap.matchMedia();
+    mm.add('(min-width: 768px)', () => {
+      buildScrubTl();
+      return () => { scrubTl?.kill(); scrubTl = null; };
+    });
     if (lineEls.length)         gsap.set(lineEls, { y: 40, opacity: 0 });
     if (eyebrowRef.current)     gsap.set(eyebrowRef.current, { opacity: 0 });
     if (trioOuterRef.current)   gsap.set(trioOuterRef.current, { opacity: 0 });
@@ -1500,8 +1509,7 @@ function HeroSection() {
       entrance.to(mobileCtasRef.current, { opacity: 1, y: 0, duration: 0.35 * speed }, 1.15 * speed);
     }
 
-    if (isMobile) return () => { entrance.kill(); };
-    return () => { entrance.kill(); scrubTl?.kill(); };
+    return () => { entrance.kill(); mm.revert(); };
   }, [reducedMotion, isMobile, ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -1509,6 +1517,7 @@ function HeroSection() {
       ref={sectionRef}
       data-folio-n={1}
       className="relative isolate bg-ink border-b border-ink/20 overflow-hidden md:flex md:items-center hero-height"
+      style={{ transform: 'translateZ(0)' }}
     >
       {/* hero-film: AmbientVideo — observer-driven play/pause, poster fallback, save-data */}
       {!reducedMotion && (

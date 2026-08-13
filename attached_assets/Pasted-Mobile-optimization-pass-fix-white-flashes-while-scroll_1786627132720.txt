@@ -1,0 +1,59 @@
+Mobile optimization pass — fix white flashes while scrolling and
+backgrounds not rendering on mobile, especially the landing page.
+
+1. VIEWPORT UNITS (the white-gap root cause): replace every 100vh /
+   min-h-screen / h-screen used for section sizing with dynamic
+   viewport units with fallback: height: 100vh; height: 100svh;
+   (small viewport height) for the hero and cinema sections, and
+   min-height equivalents elsewhere. Audit the whole codebase for
+   vh usage (grep vh) and convert. The hero-height class and the
+   cinema section's fixed 100vh from the pin fix are the two
+   critical ones. NEVER use plain 100vh on a sized section again.
+2. PAINT-HOLE BACKSTOP: set html { background-color: #101F30 }
+   (ink) — the hero is dark at the top and the footer is ink at
+   the bottom, so any overscroll rubber-banding, paint lag, or
+   momentary viewport mismatch shows INK, not white. body keeps
+   bg-paper for content flow. Add overscroll-behavior-y: none on
+   html to kill bounce-induced flashes where supported.
+3. PINS OFF ON MOBILE, ENFORCED STRUCTURALLY: wrap the director's
+   pin creation in gsap.matchMedia() — pins + scrub timelines
+   created ONLY at '(min-width: 768px)'; under 768px those
+   sections register plain reveal timelines instead. Verify in
+   mobile emulation that ZERO .pin-spacer elements exist in the
+   DOM — pin spacers with dvh drift are a white-gap source.
+4. MOBILE VIDEO BACKGROUNDS: 
+   a. Verify each AmbientVideo on mobile: playsInline + muted
+      property + observer play — test in iOS Safari emulation.
+      Where play() rejects (Low Power Mode), the poster MUST be
+      showing — verify every poster path resolves (list all
+      poster URLs and confirm 200s; we've had a 404 poster
+      before).
+   b. The hero on mobile: keep the film but lower the source cost —
+      add a media-query-driven source selection: under 768px,
+      skip the webm/mp4 sources entirely and if you cannot
+      conditionally swap sources cleanly, keep the video but
+      ensure the poster paints first and the ink overlay +
+      gradient render even when the video never starts (the
+      background must look INTENTIONAL with poster alone).
+   c. Section backgrounds behind every video (bg-ink base layers
+      from the stacking contract) must render even if the video
+      element errors — spot-check by blocking a video URL in
+      devtools and confirming no white section.
+5. SCROLL COMPOSITING: sections that animate get
+   transform: translateZ(0) (already spec'd — verify applied to
+   the hero, cinema, and ink bands specifically); the header's
+   backdrop blur is expensive on mobile — under 768px replace
+   backdrop-blur with a solid paper/95 background.
+6. LENIS ON TOUCH: confirm syncTouch remains false (native touch
+   scroll). If any touch smoothing is active, remove it — mobile
+   scroll must be 100% native feel.
+7. TEST MATRIX (report each): iPhone-width 390px and 375px and
+   Android 412px in emulation — (a) load landing page: dark hero
+   with film or intentional poster, zero white bands; (b) fling-
+   scroll the full page fast: no white flashes at any section
+   boundary; (c) rotate to landscape and back: layout recovers,
+   no gaps; (d) contact + careers pages same checks; (e) zero
+   horizontal scroll anywhere; (f) Lighthouse mobile ≥85
+   performance.
+Commit as "Mobile optimization: svh units, ink backstop, no mobile
+pins, video fallbacks".
