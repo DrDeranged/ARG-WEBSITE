@@ -9,6 +9,10 @@
  * overlayVariant="gradient" renders a vertical vignette: ink at full opacity
  * at top/bottom edges, ~12 percentage points lighter in the centre so films
  * glow through while text zones stay protected.
+ *
+ * eager=true — use on the first-visible (hero) AmbientVideo only.
+ *   preload="metadata"  → browser buffers enough to start playing at mount.
+ *   All other instances keep preload="none" (lazy, bandwidth-friendly).
  */
 import { useEffect, useRef, useState } from 'react';
 
@@ -33,6 +37,13 @@ interface AmbientVideoProps {
   overlayVariant?: 'flat' | 'gradient';
   /** Mono caption rendered below the frame, matching EditorialImage style */
   label?: string;
+  /**
+   * When true: preload="metadata" so the video is ready to play at mount.
+   * Use ONLY on the first-visible (hero) AmbientVideo per page.
+   * All other instances keep preload="none" for performance.
+   * Default: false
+   */
+  eager?: boolean;
 }
 
 type VideoState = 'video' | 'poster' | 'blank';
@@ -91,11 +102,14 @@ export function AmbientVideo({
   overlayOpacity = 0.5,
   overlayVariant = 'flat',
   label,
+  eager = false,
 }: AmbientVideoProps) {
   const wrapperRef       = useRef<HTMLDivElement>(null);
   const videoRef         = useRef<HTMLVideoElement>(null);
   const intersectingRef  = useRef(false);
   const playingRef       = useRef(false);
+  /** Cleanup for any pending one-shot retry listeners */
+  const retryCleanupRef  = useRef<(() => void) | null>(null);
 
   // 'video' | 'poster' | 'blank'
   // 'blank' = poster also errored; render ledger fill
@@ -127,6 +141,71 @@ export function AmbientVideo({
     // iOS Safari requires the *property* set in addition to the attribute
     video.muted = true;
 
+    /* ── attemptPlay() ──────────────────────────────────────────────
+       Resilient play helper used by both the observer and
+       visibilitychange paths.
+
+       Steps:
+         a. If readyState === 0 (no data): call load() then play on
+            'loadedmetadata' (once).
+         b. If play() rejects: retry ONCE on whichever comes first —
+            'canplay' event OR first user gesture (pointerdown /
+            touchstart / keydown). iOS unlocks media playback on the
+            first touch, so this recovers Low Power Mode denials.
+         c. Two total failures → stop retrying; poster stands.
+    ─────────────────────────────────────────────────────────────── */
+    const attemptPlay = () => {
+      // Cancel any lingering retry listeners from a previous call
+      retryCleanupRef.current?.();
+      retryCleanupRef.current = null;
+
+      if (!video) return;
+
+      let failures = 0; // total failed play() calls for this attempt
+
+      const onPlayFail = () => {
+        failures++;
+        if (failures >= 2) {
+          // Two strikes — poster stands; do not loop
+          playingRef.current = false;
+          return;
+        }
+
+        // Retry ONCE on the first of: canplay | pointerdown | touchstart | keydown
+        let resolved = false;
+        const cleanup = () => {
+          resolved = true;
+          video.removeEventListener('canplay',    retry);
+          window.removeEventListener('pointerdown', retry);
+          window.removeEventListener('touchstart',  retry);
+          window.removeEventListener('keydown',     retry);
+          retryCleanupRef.current = null;
+        };
+
+        const retry = () => {
+          if (resolved) return; // another trigger already fired
+          cleanup();
+          video.play().catch(onPlayFail);
+        };
+
+        video.addEventListener('canplay',    retry, { once: true });
+        window.addEventListener('pointerdown', retry, { once: true, passive: true });
+        window.addEventListener('touchstart',  retry, { once: true, passive: true });
+        window.addEventListener('keydown',     retry, { once: true, passive: true });
+        retryCleanupRef.current = cleanup;
+      };
+
+      if (video.readyState === 0) {
+        // No data buffered yet — load first, then play on loadedmetadata
+        video.load();
+        video.addEventListener('loadedmetadata', () => {
+          video.play().catch(onPlayFail);
+        }, { once: true });
+      } else {
+        video.play().catch(onPlayFail);
+      }
+    };
+
     // Hysteresis: play at ≥35% visible, pause at <20% visible
     const PLAY_THRESHOLD  = 0.35;
     const PAUSE_THRESHOLD = 0.20;
@@ -138,9 +217,7 @@ export function AmbientVideo({
 
         if (ratio >= PLAY_THRESHOLD && !playingRef.current) {
           playingRef.current = true;
-          video.play().catch(() => {
-            playingRef.current = false;
-          });
+          attemptPlay();
         } else if (ratio < PAUSE_THRESHOLD && playingRef.current) {
           playingRef.current = false;
           video.pause();
@@ -158,7 +235,7 @@ export function AmbientVideo({
         }
       } else if (intersectingRef.current && !playingRef.current) {
         playingRef.current = true;
-        video.play().catch(() => { playingRef.current = false; });
+        attemptPlay();
       }
     };
     document.addEventListener('visibilitychange', onVisibility);
@@ -166,6 +243,9 @@ export function AmbientVideo({
     return () => {
       io.disconnect();
       document.removeEventListener('visibilitychange', onVisibility);
+      // Clean up any pending retry listeners to prevent post-unmount play calls
+      retryCleanupRef.current?.();
+      retryCleanupRef.current = null;
     };
   }, [state]);
 
@@ -223,7 +303,7 @@ export function AmbientVideo({
             muted
             loop
             playsInline
-            preload="none"
+            preload={eager ? 'metadata' : 'none'}
             disablePictureInPicture
             controlsList="nodownload"
             poster={poster}
