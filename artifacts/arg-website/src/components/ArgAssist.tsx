@@ -384,7 +384,7 @@ export function ArgAssist({ open, onClose }: { open: boolean; onClose: () => voi
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 z-[79] bg-ink/30 backdrop-blur-sm transition-opacity duration-150"
+        className="fixed inset-0 z-[79] bg-ink/50 md:bg-ink/30 md:backdrop-blur-sm transition-opacity duration-150"
         style={{ opacity: anim ? 1 : 0 }}
         aria-hidden="true"
       />

@@ -93,7 +93,7 @@ function CommandPalette({
       style={{ opacity: animated ? 1 : 0, transition: `opacity ${dur} ease` }}
     >
       <div
-        className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-ink/60 md:bg-ink/40 md:backdrop-blur-sm"
         onClick={onClose} aria-hidden="true"
       />
       {/* Panel: full-screen on mobile, floating card on desktop */}

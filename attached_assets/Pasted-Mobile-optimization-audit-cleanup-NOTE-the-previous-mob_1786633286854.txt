@@ -1,0 +1,41 @@
+Mobile optimization + audit cleanup. NOTE: the previous mobile
+optimization instructions were never committed — if partial work
+exists uncommitted in the workspace, finish it; otherwise build from
+scratch. Every item below, no omissions:
+
+1. VIEWPORT UNITS: convert all layout-sizing vh units to svh with
+   vh fallback (declare both, vh first). Critical: the cinema
+   section's inline height:100vh → 100svh w/ fallback; the hero's
+   height cap; contact.tsx min-h-screen loading state. Leave
+   toast.tsx's max-h-screen (it's a cap, not layout). After
+   converting, grep vh again and report every remaining instance
+   with justification.
+2. PAINT BACKSTOP: in index.css set html { background-color:
+   #101F30; overscroll-behavior-y: none; } and keep body bg-paper.
+3. PINS DESKTOP-ONLY: wrap pin + scrub creation in
+   gsap.matchMedia('(min-width: 768px)'); below 768px those
+   sections register plain reveals. Verify zero .pin-spacer
+   elements in mobile emulation DOM.
+4. MOBILE VIDEO RESILIENCE: verify every AmbientVideo poster URL
+   resolves (list them with status codes); confirm each video
+   section's bg-ink base renders when its video is blocked (test
+   one by blocking in devtools); hero on mobile must look
+   intentional with poster alone.
+5. MOBILE HEADER: below 768px replace backdrop-blur with solid
+   bg-paper/95 (keep blur ≥768px). Also audit the palette
+   overlay's backdrop-blur-sm the same way.
+6. LENIS: confirm syncTouch:false (native touch feel) — report
+   the current Lenis config object verbatim.
+7. AUDIT CLEANUP: (a) error-boundary bg-gray-50 → bg-mist, and its
+   text colors to slate/ink tokens; (b) remove the one stray
+   console.log in src (keep console.error and debugfps paths);
+   (c) z-order: toast container z-[100] → z-[90] so palette(100) >
+   toast(90) > sheet(60) > assist tab(40) — verify nothing renders
+   above the palette.
+8. TEST MATRIX (report each result): 375/390/412px emulation —
+   landing page dark from first paint, zero white bands; fast
+   fling full-page: no white flashes at boundaries; landscape
+   rotate and back: recovers; contact + careers same; zero
+   horizontal scroll; Lighthouse mobile ≥85.
+Commit as "Mobile optimization: svh, ink backstop, desktop-only
+pins + audit cleanup".
