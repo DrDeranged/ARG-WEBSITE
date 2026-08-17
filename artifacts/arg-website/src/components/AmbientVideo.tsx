@@ -136,6 +136,8 @@ export function AmbientVideo({
   const playingRef       = useRef(false);
   /** Cleanup for any pending one-shot retry listeners */
   const retryCleanupRef  = useRef<(() => void) | null>(null);
+  /** Cumulative play() failures for this instance — stops retrying permanently at 2 */
+  const failCountRef     = useRef(0);
   /** Last play() rejection name — read synchronously by the debug getter */
   const lastErrRef       = useRef<string>('none');
   /** Mirror of `state` readable synchronously from the debug registry getter */
@@ -174,42 +176,37 @@ export function AmbientVideo({
     // iOS Safari requires the *property* set in addition to the attribute
     video.muted = true;
 
-    /* ── attemptPlay() ──────────────────────────────────────────────
-       Resilient play helper used by both the observer and
-       visibilitychange paths.
+    /* ── attemptPlay(video) ─────────────────────────────────────────
+       Resilient play helper called by both the IntersectionObserver
+       and visibilitychange paths.
 
-       Steps:
-         a. If readyState === 0 (no data): call load() then play on
-            'loadedmetadata' (once).
-         b. If play() rejects: retry ONCE on whichever comes first —
-            'canplay' event OR first user gesture (pointerdown /
-            touchstart / keydown). iOS unlocks media playback on the
-            first touch, so this recovers Low Power Mode denials.
-         c. Two total failures → stop retrying; poster stands.
+       a. readyState === 0 → call load(), then play on 'loadedmetadata'.
+       b. play() rejects → handleReject records the error and, if
+          failCountRef.current < 2, attaches ONE-TIME retry triggers:
+          'canplay' on the video AND pointerdown/touchstart/keydown on
+          window. Whichever fires first calls attemptPlay again and
+          removes the others. At 2 total failures, stop permanently.
     ─────────────────────────────────────────────────────────────── */
-    const attemptPlay = () => {
+    const attemptPlay = (v: HTMLVideoElement) => {
       // Cancel any lingering retry listeners from a previous call
       retryCleanupRef.current?.();
       retryCleanupRef.current = null;
 
-      if (!video) return;
-
-      let failures = 0; // total failed play() calls for this attempt
-
-      const onPlayFail = (playErr?: unknown) => {
-        if (playErr instanceof Error) lastErrRef.current = playErr.name;
-        failures++;
-        if (failures >= 2) {
-          // Two strikes — poster stands; do not loop
+      const handleReject = (err?: unknown) => {
+        // Record error name for the debug overlay
+        if (err instanceof Error) lastErrRef.current = err.name;
+        failCountRef.current++;
+        if (failCountRef.current >= 2) {
+          // Two total failures — stop permanently; poster stands
           playingRef.current = false;
           return;
         }
 
-        // Retry ONCE on the first of: canplay | pointerdown | touchstart | keydown
+        // Retry on whichever arrives first: canplay | user gesture
         let resolved = false;
         const cleanup = () => {
           resolved = true;
-          video.removeEventListener('canplay',    retry);
+          v.removeEventListener('canplay',       retry);
           window.removeEventListener('pointerdown', retry);
           window.removeEventListener('touchstart',  retry);
           window.removeEventListener('keydown',     retry);
@@ -219,24 +216,24 @@ export function AmbientVideo({
         const retry = () => {
           if (resolved) return; // another trigger already fired
           cleanup();
-          video.play().catch(onPlayFail);
+          attemptPlay(v);
         };
 
-        video.addEventListener('canplay',    retry, { once: true });
+        v.addEventListener('canplay',       retry, { once: true });
         window.addEventListener('pointerdown', retry, { once: true, passive: true });
         window.addEventListener('touchstart',  retry, { once: true, passive: true });
         window.addEventListener('keydown',     retry, { once: true, passive: true });
         retryCleanupRef.current = cleanup;
       };
 
-      if (video.readyState === 0) {
+      if (v.readyState === 0) {
         // No data buffered yet — load first, then play on loadedmetadata
-        video.load();
-        video.addEventListener('loadedmetadata', () => {
-          video.play().catch(onPlayFail);
+        v.load();
+        v.addEventListener('loadedmetadata', () => {
+          v.play().catch(handleReject);
         }, { once: true });
       } else {
-        video.play().catch(onPlayFail);
+        v.play().catch(handleReject);
       }
     };
 
@@ -251,7 +248,7 @@ export function AmbientVideo({
 
         if (ratio >= PLAY_THRESHOLD && !playingRef.current) {
           playingRef.current = true;
-          attemptPlay();
+          attemptPlay(video);
         } else if (ratio < PAUSE_THRESHOLD && playingRef.current) {
           playingRef.current = false;
           video.pause();
@@ -269,7 +266,7 @@ export function AmbientVideo({
         }
       } else if (intersectingRef.current && !playingRef.current) {
         playingRef.current = true;
-        attemptPlay();
+        attemptPlay(video);
       }
     };
     document.addEventListener('visibilitychange', onVisibility);
