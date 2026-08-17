@@ -92,6 +92,32 @@ function buildGradient(): string {
 
 const GRADIENT_BG = buildGradient();
 
+/* ── Debug registry ──────────────────────────────────────────────────
+   Module-level so FPSOverlay can poll it from outside the React tree.
+   Each AmbientVideo registers a getter on mount and removes on unmount.
+   getVideoDebugEntries() is called every rAF frame by FPSOverlay.
+   Zero cost when ?debugfps=1 is absent — registration never happens.
+─────────────────────────────────────────────────────────────────────*/
+export interface VideoDebugEntry {
+  /** Truncated mp4 filename (max 12 chars), e.g. "hero-film" */
+  name: string;
+  /** HTMLMediaElement.readyState (0–4), or -1 if no video element */
+  readyState: number;
+  paused: boolean;
+  /** DOMException.name from last play() rejection, or 'none' */
+  err: string;
+  /** 'mp4' | 'webm' | 'loading' | 'poster-only' */
+  src: string;
+  /** True when err === 'NotAllowedError' (iOS autoplay / Low Power Mode) */
+  autoplayBlocked: boolean;
+}
+let _debugIdCtr = 0;
+const _debugRegistry = new Map<string, () => VideoDebugEntry>();
+/** Poll this from FPSOverlay on every rAF tick to get live video state. */
+export function getVideoDebugEntries(): VideoDebugEntry[] {
+  return [..._debugRegistry.values()].map(fn => fn());
+}
+
 /* ── Component ──────────────────────────────────────────────────────── */
 export function AmbientVideo({
   mp4,
@@ -110,6 +136,13 @@ export function AmbientVideo({
   const playingRef       = useRef(false);
   /** Cleanup for any pending one-shot retry listeners */
   const retryCleanupRef  = useRef<(() => void) | null>(null);
+  /** Last play() rejection name — read synchronously by the debug getter */
+  const lastErrRef       = useRef<string>('none');
+  /** Mirror of `state` readable synchronously from the debug registry getter */
+  const stateRef         = useRef<VideoState>('poster');
+  /** Stable debug-mode flag — set once at first render, never changes */
+  const debugMode = typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).has('debugfps');
 
   // 'video' | 'poster' | 'blank'
   // 'blank' = poster also errored; render ledger fill
@@ -163,7 +196,8 @@ export function AmbientVideo({
 
       let failures = 0; // total failed play() calls for this attempt
 
-      const onPlayFail = () => {
+      const onPlayFail = (playErr?: unknown) => {
+        if (playErr instanceof Error) lastErrRef.current = playErr.name;
         failures++;
         if (failures >= 2) {
           // Two strikes — poster stands; do not loop
@@ -261,6 +295,42 @@ export function AmbientVideo({
     video.addEventListener('loadeddata', onLoaded, { once: true });
     return () => video.removeEventListener('loadeddata', onLoaded);
   }, [state]);
+
+  /* ── Mirror state into ref (synchronous read in debug getter) ── */
+  useEffect(() => { stateRef.current = state; }, [state]);
+
+  /* ── Debug registry — register/unregister when ?debugfps=1 ──────
+     Zero cost when the flag is absent — the effect returns early.
+  ─────────────────────────────────────────────────────────────────*/
+  useEffect(() => {
+    if (!debugMode) return;
+    const id = String(_debugIdCtr++);
+    const name = mp4.split('/').pop()?.replace(/\.[^.]+$/, '').slice(0, 12) ?? '?';
+    _debugRegistry.set(id, () => {
+      const video = videoRef.current;
+      const cs    = video?.currentSrc ?? '';
+      let src: string;
+      if (stateRef.current !== 'video') {
+        src = 'poster-only';
+      } else if (cs.includes('.webm')) {
+        src = 'webm';
+      } else if (cs.includes('.mp4')) {
+        src = 'mp4';
+      } else {
+        src = 'loading';
+      }
+      const err = lastErrRef.current;
+      return {
+        name,
+        readyState: video?.readyState ?? -1,
+        paused:     video?.paused ?? true,
+        err,
+        src,
+        autoplayBlocked: err === 'NotAllowedError',
+      };
+    });
+    return () => { _debugRegistry.delete(id); };
+  }, [debugMode, mp4]);
 
   /* ── Handlers ───────────────────────────────────────────────────── */
   const handleVideoError = () => setState('poster');

@@ -1,32 +1,71 @@
 /**
- * FPSOverlay — Motion Architecture V2 instrumentation.
+ * FPSOverlay — Mobile-friendly debug panel, gated by ?debugfps=1.
  *
- * Rendered only when ?debugfps=1 is present in the URL (never in production
- * user sessions — the flag must be explicit). Displays:
+ * Renders a fixed bottom-left mono panel (paper bg, rule border, 10px,
+ * z-[95]) showing:
+ *   • fps (rolling 30-frame avg) | active ScrollTrigger count
+ *   • pins: N (red on mobile if > 0) | lenis: on/off
+ *   • viewport: WxH | svh support
+ *   • reduced-motion | saveData
+ *   • Per-AmbientVideo: name, readyState, paused/playing, src, err
+ *     (err=NotAllowedError → "autoplay-blocked" annotation)
  *
- *   • Rolling FPS (smoothed over 30 frames)
- *   • Active ScrollTrigger instance count
- *   • A color-coded indicator: green ≥55fps, amber 40-54, red <40
+ * Also runs the one-shot duplicate ScrollTrigger ID assertion (2s after
+ * mount) and logs to the console for devtools users.
  *
- * Usage:
- *   <FPSOverlay />   (always mount; it reads the flag internally)
+ * Usage — always mount; the component reads the flag internally:
+ *   <FPSOverlay />
  */
 import { useEffect, useRef, useState } from 'react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useMotion } from '@/motion';
+import { getVideoDebugEntries, type VideoDebugEntry } from '@/components/AmbientVideo';
 
 const WINDOW_FRAMES = 30;
 
+/* ── Colour tokens (matching design-system, inline so no Tailwind needed) */
+const C = {
+  paper:     '#f9f7f2',
+  ink:       '#101f30',
+  rule:      '#d4cfc9',
+  slate:     '#6b7280',
+  recovered: '#1d8a6b',
+  amber:     '#f59e0b',
+  red:       '#ef4444',
+  green:     '#22c55e',
+} as const;
+
 export function FPSOverlay() {
+  /* ── Flag is stable for the lifetime of the page ── */
   const active = typeof window !== 'undefined'
     && new URLSearchParams(window.location.search).has('debugfps');
 
-  const [fps,   setFps]   = useState(0);
-  const [stCnt, setStCnt] = useState(0);
-  const frameRef  = useRef<number | null>(null);
-  const timesRef  = useRef<number[]>([]);
+  /* ── Motion context — must be called unconditionally (hooks rule) ── */
+  const { lenis } = useMotion();
 
-  // One-shot duplicate trigger ID assertion — fires 2s after mount so all
-  // sections' useLayoutEffects have had time to create their ScrollTriggers.
+  /* ── Rolling FPS state ── */
+  const [fps,    setFps]    = useState(0);
+  /* ── ScrollTrigger counts ── */
+  const [stCnt,  setStCnt]  = useState(0);
+  const [pinCnt, setPinCnt] = useState(0);
+  /* ── Viewport ── */
+  const [vw, setVw] = useState(0);
+  const [vh, setVh] = useState(0);
+  /* ── Per-video entries ── */
+  const [videos, setVideos] = useState<VideoDebugEntry[]>([]);
+
+  const frameRef = useRef<number | null>(null);
+  const timesRef = useRef<number[]>([]);
+
+  /* ── Static checks — computed once at first render ── */
+  const svhOk = typeof CSS !== 'undefined' && CSS.supports('height', '1svh');
+  const rm    = typeof window !== 'undefined'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const sd    = typeof navigator !== 'undefined'
+    && ((navigator as Navigator & { connection?: { saveData?: boolean } })
+        .connection?.saveData === true);
+
+  /* ── One-shot duplicate-trigger ID assertion ── */
   useEffect(() => {
     if (!active) return;
     const timer = setTimeout(() => {
@@ -44,64 +83,130 @@ export function FPSOverlay() {
     return () => clearTimeout(timer);
   }, [active]);
 
+  /* ── rAF polling loop ── */
   useEffect(() => {
     if (!active) return;
 
     const tick = (now: number) => {
+      /* FPS rolling average */
       timesRef.current.push(now);
-      if (timesRef.current.length > WINDOW_FRAMES) {
-        timesRef.current.shift();
-      }
+      if (timesRef.current.length > WINDOW_FRAMES) timesRef.current.shift();
       if (timesRef.current.length > 1) {
         const span = timesRef.current.at(-1)! - timesRef.current[0];
-        const avg  = (timesRef.current.length - 1) / (span / 1000);
-        setFps(Math.round(avg));
+        setFps(Math.round((timesRef.current.length - 1) / (span / 1000)));
       }
-      // ScrollTrigger count — cheap: array length
-      setStCnt(ScrollTrigger.getAll().length);
+
+      /* ScrollTrigger snapshot */
+      const allST = ScrollTrigger.getAll();
+      setStCnt(allST.length);
+      setPinCnt(allST.filter(t => t.vars.pin).length);
+
+      /* Viewport */
+      setVw(window.innerWidth);
+      setVh(window.innerHeight);
+
+      /* Video registry */
+      setVideos(getVideoDebugEntries());
+
       frameRef.current = requestAnimationFrame(tick);
     };
 
     frameRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
-    };
+    return () => { if (frameRef.current !== null) cancelAnimationFrame(frameRef.current); };
   }, [active]);
 
   if (!active) return null;
 
-  const color =
-    fps >= 55 ? '#22c55e' :
-    fps >= 40 ? '#f59e0b' : '#ef4444';
+  /* ── Derived colours ── */
+  const fpsColor  = fps >= 55 ? C.green : fps >= 40 ? C.amber : C.red;
+  const pinsColor = pinCnt > 0 && vw < 768 ? C.red : C.ink;
+
+  /* ── Helpers ── */
+  const dim = (text: string) => (
+    <span style={{ color: C.slate }}>{text}</span>
+  );
+  const val = (text: string | number, color: string = C.ink) => (
+    <span style={{ color }}>{text}</span>
+  );
 
   return (
     <div
       aria-hidden="true"
       style={{
-        position: 'fixed',
-        top: 8,
-        left: 8,
-        zIndex: 9999,
-        background: 'rgba(16,31,48,0.82)',
-        color: '#f9f7f2',
-        fontFamily: '"Roboto Mono", "IBM Plex Mono", monospace',
-        fontSize: 10,
-        lineHeight: 1.6,
-        padding: '4px 8px',
+        position:    'fixed',
+        bottom:      8,
+        left:        8,
+        zIndex:      95,
+        background:  C.paper,
+        color:       C.ink,
+        fontFamily:  '"Roboto Mono", "IBM Plex Mono", ui-monospace, monospace',
+        fontSize:    10,
+        lineHeight:  1.6,
+        padding:     '5px 8px',
         borderRadius: 3,
+        border:      `1px solid ${C.rule}`,
         pointerEvents: 'none',
-        userSelect: 'none',
-        backdropFilter: 'blur(4px)',
-        borderLeft: `2px solid ${color}`,
+        userSelect:  'none',
+        maxWidth:    300,
+        whiteSpace:  'pre',
       }}
     >
-      <span style={{ color }}>
-        {fps.toString().padStart(3, ' ')} fps
-      </span>
-      {'  '}
-      <span style={{ opacity: 0.55 }}>
-        ST {stCnt}
-      </span>
+      {/* ── Row 1: fps | ST | pins | lenis ── */}
+      <div>
+        <span style={{ color: fpsColor, fontWeight: 700 }}>{String(fps).padStart(3, ' ')} fps</span>
+        {dim('  ST:')}
+        {val(stCnt)}
+        {dim('  pins:')}
+        {val(pinCnt, pinsColor)}
+        {dim('  lenis:')}
+        {val(lenis ? 'on' : 'off', lenis ? C.recovered : C.slate)}
+      </div>
+
+      {/* ── Row 2: viewport | svh ── */}
+      <div>
+        {dim('vp:')}
+        {val(`${vw}×${vh}`)}
+        {dim('  svh:')}
+        {val(svhOk ? 'yes' : 'no', svhOk ? C.recovered : C.red)}
+      </div>
+
+      {/* ── Row 3: reduced-motion | saveData ── */}
+      <div>
+        {dim('rm:')}
+        {val(rm ? 'Y' : 'N', rm ? C.amber : C.ink)}
+        {dim('  saveData:')}
+        {val(sd ? 'Y' : 'N', sd ? C.amber : C.ink)}
+      </div>
+
+      {/* ── Per-video rows ── */}
+      {videos.length > 0 && (
+        <div style={{ borderTop: `1px solid ${C.rule}`, marginTop: 3, paddingTop: 3 }}>
+          {videos.map((v, i) => (
+            <div key={i}>
+              {/* name (12 chars) */}
+              <span style={{ color: C.ink, fontWeight: 600 }}>
+                {v.name.padEnd(12, ' ')}
+              </span>
+              {dim(' rs:')}
+              {val(v.readyState < 0 ? '—' : String(v.readyState))}
+              {dim(' ')}
+              {val(v.paused ? 'paused ' : 'playing', v.paused ? C.slate : C.recovered)}
+              {dim(' ')}
+              {val(v.src.padEnd(11, ' '))}
+              {/* Error annotation — only when something failed */}
+              {v.err !== 'none' && (
+                <>
+                  {dim('err:')}
+                  <span style={{ color: C.red }}>
+                    {v.err}
+                    {v.autoplayBlocked ? ' ⚡autoplay-blocked' : ''}
+                  </span>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
