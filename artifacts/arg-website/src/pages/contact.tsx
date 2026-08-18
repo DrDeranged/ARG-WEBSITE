@@ -784,10 +784,10 @@ export default function ContactPage() {
       </section>
 
       {/* ── CLOSER BAND ──────────────────────────────────────────── */}
-      {/* hands-ledger: mp4 + poster only — no webm (corrupt file, see memory) */}
       <CloserBand
         headline="Have documents ready to send?"
         mp4="/videos/hands-ledger.mp4"
+        webm="/videos/hands-ledger.webm"
         poster="/videos/hands-ledger-poster.jpg"
         overlayOpacity={0.6}
       >

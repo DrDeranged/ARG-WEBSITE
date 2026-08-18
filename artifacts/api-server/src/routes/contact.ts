@@ -60,8 +60,9 @@ async function sendEmail(payload: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      // TODO: switch to noreply@advancedrecoverygroup.com after domain verification
-      from: "ARG Website <onboarding@resend.dev>",
+      // EMAIL_FROM secret is set after Resend domain verification,
+      // e.g. "ARG Website <noreply@advancedrecoverygroup.com>"
+      from: process.env.EMAIL_FROM || "ARG Website <onboarding@resend.dev>",
       to: [payload.to],
       reply_to: payload.replyTo,
       subject: payload.subject,

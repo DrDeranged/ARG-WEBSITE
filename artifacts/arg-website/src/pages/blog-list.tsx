@@ -78,13 +78,11 @@ export default function BlogListPage() {
         <meta property="og:url" content={`${SITE_ORIGIN}/blog/`} />
       </Helmet>
 
-      {/* ── CINEMATIC HEADER ─────────────────────────────────────────
-          hands-ledger: mp4 + poster only — no webm (corrupt file).
-          Writing-hands footage is the thematic match for editorial.
-      ─────────────────────────────────────────────────────────────── */}
+      {/* ── CINEMATIC HEADER ──────────────────────────────────────── */}
       <PageHeader
         variant="cinema"
         mp4="/videos/hands-ledger.mp4"
+        webm="/videos/hands-ledger.webm"
         poster="/videos/hands-ledger-poster.jpg"
         eyebrow="Insights"
         headline="Insights &amp; updates."

@@ -24,8 +24,10 @@ import type { ReactNode } from 'react';
 
 export interface CloserBandProps {
   headline: string;
-  /** mp4 source for the ambient background video (no webm — use mp4 + poster only) */
+  /** mp4 source for the ambient background video */
   mp4?: string;
+  /** Optional WebM source for browsers that prefer it */
+  webm?: string;
   /** Required when mp4 is provided. Must resolve to an existing file. */
   poster?: string;
   /** Ink overlay opacity 0–1. Default: 0.6 */
@@ -37,6 +39,7 @@ export interface CloserBandProps {
 export function CloserBand({
   headline,
   mp4,
+  webm,
   poster,
   overlayOpacity = 0.6,
   children,
@@ -47,6 +50,7 @@ export function CloserBand({
         <div className="absolute inset-0 z-0">
           <AmbientVideo
             mp4={mp4}
+            webm={webm}
             poster={poster}
             overlayOpacity={overlayOpacity}
             overlayVariant="gradient"
