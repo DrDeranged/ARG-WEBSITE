@@ -1,3 +1,936 @@
+import { Shell } from '@/components/layout/Shell';
+import { AmbientVideo } from '@/components/AmbientVideo';
+import { EditorialImage } from '@/components/EditorialImage';
+import { SectionRule } from '@/components/SectionRule';
+import { Link } from 'wouter';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { Helmet } from 'react-helmet-async';
+import gsap from 'gsap';
+import { useMotion, useSplitLines, createReveal, createPinScrub, createCinema } from '@/motion';
+
+/* ─────────────────────────────────────────────────────────
+   SCROLL-REVEAL HOOK  (used by blog teaser section)
+───────────────────────────────────────────────────────── */
+function useScrollReveal(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null);
+  const prefersReduced =
+    typeof window !== 'undefined'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : true;
+  const [revealed, setRevealed] = useState(prefersReduced);
+
+  useEffect(() => {
+    if (prefersReduced) return;
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setRevealed(true); io.disconnect(); } },
+      { threshold }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [prefersReduced, threshold]);
+
+  return { ref, revealed };
+}
+
+function Reveal({
+  children, delay = 0, className = '',
+}: { children: ReactNode; delay?: number; className?: string }) {
+  const { ref, revealed } = useScrollReveal();
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: revealed ? 1 : 0,
+        transform: revealed ? 'translateY(0)' : 'translateY(12px)',
+        transition: `opacity 500ms ease ${delay}ms, transform 500ms ease ${delay}ms`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   SECTION FOLIO — static
+───────────────────────────────────────────────────────── */
+function SectionFolio({ n, total = 7 }: { n: number; total?: number }) {
+  return (
+    <span className="absolute top-4 right-4 md:top-8 md:right-8 font-mono text-[10px] text-recovered/50 tabular-nums select-none pointer-events-none">
+      {String(n).padStart(2, '0')} / {String(total).padStart(2, '0')}
+    </span>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   ANIMATED LEDGER CARD
+───────────────────────────────────────────────────────── */
+const FILE_TYPES = ['MCA DEFAULT', 'EQUIPMENT LEASE', 'COMMERCIAL LOAN', 'JUDGMENT MATTER'];
+const LIFECYCLE_STEPS = [
+  { label: 'FILE PLACED',           mobileLabel: 'FILE PLACED',           middle: false, amount: false, day: 'DAY 01', final: false },
+  { label: 'SKIP TRACE COMPLETE',   mobileLabel: 'SKIP TRACE \u2713',     middle: true,  amount: false, day: 'DAY 03', final: false },
+  { label: 'DEBTOR CONTACTED',      mobileLabel: 'DEBTOR CONTACTED',      middle: true,  amount: false, day: 'DAY 09', final: false },
+  { label: 'PAYMENT PLAN SECURED',  mobileLabel: 'PLAN SECURED',          middle: true,  amount: false, day: 'DAY 21', final: false },
+  { label: 'AMOUNT RECOVERED',      mobileLabel: 'AMOUNT RECOVERED',      middle: false, amount: true,  day: 'DAY 34', final: false },
+  { label: 'FILE RECOVERED \u2713', mobileLabel: 'FILE RECOVERED \u2713', middle: false, amount: false, day: '',       final: true  },
+];
+
+function AnimatedLedgerCard() {
+  const prefersReduced =
+    typeof window !== 'undefined'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false;
+
+  const [fileIdx,    setFileIdx]  = useState(0);
+  const [fileNumber, setFileNum]  = useState(() => 1000 + Math.floor(Math.random() * 8999));
+  const [visibleRows, setVisible] = useState(prefersReduced ? LIFECYCLE_STEPS.length : 0);
+  const [fading,     setFading]   = useState(false);
+
+  useEffect(() => {
+    if (prefersReduced) return;
+    const ids: ReturnType<typeof setTimeout>[] = [];
+    let fi = 0;
+
+    function startCycle() {
+      fi = fi % FILE_TYPES.length;
+      setFileIdx(fi);
+      setFileNum(1000 + Math.floor(Math.random() * 8999));
+      setVisible(0);
+      setFading(false);
+      for (let row = 1; row <= LIFECYCLE_STEPS.length; row++) {
+        ids.push(setTimeout(() => setVisible(row), row * 1200));
+      }
+      const holdAt = LIFECYCLE_STEPS.length * 1200 + 3000;
+      ids.push(setTimeout(() => {
+        setFading(true);
+        ids.push(setTimeout(() => { fi = (fi + 1) % FILE_TYPES.length; startCycle(); }, 600));
+      }, holdAt));
+    }
+    startCycle();
+    return () => ids.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase();
+  const isFinal = visibleRows >= LIFECYCLE_STEPS.length;
+
+  return (
+    <div
+      className="bg-paper font-mono text-[11px]"
+      style={{
+        border: '1px solid var(--color-rule)',
+        opacity: fading ? 0 : 1,
+        transition: 'opacity 600ms ease',
+      }}
+      aria-hidden="true"
+    >
+      <div className="border-b border-rule px-4 py-3 flex justify-between items-center bg-ink">
+        <span className="text-paper/70 tracking-widest uppercase text-[9px]">Recovery File</span>
+        <span className="text-paper/40 tabular-nums text-[9px]">{dateStr}</span>
+      </div>
+      <div className="border-b border-rule px-4 py-3 flex justify-between items-center bg-mist">
+        <span className="text-ink font-medium tracking-wider">{FILE_TYPES[fileIdx]}</span>
+        <span className="text-slate/40 tabular-nums text-[9px]">FILE № 2026-{fileNumber}</span>
+      </div>
+      <div className="divide-y divide-rule">
+        {LIFECYCLE_STEPS.map((step, i) => (
+          <div
+            key={step.label}
+            className={`px-4 flex justify-between items-center min-h-[44px] lg:min-h-[48px] ${step.final ? 'bg-recovered/[0.08]' : ''}`}
+            style={{ opacity: i < visibleRows ? 1 : 0, transition: 'opacity 300ms ease' }}
+          >
+            <span className={
+              step.final ? 'text-recovered font-medium' :
+              (step.amount && isFinal) ? 'text-recovered font-medium' :
+              'text-ink'
+            }>
+              <span className="md:hidden">{step.mobileLabel}</span>
+              <span className="hidden md:inline">{step.label}</span>
+            </span>
+
+            {i < visibleRows && (
+              step.amount ? (
+                <span className={`tabular-nums ${isFinal ? 'text-recovered font-medium' : 'text-slate/35'}`}>
+                  {isFinal ? '$ CONFIRMED' : <><span className="md:hidden">$ ————</span><span className="hidden md:inline">$ ———————</span></>}
+                </span>
+              ) : step.final ? (
+                <span style={{ color: 'var(--color-recovered)' }}>●</span>
+              ) : (
+                <span className="flex items-center gap-3 text-[9px]">
+                  <span style={{ color: step.middle ? 'var(--color-signal)' : 'hsl(213 19.5% 36.1% / 0.4)' }}>○</span>
+                  <span data-day-stamp className="text-slate/40 tabular-nums">{step.day}</span>
+                </span>
+              )
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="border-t border-rule px-4 py-2 text-slate/35 text-[9px]">
+        Representative recovery lifecycle.
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   VERTICALS TICKER
+───────────────────────────────────────────────────────── */
+const TICKER_PARTS = [
+  'MERCHANT CASH ADVANCE', 'FACTORING', 'EQUIPMENT LEASING',
+  'COMMERCIAL LOANS', 'FINTECH LENDING', 'JUDGMENT ENFORCEMENT',
+];
+
+function TickerSegment() {
+  return (
+    <span className="inline-flex items-center gap-0 font-mono text-xs text-slate/70 tracking-widest whitespace-nowrap shrink-0 pr-0">
+      {TICKER_PARTS.map((part, i) => (
+        <span key={i}>
+          {part}
+          &nbsp;<span className="text-recovered">·</span>&nbsp;
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function VerticalsTicker() {
+  const prefersReduced =
+    typeof window !== 'undefined'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false;
+
+  if (prefersReduced) {
+    return (
+      <div className="border-t border-b border-rule py-3 bg-paper overflow-x-hidden">
+        <p className="font-mono text-xs text-slate tracking-widest text-center flex-wrap px-4">
+          {TICKER_PARTS.map((p, i) => (
+            <span key={i}>{p}{i < TICKER_PARTS.length - 1 && <span className="text-recovered mx-2">·</span>}</span>
+          ))}
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="border-t border-b border-rule py-3 bg-paper overflow-x-hidden">
+      <div className="flex whitespace-nowrap ticker-animate" aria-hidden="true">
+        <TickerSegment /><TickerSegment /><TickerSegment /><TickerSegment />
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   SCENE 1: WHY ARG — "entries write themselves"
+   Pin: 120vh desktop. 4 ledger rows draw in sequentially
+   tied to scrub: rule line scaleX, mono label fades, desc fades.
+   Folio scrambles 01 → 02 on enter.
+   Mobile: IO-based play-once stagger per row.
+───────────────────────────────────────────────────────── */
+const WHY_FEATURES = [
+  { num: '01', title: 'Contingency-Based Recovery', desc: 'You only pay when we collect. Zero upfront fees, zero risk. Our incentives are perfectly aligned with your success.' },
+  { num: '02', title: 'B2B Specialists', desc: 'We handle commercial debt exclusively — business-to-business, not consumer. We understand corporate structures, contracts, and negotiation.' },
+  { num: '03', title: 'Litigation-Ready', desc: "When negotiation isn't enough, we escalate through affiliated counsel — liens, judgments, and enforcement, pursued properly." },
+  { num: '04', title: 'Relationship-Preserving', desc: 'We operate with a level of professionalism that protects your reputation and, when possible, preserves your client relationships.' },
+];
+
+function WhyArgSection() {
+  const { reducedMotion, ready } = useMotion();
+  const sectionRef = useRef<HTMLElement>(null);
+  const ruleRefs   = useRef<(HTMLDivElement | null)[]>([]);
+  const numRefs    = useRef<(HTMLSpanElement | null)[]>([]);
+  const titleRefs  = useRef<(HTMLHeadingElement | null)[]>([]);
+  const descRefs   = useRef<(HTMLParagraphElement | null)[]>([]);
+
+  // SCENE 2 — plain choreographed reveal (no pin). All viewports.
+  // Rule draws, then the row's num/title/desc stagger-fade in sequence.
+  useLayoutEffect(() => {
+    if (reducedMotion || !ready) return;
+    const ctx = gsap.context(() => {
+      ruleRefs.current.forEach(el => el && gsap.set(el, { scaleX: 0, transformOrigin: 'left' }));
+      numRefs.current.forEach(el => el && gsap.set(el, { opacity: 0 }));
+      titleRefs.current.forEach(el => el && gsap.set(el, { opacity: 0, y: 6 }));
+      descRefs.current.forEach(el => el && gsap.set(el, { opacity: 0 }));
+
+      WHY_FEATURES.forEach((_, i) => {
+        const row = ruleRefs.current[i]?.parentElement?.parentElement;
+        createReveal(row ?? null, {
+          id: `why-reveal-${i}`,
+          onEnter: () => {
+            gsap.timeline()
+              .to(ruleRefs.current[i],  { scaleX: 1, duration: 0.4, ease: 'power2.out' })
+              .to(numRefs.current[i],   { opacity: 1, duration: 0.2 }, '>-0.1')
+              .to(titleRefs.current[i], { opacity: 1, y: 0, duration: 0.3 }, '>-0.05')
+              .to(descRefs.current[i],  { opacity: 1, duration: 0.3 }, '>-0.05');
+          },
+        });
+      });
+    }, sectionRef);
+    return () => ctx.revert();
+  }, [reducedMotion, ready]);
+
+  return (
+    <section ref={sectionRef} data-folio-n={2} className="relative isolate bg-mist py-24 md:py-32 border-b border-rule">
+      <SectionFolio n={2} />
+
+      <div className="max-w-6xl mx-auto px-6 md:px-8">
+        <SectionRule />
+        <p className="font-mono text-recovered tracking-widest text-xs font-semibold mb-4 uppercase">
+          Why Advanced Recovery Group
+        </p>
+        <h2 className="text-h2 font-serif text-ink mb-4">
+          A precise, results-driven approach to commercial debt.
+        </h2>
+        <p className="font-mono text-xs text-slate/60 tracking-widest uppercase mb-16">
+          100% Contingency &nbsp;·&nbsp; B2B Commercial Only &nbsp;·&nbsp; 24/7 Client Portal
+        </p>
+
+        <div className="flex flex-col">
+          {WHY_FEATURES.map((f, i) => (
+            <div key={f.num} className="relative py-8 md:py-10">
+              {/* Animated rule (GSAP scaleX 0→1, replaces border-t) */}
+              <div
+                ref={el => { ruleRefs.current[i] = el; }}
+                className="absolute top-0 left-0 right-0 h-[1px] bg-rule"
+                style={{ transformOrigin: 'left', ...(reducedMotion ? {} : { transform: 'scaleX(0)' }) }}
+              />
+              {/* Bottom rule on final row */}
+              {i === WHY_FEATURES.length - 1 && (
+                <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-rule" />
+              )}
+              <div className="flex flex-col md:flex-row md:items-start gap-4 md:gap-16 pt-1">
+                <span
+                  ref={el => { numRefs.current[i] = el; }}
+                  className="font-mono text-sm text-slate/40 mt-0.5 tabular-nums flex-shrink-0 w-8"
+                  style={reducedMotion ? {} : { opacity: 0 }}
+                >
+                  {f.num}
+                </span>
+                <div className="flex-1 max-w-3xl">
+                  <h3
+                    ref={el => { titleRefs.current[i] = el; }}
+                    className="text-xl font-serif text-ink mb-2"
+                    style={reducedMotion ? {} : { opacity: 0, transform: 'translateY(6px)' }}
+                  >
+                    {f.title}
+                  </h3>
+                  <p
+                    ref={el => { descRefs.current[i] = el; }}
+                    className="text-slate leading-relaxed font-sans max-w-prose"
+                    style={reducedMotion ? {} : { opacity: 0 }}
+                  >
+                    {f.desc}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   SCENE 2: PROCESS — "one file, three moves"
+   Desktop: pin 180vh. FILE chip travels the drawn timeline,
+   docking at each step. Rule draws ahead of chip.
+   Previous steps mark ✓. Image fades in at scrub start.
+   Mobile: no pin, chip snaps per step on scroll-into-view.
+───────────────────────────────────────────────────────── */
+const PROCESS_STEPS = [
+  { step: '01', title: 'Submit Placement', desc: 'Provide account details, invoices, and supporting documentation through our secure client portal.' },
+  { step: '02', title: 'Dedicated Recovery', desc: 'Our specialized team immediately pursues collection using proven, compliant communication and negotiation strategies.' },
+  { step: '03', title: 'You Get Paid', desc: 'We remit collected funds directly to you. We only retain our contingency fee upon successful collection.' },
+];
+
+const CHIP_STATUSES = ['·· SUBMITTED ··', '·· UNDER REVIEW ··', '·· IN PURSUIT ··', '✓ SECURED'];
+
+function ProcessSection() {
+  const { reducedMotion, ready } = useMotion();
+  const sectionRef   = useRef<HTMLElement>(null);
+  const timelineRef  = useRef<HTMLDivElement>(null);
+  const stepChipRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const ruleInkRef   = useRef<HTMLDivElement>(null);
+  const stepRefs     = useRef<(HTMLDivElement | null)[]>([]);
+  const dotRefs      = useRef<(HTMLDivElement | null)[]>([]);
+  const numRefs      = useRef<(HTMLSpanElement | null)[]>([]);
+  const bodyRefs     = useRef<(HTMLDivElement | null)[]>([]);
+  const checkRefs    = useRef<(HTMLSpanElement | null)[]>([]);
+  const imgColRef    = useRef<HTMLDivElement>(null);
+  // Mobile chip label ref
+  const mobileChipRef = useRef<HTMLSpanElement>(null);
+
+  useLayoutEffect(() => {
+    if (reducedMotion || !ready) return;
+    const ctx = gsap.context(() => {
+      // Initial states
+      bodyRefs.current.forEach(el => el && gsap.set(el, { opacity: 0, y: 10 }));
+      dotRefs.current.forEach(el => {
+        if (el) el.style.backgroundColor = 'hsl(210 24.1% 87.8%)';
+      });
+      numRefs.current.forEach(el => {
+        if (el) el.style.color = 'hsl(210 24.1% 87.8%)';
+      });
+      checkRefs.current.forEach(el => {
+        if (el) el.style.opacity = '0';
+      });
+
+      // V2: IO-based activation for ALL viewports (no pin)
+      gsap.set(imgColRef.current, { opacity: 0, x: 16 });
+      if (ruleInkRef.current) {
+        gsap.set(ruleInkRef.current, { scaleY: 0, transformOrigin: 'top' });
+      }
+
+      // Section enter: draw rule + slide image in
+      createReveal(sectionRef.current, {
+        id: 'process-section',
+        start: 'top 70%',
+        onEnter: () => {
+          gsap.to(ruleInkRef.current, { scaleY: 1, duration: 1.2, ease: 'power2.inOut' });
+          gsap.to(imgColRef.current,  { opacity: 1, x: 0, duration: 0.7, ease: 'power2.out' });
+        },
+      });
+
+      // Per-step reveals: dot/number ink, body copy, check marks, chip labels
+      PROCESS_STEPS.forEach((_, i) => {
+        const el = stepRefs.current[i];
+        createReveal(el ?? null, {
+          id: `process-step-${i}`,
+          start: 'top 78%',
+          onEnter: () => {
+            if (dotRefs.current[i]) dotRefs.current[i]!.style.backgroundColor = 'hsl(212 50% 12.5%)';
+            if (numRefs.current[i]) numRefs.current[i]!.style.color = 'hsl(246 100% 98%)';
+            gsap.to(bodyRefs.current[i], { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' });
+            if (i > 0 && checkRefs.current[i - 1]) {
+              checkRefs.current[i - 1]!.style.opacity = '1';
+            }
+            const status = CHIP_STATUSES[i];
+            if (mobileChipRef.current)  mobileChipRef.current.textContent  = status;
+            // Activate the inline step chip on desktop
+            const chip = stepChipRefs.current[i];
+            if (chip) gsap.to(chip, { opacity: 1, duration: 0.3, ease: 'power2.out' });
+          },
+        });
+      });
+    }, sectionRef);
+    return () => ctx.revert();
+  }, [reducedMotion, ready]);
+
+  return (
+    <section ref={sectionRef} data-folio-n={3} id="process" className="relative isolate bg-paper py-24 md:py-32 border-b border-rule scroll-m-20">
+      <SectionFolio n={3} />
+      <div className="max-w-6xl mx-auto px-6 md:px-8">
+        <SectionRule />
+        <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-4 uppercase">Our Process</p>
+        <h2 className="text-h2 font-serif text-ink mb-16 md:mb-24">From placement to recovery</h2>
+
+        {/* Mobile chip (static, updates on step enter) */}
+        <div className="lg:hidden mb-8">
+          <div className="inline-flex items-center gap-2 border border-rule bg-mist px-4 py-2 font-mono text-[10px]">
+            <span className="text-slate/50">FILE №</span>
+            <span className="text-ink font-semibold tracking-wider">2026-0847</span>
+            <span className="w-[1px] h-3 bg-rule mx-0.5" />
+            <span ref={mobileChipRef} className="text-recovered tracking-wide">{CHIP_STATUSES[0]}</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+          {/* Left: timeline + chip */}
+          <div ref={timelineRef} className="relative flex flex-col gap-12">
+
+            {/* Rule: light background (always visible) */}
+            <div className="hidden lg:block absolute left-[11px] top-3 bottom-3 w-[1px] bg-rule z-0" />
+            {/* Rule: ink foreground (draws downward ahead of chip) */}
+            <div
+              ref={ruleInkRef}
+              className="hidden lg:block absolute left-[11px] top-3 w-[1px] bg-ink z-0"
+              style={{ height: reducedMotion ? 'calc(100% - 1.5rem)' : '0px' }}
+            />
+
+
+            {PROCESS_STEPS.map((p, i) => (
+              <div
+                key={p.step}
+                ref={el => { stepRefs.current[i] = el; }}
+                className="relative z-10 flex gap-6 md:gap-8"
+              >
+                {/* Step dot */}
+                <div className="bg-paper w-6 h-6 flex-shrink-0 mt-1 flex items-center justify-center relative">
+                  <div
+                    ref={el => { dotRefs.current[i] = el; }}
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      border: '1px solid hsl(210 24.1% 87.8%)',
+                      backgroundColor: reducedMotion ? 'hsl(212 50% 12.5%)' : 'hsl(210 24.1% 87.8%)',
+                    }}
+                  />
+                  <span
+                    ref={el => { numRefs.current[i] = el; }}
+                    className="relative z-10 font-mono text-[10px] tabular-nums font-bold"
+                    style={{ color: reducedMotion ? 'hsl(246 100% 98%)' : 'hsl(210 24.1% 87.8%)' }}
+                  >
+                    {p.step}
+                  </span>
+                </div>
+
+                {/* Step body */}
+                <div
+                  ref={el => { bodyRefs.current[i] = el; }}
+                  className="flex-1"
+                  style={reducedMotion ? {} : { opacity: 0, transform: 'translateY(10px)' }}
+                >
+                  {/* Row header: title + ✓ badge right-aligned */}
+                  <div className="flex items-start justify-between gap-4 mb-2">
+                    <h3 className="text-xl font-serif text-ink">{p.title}</h3>
+                    {i < 2 && (
+                      <span
+                        ref={el => { checkRefs.current[i] = el; }}
+                        className="font-mono text-xs text-recovered font-semibold whitespace-nowrap mt-1 flex-shrink-0"
+                        style={reducedMotion ? {} : { opacity: 0, transition: 'opacity 0.35s ease' }}
+                      >
+                        ✓ COMPLETE
+                      </span>
+                    )}
+                  </div>
+                  {/* Inline chip — fixed-width slot, never overlaps text */}
+                  <div
+                    ref={el => { stepChipRefs.current[i] = el; }}
+                    className="hidden lg:inline-flex items-center gap-2 border border-rule bg-mist px-2.5 py-1 font-mono text-[9px] whitespace-nowrap mb-3"
+                    style={reducedMotion ? {} : { opacity: 0 }}
+                    aria-hidden="true"
+                  >
+                    <span className="text-slate/50">FILE №</span>
+                    <span className="font-semibold tracking-wider text-ink">2026-0847</span>
+                    <span className="w-[1px] h-2.5 bg-rule mx-0.5" />
+                    <span className="text-recovered tracking-wide">{CHIP_STATUSES[i]}</span>
+                  </div>
+                  <p className="text-slate leading-relaxed max-w-prose">{p.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Right: image */}
+          <div
+            ref={imgColRef}
+            className="relative aspect-[4/3] lg:aspect-auto lg:h-[500px]"
+            style={reducedMotion ? {} : {}}
+          >
+            <EditorialImage
+              src="/images/collectors.jpg"
+              alt="ARG collections team at work"
+              caption="THE ARG TEAM — FAIRFIELD, NJ"
+              aspectClassName="h-full"
+              width={800}
+              height={600}
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   SCENE 3: RECOVERY ESTIMATOR — "the instrument"
+   No pin (interactive). Entrance: section rises + sliders
+   sweep 0 → defaults + outlook bar sweeps. While dragging
+   any slider: rest of page dims at ink 4%.
+───────────────────────────────────────────────────────── */
+type DScore = 'Strong' | 'Moderate' | 'Challenging';
+
+function computeOutlook(balance: number, months: number, status: string) {
+  let pts = 0;
+  if (balance < 100_000) pts += 3;
+  else if (balance < 500_000) pts += 2;
+  else if (balance < 1_500_000) pts += 1;
+  if (months <= 3) pts += 3;
+  else if (months <= 9) pts += 2;
+  else if (months <= 15) pts += 1;
+  if (status === 'operating') pts += 3;
+  else if (status === 'reduced') pts += 1;
+
+  const lines: string[] = [];
+  if (months <= 3) lines.push('Recent default — early intervention is the single biggest recovery advantage.');
+  else if (months <= 9) lines.push('Moderate age. Recovery prospects remain viable with professional escalation.');
+  else lines.push('Debt is aging. Each additional month narrows the window — prompt placement matters.');
+  if (status === 'operating') lines.push('An operating debtor has income to negotiate against — that meaningfully improves outcomes.');
+  else if (status === 'reduced') lines.push('A debtor with reduced operations may still be reachable; our investigators establish status on placement.');
+  else lines.push('Unknown debtor status introduces uncertainty — our investigators establish operating condition on placement.');
+  if (balance >= 1_000_000) lines.push('At this balance, litigation-backed escalation through affiliated counsel may be the most effective path.');
+
+  let score: DScore;
+  let pct: number;
+  if (pts >= 7) { score = 'Strong'; pct = 78; }
+  else if (pts >= 4) { score = 'Moderate'; pct = 50; }
+  else { score = 'Challenging'; pct = 24; }
+  return { score, pct, lines: lines.slice(0, 3) };
+}
+
+const BAND_COLORS: Record<DScore, string> = { Strong: 'bg-recovered', Moderate: 'bg-amber-600', Challenging: 'bg-slate' };
+const BAND_TEXT: Record<DScore, string>   = { Strong: 'text-recovered', Moderate: 'text-amber-700', Challenging: 'text-slate' };
+const EST_SCRAMBLE = 'ABCDEFGHJKLMNPQRSTUVWXYZ!@#$%';
+
+function RecoveryEstimator() {
+  const { reducedMotion, ready } = useMotion();
+  const sectionRef = useRef<HTMLElement>(null);
+
+  const [balance, setBalance] = useState(() => reducedMotion ? 500_000 : 0);
+  const [months, setMonths]   = useState(() => reducedMotion ? 6 : 0);
+  const [status, setStatus]   = useState('operating');
+  const [animPct, setAnimPct] = useState(0);
+  const [focusDim, setFocusDim] = useState(false);
+  const rafRef = useRef<number | null>(null);
+
+  const { score, pct, lines } = computeOutlook(balance, months, status);
+
+  // Score scramble
+  const [displayScore, setDisplayScore] = useState<string>(score);
+  const prevScore = useRef(score);
+  useEffect(() => {
+    if (score === prevScore.current) return;
+    const prevS = prevScore.current;
+    prevScore.current = score;
+    if (reducedMotion) { setDisplayScore(score); return; }
+    let frame = 0;
+    const tick = () => {
+      frame++;
+      if (frame >= 6) { setDisplayScore(score); return; }
+      setDisplayScore(Array.from({ length: Math.max(score.length, prevS.length) }, () =>
+        EST_SCRAMBLE[Math.floor(Math.random() * EST_SCRAMBLE.length)]
+      ).join('').slice(0, score.length));
+      setTimeout(tick, 50);
+    };
+    tick();
+  }, [score, reducedMotion]);
+
+  // Lines change key
+  const linesStr = lines.join('|');
+  const prevLinesStr = useRef(linesStr);
+  const [lineKey, setLineKey] = useState(0);
+  useEffect(() => {
+    if (linesStr !== prevLinesStr.current) {
+      prevLinesStr.current = linesStr;
+      setLineKey(k => k + 1);
+    }
+  }, [linesStr]);
+
+  // Outlook bar sweep
+  useEffect(() => {
+    if (reducedMotion) { setAnimPct(pct); return; }
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    let start: number | null = null;
+    const from = animPct;
+    const step = (ts: number) => {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / 400, 1);
+      setAnimPct(from + (pct - from) * p);
+      if (p < 1) rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pct]);
+
+  // Entrance: section rises + sliders animate 0 → defaults
+  useLayoutEffect(() => {
+    if (reducedMotion || !ready) return;
+    const ctx = gsap.context(() => {
+      gsap.set(sectionRef.current, { opacity: 0, y: 24 });
+      createReveal(sectionRef.current, {
+        id: 'estimator-reveal',
+        start: 'top 85%',
+        onEnter: () => {
+          gsap.to(sectionRef.current, { opacity: 1, y: 0, duration: 0.65, ease: 'power2.out' });
+          const proxy = { balance: 0, months: 0 };
+          gsap.to(proxy, {
+            balance: 500_000,
+            months: 6,
+            duration: 1.4,
+            ease: 'power2.inOut',
+            onUpdate: () => {
+              setBalance(Math.round(proxy.balance / 10_000) * 10_000);
+              setMonths(Math.round(proxy.months));
+            },
+            onComplete: () => {
+              setBalance(500_000);
+              setMonths(6);
+            },
+          });
+        },
+      });
+    }, sectionRef);
+    return () => ctx.revert();
+  }, [reducedMotion]);
+
+  const fmt = (v: number) =>
+    v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1)}M` : `$${(v / 1_000).toFixed(0)}k`;
+
+  const handleSliderPointerDown = () => { if (!reducedMotion) setFocusDim(true); };
+  const handleSliderPointerUp   = () => setFocusDim(false);
+
+  return (
+    <>
+      {/* Focus dim overlay — ink 4% when dragging any slider */}
+      {focusDim && (
+        <div
+          className="fixed inset-0 z-30 pointer-events-none"
+          style={{ backgroundColor: 'hsl(212 50% 12.5% / 0.04)' }}
+          aria-hidden="true"
+        />
+      )}
+      <section ref={sectionRef} data-folio-n={4} className="relative isolate bg-mist ledger-grid py-24 md:py-32 border-b border-rule" style={reducedMotion ? {} : { opacity: 0 }}>
+        <SectionFolio n={4} />
+        <div className="max-w-6xl mx-auto px-6 md:px-8">
+          <SectionRule />
+          <p className="font-mono text-recovered tracking-widest text-xs font-semibold mb-4 uppercase">Recovery Estimator</p>
+          <h2 className="text-h2 font-serif text-ink mb-4">What&rsquo;s still recoverable?</h2>
+          <p className="text-slate max-w-prose mb-12">Adjust the inputs to see a qualitative outlook. Every file is assessed individually.</p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+            <div className="flex flex-col gap-10">
+              <div>
+                <div className="flex justify-between items-baseline mb-3">
+                  <label htmlFor="est-balance" className="font-mono text-xs uppercase tracking-widest text-slate">Outstanding Balance</label>
+                  <span className="font-mono text-2xl text-ink tabular-nums">{fmt(balance)}</span>
+                </div>
+                <input
+                  id="est-balance" type="range" min={10_000} max={5_000_000} step={10_000} value={balance}
+                  onChange={e => setBalance(Number(e.target.value))}
+                  onPointerDown={handleSliderPointerDown}
+                  onPointerUp={handleSliderPointerUp}
+                  className="w-full h-[2px] bg-rule accent-recovered cursor-pointer"
+                />
+                <div className="flex justify-between font-mono text-xs text-slate/50 mt-1"><span>$10k</span><span>$5M</span></div>
+              </div>
+              <div>
+                <div className="flex justify-between items-baseline mb-3">
+                  <label htmlFor="est-months" className="font-mono text-xs uppercase tracking-widest text-slate">Months Since Default</label>
+                  <span className="font-mono text-2xl text-ink tabular-nums">{months} mo</span>
+                </div>
+                <input
+                  id="est-months" type="range" min={0} max={24} step={1} value={months}
+                  onChange={e => setMonths(Number(e.target.value))}
+                  onPointerDown={handleSliderPointerDown}
+                  onPointerUp={handleSliderPointerUp}
+                  className="w-full h-[2px] bg-rule accent-recovered cursor-pointer"
+                />
+                <div className="flex justify-between font-mono text-xs text-slate/50 mt-1"><span>0</span><span>24 mo</span></div>
+              </div>
+              <div>
+                <label htmlFor="est-status" className="font-mono text-xs uppercase tracking-widest text-slate block mb-3">Debtor Status</label>
+                <select
+                  id="est-status" value={status} onChange={e => setStatus(e.target.value)}
+                  className="w-full border border-rule bg-paper text-ink font-mono text-sm px-4 py-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered"
+                >
+                  <option value="operating">Operating</option>
+                  <option value="reduced">Reduced operations</option>
+                  <option value="unknown">Unknown</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="border border-rule p-8 rounded-sm flex flex-col gap-8 bg-paper">
+              <div>
+                <p className="font-mono text-xs uppercase tracking-widest text-slate mb-2">Recoverability Outlook</p>
+                <p className={`text-3xl font-serif font-semibold font-mono tracking-wider ${BAND_TEXT[score]}`}>
+                  {displayScore}
+                </p>
+              </div>
+              <div>
+                <div className="h-3 w-full bg-rule rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${BAND_COLORS[score]}`} style={{ width: `${animPct}%`, transition: 'width 400ms ease' }} />
+                </div>
+                <div className="flex justify-between font-mono text-xs text-slate/50 mt-1"><span>Challenging</span><span>Strong</span></div>
+              </div>
+              <ul className="flex flex-col gap-3 min-h-[160px]">
+                {lines.map((l, i) => (
+                  <li
+                    key={`${lineKey}-${i}`}
+                    className="text-sm text-slate leading-relaxed flex gap-3"
+                    style={{ animation: `fade-up-in 300ms ease ${i * 80}ms both` }}
+                  >
+                    <span className="w-4 h-[1px] bg-recovered block mt-[0.6em] flex-shrink-0" />
+                    {l}
+                  </li>
+                ))}
+              </ul>
+              <div className="pt-4 border-t border-rule flex flex-col gap-4">
+                <p className="font-mono text-xs text-slate/50 italic">Illustrative outlook, not a guarantee. Every file is assessed individually.</p>
+                <Link href="/contact-us/"
+                  className="inline-flex items-center gap-2 bg-ink text-paper px-6 py-3 text-sm font-medium rounded-sm hover:bg-ink/90 transition-colors w-fit">
+                  Get a real assessment →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   SCENE 4: INDUSTRIES + PULL-LINE — "the spread"
+   6 verticals fan out from stacked center → list positions
+   (staggered translate). The serif pull-line reveals
+   word-by-word tied to scrub across 60vh.
+   Mobile: stagger fade-in, pull-line fades as a unit.
+───────────────────────────────────────────────────────── */
+const INDUSTRIES = [
+  'Merchant Cash Advance',
+  'Factoring',
+  'Equipment Leasing',
+  'Commercial Loans',
+  'Fintech Lending',
+  'Law Firms & Judgment Holders',
+];
+
+const PULL_QUOTE = 'Effective collections keep credit flowing. We give creditors the confidence that when things go wrong, their losses can be recovered.';
+const PULL_WORDS = PULL_QUOTE.split(' ');
+
+function IndustriesSection() {
+  const { reducedMotion, ready } = useMotion();
+  const sectionRef = useRef<HTMLElement>(null);
+  const quoteRef   = useRef<HTMLQuoteElement>(null);
+  const wordRefs   = useRef<(HTMLSpanElement | null)[]>([]);
+  const panelRef   = useRef<HTMLDivElement>(null);
+  const listRef    = useRef<HTMLUListElement>(null);
+
+  useLayoutEffect(() => {
+    if (reducedMotion || !ready) return;
+
+    const words = wordRefs.current.filter(Boolean) as HTMLSpanElement[];
+
+    // gsap.matchMedia enforces pin boundary structurally:
+    // zero .pin-spacer elements exist in the DOM below 768px.
+    const mm = gsap.matchMedia();
+
+    // ≤767px — enter-once reveals, no pin, no pin-spacers.
+    // CRITICAL: use gsap.from() so initial hidden state lives inside the branch
+    // and is reverted by mm.revert() on resize. Content is visible by default
+    // in JSX — animation FROM hidden, never a persistent opacity-0 set in CSS.
+    mm.add('(max-width: 767px)', () => {
+      // Words stagger in 60ms apart over 500ms each
+      if (words.length) {
+        gsap.from(words, {
+          opacity: 0,
+          y: 8,
+          duration: 0.5,
+          stagger: 0.06,
+          ease: 'power2.out',
+          scrollTrigger: {
+            id: 'industries-words-mobile',
+            trigger: quoteRef.current,
+            start: 'top 85%',
+            toggleActions: 'play none none none',
+          },
+        });
+      }
+      // Industry tiles follow after words
+      if (panelRef.current) {
+        const tiles = Array.from(panelRef.current.querySelectorAll('li'));
+        if (tiles.length) {
+          gsap.from(tiles, {
+            opacity: 0,
+            y: 8,
+            duration: 0.4,
+            stagger: 0.08,
+            ease: 'power2.out',
+            scrollTrigger: {
+              id: 'industries-tiles-mobile',
+              trigger: panelRef.current,
+              start: 'top 90%',
+              toggleActions: 'play none none none',
+            },
+          });
+        }
+      }
+    });
+
+    // ≥768px — pin cinema: words reveal 0→0.65, panel fades 0.58→1.0
+    mm.add('(min-width: 768px)', () => {
+      gsap.set(words, { opacity: 0.12 });
+      if (panelRef.current) gsap.set(panelRef.current, { opacity: 0 });
+
+      // Cinema pin #2 — 120vh, onToggle manages z-index so no section bleeds through
+      const tl = createCinema(sectionRef.current, {
+        id: 'cinema-pin',
+        end: '+=120%',
+        onToggle: (self) => {
+          if (sectionRef.current) {
+            sectionRef.current.style.zIndex = self.isActive ? '10' : '1';
+          }
+        },
+        onEnter: () => {
+          if (sectionRef.current) sectionRef.current.style.willChange = 'transform';
+        },
+        onLeave: () => {
+          if (sectionRef.current) {
+            sectionRef.current.style.willChange = '';
+            sectionRef.current.style.zIndex = '1';
+          }
+        },
+        onLeaveBack: () => {
+          if (sectionRef.current) {
+            sectionRef.current.style.willChange = '';
+            sectionRef.current.style.zIndex = '1';
+          }
+        },
+      });
+
+      tl.to({}, { duration: 1 }); // anchor total to 1.0s
+
+      // Word-by-word reveal across first 65% of the scrub
+      words.forEach((word, i) => {
+        tl.to(word, { opacity: 1, duration: 0.012, ease: 'none' }, (i / words.length) * 0.65);
+      });
+
+      // Industry panel fades in at 0.58
+      if (panelRef.current) {
+        tl.to(panelRef.current, { opacity: 1, ease: 'power2.out', duration: 0.35 }, 0.58);
+      }
+    });
+
+    return () => { mm.revert(); };
+  }, [reducedMotion, ready]);
+
+  return (
+    /* Opaque, isolated stacking layer — height locked to 100svh (with 100vh
+       fallback) so pin math is stable and browser chrome is excluded on mobile.
+       bg-ink sits under the video so nothing shows through before first paint. */
+    <section
+      ref={sectionRef}
+      data-folio-n={5}
+      className="relative bg-ink isolate overflow-hidden md:h-svh"
+      style={{ transform: 'translateZ(0)' }}
+    >
+      <SectionFolio n={5} />
+
+      {/* Solid ink base — absolute below video, so neighbours never bleed through */}
+      <div className="absolute inset-0 z-0 bg-ink" />
+
+      {/* bw-skyline cinema background */}
+      <div className="absolute inset-0 z-[1]">
+        <AmbientVideo
+          mp4="/videos/bw-skyline.mp4"
+          webm="/videos/bw-skyline.webm"
+          poster="/videos/bw-skyline-poster.jpg"
+          overlayOpacity={0.48}
+          overlayVariant="gradient"
+          aspectClassName=""
+          className="w-full h-full"
+        />
+      </div>
+
+      {/* Pull-quote centrepiece — flow on mobile (section auto-sizes), absolute centred on desktop */}
+      <div className="relative z-10 flex flex-col justify-center px-6 md:px-8 pt-16 pb-4 md:absolute md:inset-0 md:pt-0 md:pb-0">
+        <div className="max-w-5xl mx-auto w-full md:pb-28 lg:pb-32">
+          <p className="font-mono text-paper/50 tracking-widest text-xs font-semibold mb-8 uppercase">
+            Trusted Partners
           </p>
           <blockquote
             ref={quoteRef}
@@ -11,7 +944,6 @@
                 <span
                   key={i}
                   ref={el => { wordRefs.current[i] = el; }}
-                  style={{ opacity: 0.12 }}
                 >
                   {word}{' '}
                 </span>
@@ -21,11 +953,10 @@
         </div>
       </div>
 
-      {/* Industry tiles panel — anchored to bottom of the 100vh section */}
+      {/* Industry tiles panel — flow on mobile (no blank-band risk), absolute bottom on desktop */}
       <div
         ref={panelRef}
-        className="absolute bottom-0 left-0 right-0 z-10 bg-paper border-t border-rule py-8 md:py-10"
-        style={reducedMotion ? {} : { opacity: 0 }}
+        className="relative z-10 bg-paper border-t border-rule py-8 md:py-10 md:absolute md:bottom-0 md:left-0 md:right-0"
       >
         <div className="max-w-6xl mx-auto px-6 md:px-8">
           <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-5 uppercase">
