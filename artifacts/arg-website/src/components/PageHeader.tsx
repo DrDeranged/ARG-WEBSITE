@@ -2,7 +2,7 @@
  * PageHeader — page-opening header section in two variants.
  *
  * variant="light"
- *   Paper-background section with eyebrow + serif headline.
+ *   Glass content plane with eyebrow + serif headline.
  *   Used by: Careers, Blog, any paper-bg page.
  *
  * variant="cinema"
@@ -64,10 +64,10 @@ export type PageHeaderProps = PageHeaderLightProps | PageHeaderCinemaProps;
 function LightHeader({ headline, eyebrow, ariaLabel }: PageHeaderLightProps) {
   return (
     <section
-      className="pt-32 pb-10 md:pt-48 md:pb-10 bg-paper"
+      className="pt-24 pb-10 md:pt-40 md:pb-10 bg-transparent"
       aria-label={ariaLabel ?? headline}
     >
-      <div className="max-w-6xl mx-auto px-6 md:px-8">
+      <div className="glass-paper max-w-6xl mx-auto px-6 md:px-8 py-8 md:py-10">
         {eyebrow && (
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate mb-5">
             {eyebrow}
@@ -133,8 +133,12 @@ function CinemaHeader({
       tl.to(eyebrowRef.current,  { opacity: 1, duration: 0.35, ease: 'power2.out' }, 0.30);
       tl.to(headlineRef.current, { opacity: 1, y: 0, duration: 0.65, ease: 'power3.out' }, 0.35);
       // Beat 3 — subline + footer
-      tl.to(sublineRef.current,  { opacity: 1, duration: 0.45, ease: 'power2.out' }, 0.65);
-      tl.to(footerRef.current,   { opacity: 1, duration: 0.35, ease: 'power2.out' }, 0.80);
+      if (sublineRef.current) {
+        tl.to(sublineRef.current, { opacity: 1, duration: 0.45, ease: 'power2.out' }, 0.65);
+      }
+      if (footerRef.current) {
+        tl.to(footerRef.current, { opacity: 1, duration: 0.35, ease: 'power2.out' }, 0.80);
+      }
     });
 
     return () => ctx.revert();

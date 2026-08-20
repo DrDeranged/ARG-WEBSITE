@@ -99,7 +99,7 @@ export default function TemplatePage() {
           Choose ONE variant and delete the other.
       ──────────────────────────────────────────────────────────────── */}
 
-      {/* OPTION A — Light header (paper background, no video) */}
+      {/* OPTION A — Light header (glass content over the shared L0 backdrop) */}
       <PageHeader
         variant="light"
         eyebrow="Section — Location"     // e.g. "Careers" or omit
@@ -150,11 +150,12 @@ export default function TemplatePage() {
       </CinemaBand>
 
       {/* ── STANDARD SECTION ───────────────────────────────────────────
-          bg-paper or bg-mist. Always border-b border-rule between sections.
+          Keep the section transparent and use one .glass-paper plane for
+          all its content. Always border-b border-rule between sections.
           Section padding scale: py-24 md:py-32 (tall), py-16 md:py-20 (std).
       ──────────────────────────────────────────────────────────────── */}
-      <section className="bg-paper py-16 md:py-20 border-b border-rule">
-        <div className="max-w-6xl mx-auto px-6 md:px-8">
+      <section className="bg-transparent py-16 md:py-20 border-b border-rule">
+        <div className="glass-paper max-w-6xl mx-auto px-6 md:px-8 py-8 md:py-10">
           {/* Eyebrow */}
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate mb-5">
             Section label
@@ -176,8 +177,8 @@ export default function TemplatePage() {
           Numbered what-happens-next / step pattern with draw animation.
           Delete if the page doesn't need a steps list.
       ──────────────────────────────────────────────────────────────── */}
-      <section className="bg-mist py-16 md:py-20 border-b border-rule">
-        <div className="max-w-6xl mx-auto px-6 md:px-8 max-w-xl">
+      <section className="bg-transparent py-16 md:py-20 border-b border-rule">
+        <div className="glass-paper max-w-xl mx-auto px-6 md:px-8 py-8 md:py-10">
           <MiniLedgerList
             steps={STEPS}
             label="What happens next"

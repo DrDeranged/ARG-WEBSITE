@@ -43,15 +43,15 @@ export default function CareersPage() {
       </CinemaBand>
 
       {/* ── Current openings ─────────────────────────────────────── */}
-      <section className="bg-mist py-24 border-b border-rule">
-        <div className="max-w-6xl mx-auto px-6 md:px-8">
+      <section className="bg-transparent py-24 border-b border-rule">
+        <div className="glass-paper max-w-6xl mx-auto px-6 md:px-8 py-8 md:py-10">
           <h2 className="font-mono text-slate tracking-widest text-xs font-semibold mb-12 uppercase">
             Current Openings
           </h2>
 
           <div className="flex flex-col">
             {/* Job listing row */}
-            <div className="list-row group relative border-t border-b border-rule py-12 flex flex-col md:flex-row gap-8 md:gap-16 items-start hover:bg-paper/50 transition-colors pl-4 md:pl-6">
+            <div className="list-row group relative border-t border-b border-rule py-12 flex flex-col md:flex-row gap-8 md:gap-16 items-start hover:bg-paper/25 transition-colors pl-4 md:pl-6">
               <div className="md:w-1/4 flex flex-col gap-2 pt-1">
                 <span className="font-mono text-sm font-semibold text-ink">ARG-001</span>
                 <span className="font-mono text-xs text-slate">Full-Time, On-Site</span>
@@ -79,8 +79,8 @@ export default function CareersPage() {
       </section>
 
       {/* ── Office image ─────────────────────────────────────────── */}
-      <section className="bg-paper py-24">
-        <div className="max-w-6xl mx-auto px-6 md:px-8 flex flex-col gap-8">
+      <section className="bg-transparent py-24">
+        <div className="glass-paper max-w-6xl mx-auto px-6 md:px-8 py-8 md:py-10 flex flex-col gap-8">
           <EditorialImage
             src="/images/office.jpg"
             alt="Advanced Recovery Group office in Fairfield, NJ"

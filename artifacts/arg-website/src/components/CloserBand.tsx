@@ -60,7 +60,7 @@ export function CloserBand({
         </div>
       )}
 
-      <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8 flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+      <div className="glass-ink relative z-10 max-w-6xl mx-auto px-6 md:px-8 py-8 md:py-10 flex flex-col md:flex-row md:items-center md:justify-between gap-8">
         <h2 className="text-2xl md:text-3xl font-serif text-paper leading-snug">
           {headline}
         </h2>

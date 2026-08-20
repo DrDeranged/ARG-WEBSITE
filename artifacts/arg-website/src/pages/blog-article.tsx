@@ -321,8 +321,8 @@ export default function BlogArticlePage() {
           coverImage={article.coverImage}
         />
 
-        {/* ── Article body — unchanged ─────────────────────────────── */}
-        <div className="max-w-3xl mx-auto px-5 md:px-8 pt-16">
+        {/* ── Article body + share row — one bounded L1 reading plane ── */}
+        <div className="glass-paper max-w-3xl mx-auto px-6 md:px-8 py-8 md:py-10 mt-16">
           {article.placeholder ? (
             <p className="text-2xl text-slate italic font-serif text-center py-16">
               Full article being migrated — check back soon.

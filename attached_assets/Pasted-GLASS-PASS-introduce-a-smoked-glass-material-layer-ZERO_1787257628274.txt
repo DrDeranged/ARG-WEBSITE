@@ -1,0 +1,57 @@
+GLASS PASS — introduce a "smoked glass" material layer. ZERO changes
+to any motion, scroll behavior, pins, reveals, or videos — this is
+purely surface treatment. Update DESIGN-SYSTEM.md accordingly (the
+old "no glassmorphism" law is amended to the rules below).
+
+1. GLASS TOKENS (define once in index.css as utility classes):
+   .glass-paper — background: paper at 72%; backdrop-filter:
+   blur(16px) saturate(1.15); border: 1px solid paper/45; and a
+   1px inner top-edge highlight (paper/60). Sharp corners, max 4px
+   radius, NO drop shadows beyond existing documented exceptions.
+   .glass-ink — ink at 55%; blur(14px) saturate(1.1); border
+   paper/15; for dark-context panels.
+   Mobile (<768px): blur radius drops to 8px via media query;
+   and add an @supports not (backdrop-filter: blur(1px)) fallback
+   raising background opacity to 92% (Firefox/legacy).
+
+2. WHERE GLASS APPLIES (exhaustive list — nowhere else):
+   a. HERO LEDGER CARD → .glass-paper. The lifecycle rows over the
+      moving film through frosted glass is the marquee moment of
+      this pass. Row separators stay 1px rule at reduced opacity.
+   b. STICKY HEADER (scrolled state) → .glass-paper instead of
+      bg-paper/95 (desktop keeps current blur behavior but unified
+      through the token; mobile now gets the 8px glass instead of
+      solid — re-verify fps with the debug overlay).
+   c. CINEMA BREAK industries tile panel → .glass-paper (replacing
+      paper/95 opaque), so the skyline moves behind the tiles.
+   d. ARG ASSIST tab and sheet header → tab becomes .glass-paper;
+      the sheet's ink header becomes .glass-ink with the body
+      staying opaque paper (readability first in conversation).
+   e. COMMAND PALETTE panel → .glass-paper over its existing
+      overlay.
+   f. CONTACT locality card + the cinematic header's status line
+      chip → .glass-paper.
+   g. TRUST STRIP + CLOSING CTA inner content blocks (the text
+      containers over office-floor/dusk films) → .glass-ink,
+      subtle.
+   Flat paper/mist body sections (Why ARG, Process, Estimator,
+   blog rows, forms) remain OPAQUE — glass only exists over
+   motion.
+
+3. CONTRAST + PERFORMANCE GUARDRAILS:
+   a. Re-verify AA contrast for all text on every glass surface
+      against the BRIGHTEST frame of the film behind it; where
+      failing, raise that surface's bg opacity in 4% steps until
+      passing (never darken the film).
+   b. Max simultaneously-visible backdrop-filter surfaces: 3.
+      Audit each viewport-state; if any scroll position shows >3,
+      demote the least important to opaque.
+   c. will-change: backdrop-filter is NOT to be used; glass
+      surfaces must not be inside animated transforms' children
+      where blur re-rasterizes per frame — verify the hero card's
+      pin-scrub still runs 60fps with glass (debug overlay,
+      report fps before/after).
+4. VERIFY: screenshot-level pass on home, contact, blog list at
+   desktop + 390px; fps report via ?debugfps on the hero and
+   cinema sections; reduced-motion unaffected; build + tsc clean.
+Commit as "Glass pass: smoked-glass material layer".

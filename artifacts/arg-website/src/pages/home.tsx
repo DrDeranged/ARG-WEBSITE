@@ -119,23 +119,22 @@ function AnimatedLedgerCard() {
 
   return (
     <div
-      className="bg-paper font-mono text-[11px]"
+      className="glass-paper font-mono text-[11px]"
       style={{
-        border: '1px solid var(--color-rule)',
         opacity: fading ? 0 : 1,
         transition: 'opacity 600ms ease',
       }}
       aria-hidden="true"
     >
-      <div className="border-b border-rule px-4 py-3 flex justify-between items-center bg-ink">
+      <div className="border-b border-paper/25 px-4 py-3 flex justify-between items-center bg-ink">
         <span className="text-paper/70 tracking-widest uppercase text-[9px]">Recovery File</span>
         <span className="text-paper/40 tabular-nums text-[9px]">{dateStr}</span>
       </div>
-      <div className="border-b border-rule px-4 py-3 flex justify-between items-center bg-mist">
+      <div className="border-b border-rule/60 px-4 py-3 flex justify-between items-center bg-paper/35">
         <span className="text-ink font-medium tracking-wider">{FILE_TYPES[fileIdx]}</span>
         <span className="text-slate/40 tabular-nums text-[9px]">FILE № 2026-{fileNumber}</span>
       </div>
-      <div className="divide-y divide-rule">
+      <div className="divide-y divide-rule/60">
         {LIFECYCLE_STEPS.map((step, i) => (
           <div
             key={step.label}
@@ -168,7 +167,7 @@ function AnimatedLedgerCard() {
           </div>
         ))}
       </div>
-      <div className="border-t border-rule px-4 py-2 text-slate/35 text-[9px]">
+      <div className="border-t border-rule/60 px-4 py-2 text-slate/50 text-[9px]">
         Representative recovery lifecycle.
       </div>
     </div>
@@ -204,7 +203,7 @@ function VerticalsTicker() {
 
   if (prefersReduced) {
     return (
-      <div className="border-t border-b border-rule py-3 bg-paper overflow-x-hidden">
+      <div className="glass-paper border-t border-b border-rule py-3 overflow-x-hidden">
         <p className="font-mono text-xs text-slate tracking-widest text-center flex-wrap px-4">
           {TICKER_PARTS.map((p, i) => (
             <span key={i}>{p}{i < TICKER_PARTS.length - 1 && <span className="text-recovered mx-2">·</span>}</span>
@@ -214,7 +213,7 @@ function VerticalsTicker() {
     );
   }
   return (
-    <div className="border-t border-b border-rule py-3 bg-paper overflow-x-hidden">
+    <div className="glass-paper border-t border-b border-rule py-3 overflow-x-hidden">
       <div className="flex whitespace-nowrap ticker-animate" aria-hidden="true">
         <TickerSegment /><TickerSegment /><TickerSegment /><TickerSegment />
       </div>
@@ -272,10 +271,10 @@ function WhyArgSection() {
   }, [reducedMotion, ready]);
 
   return (
-    <section ref={sectionRef} data-folio-n={2} className="relative isolate bg-mist py-24 md:py-32 border-b border-rule">
+    <section ref={sectionRef} data-folio-n={2} className="relative isolate bg-transparent py-24 md:py-32 border-b border-rule">
       <SectionFolio n={2} />
 
-      <div className="max-w-6xl mx-auto px-6 md:px-8">
+      <div className="glass-paper max-w-6xl mx-auto px-6 md:px-8 py-8 md:py-10">
         <SectionRule />
         <p className="font-mono text-recovered tracking-widest text-xs font-semibold mb-4 uppercase">
           Why Advanced Recovery Group
@@ -420,9 +419,9 @@ function ProcessSection() {
   }, [reducedMotion, ready]);
 
   return (
-    <section ref={sectionRef} data-folio-n={3} id="process" className="relative isolate bg-paper py-24 md:py-32 border-b border-rule scroll-m-20">
+    <section ref={sectionRef} data-folio-n={3} id="process" className="relative isolate bg-transparent py-24 md:py-32 border-b border-rule scroll-m-20">
       <SectionFolio n={3} />
-      <div className="max-w-6xl mx-auto px-6 md:px-8">
+      <div className="glass-paper max-w-6xl mx-auto px-6 md:px-8 py-8 md:py-10">
         <SectionRule />
         <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-4 uppercase">Our Process</p>
         <h2 className="text-h2 font-serif text-ink mb-16 md:mb-24">From placement to recovery</h2>
@@ -682,7 +681,7 @@ function RecoveryEstimator() {
           aria-hidden="true"
         />
       )}
-      <section ref={sectionRef} data-folio-n={4} className="relative isolate bg-mist ledger-grid py-24 md:py-32 border-b border-rule" style={reducedMotion ? {} : { opacity: 0 }}>
+      <section ref={sectionRef} data-folio-n={4} className="relative isolate glass-paper ledger-grid py-24 md:py-32 border-b border-rule" style={reducedMotion ? {} : { opacity: 0 }}>
         <SectionFolio n={4} />
         <div className="max-w-6xl mx-auto px-6 md:px-8">
           <SectionRule />
@@ -724,7 +723,7 @@ function RecoveryEstimator() {
                 <label htmlFor="est-status" className="font-mono text-xs uppercase tracking-widest text-slate block mb-3">Debtor Status</label>
                 <select
                   id="est-status" value={status} onChange={e => setStatus(e.target.value)}
-                  className="w-full border border-rule bg-paper text-ink font-mono text-sm px-4 py-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered"
+                  className="glass-field w-full text-ink font-mono text-sm px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered"
                 >
                   <option value="operating">Operating</option>
                   <option value="reduced">Reduced operations</option>
@@ -733,7 +732,7 @@ function RecoveryEstimator() {
               </div>
             </div>
 
-            <div className="border border-rule p-8 rounded-sm flex flex-col gap-8 bg-paper">
+            <div className="glass-field p-8 flex flex-col gap-8">
               <div>
                 <p className="font-mono text-xs uppercase tracking-widest text-slate mb-2">Recoverability Outlook</p>
                 <p className={`text-3xl font-serif font-semibold font-mono tracking-wider ${BAND_TEXT[score]}`}>
@@ -865,18 +864,13 @@ function IndustriesSection() {
             sectionRef.current.style.zIndex = self.isActive ? '10' : '1';
           }
         },
-        onEnter: () => {
-          if (sectionRef.current) sectionRef.current.style.willChange = 'transform';
-        },
         onLeave: () => {
           if (sectionRef.current) {
-            sectionRef.current.style.willChange = '';
             sectionRef.current.style.zIndex = '1';
           }
         },
         onLeaveBack: () => {
           if (sectionRef.current) {
-            sectionRef.current.style.willChange = '';
             sectionRef.current.style.zIndex = '1';
           }
         },
@@ -906,7 +900,6 @@ function IndustriesSection() {
       ref={sectionRef}
       data-folio-n={5}
       className="relative bg-ink isolate overflow-hidden md:h-svh"
-      style={{ transform: 'translateZ(0)' }}
     >
       <SectionFolio n={5} />
 
@@ -956,13 +949,13 @@ function IndustriesSection() {
       {/* Industry tiles panel — flow on mobile (no blank-band risk), absolute bottom on desktop */}
       <div
         ref={panelRef}
-        className="relative z-10 bg-paper border-t border-rule py-8 md:py-10 md:absolute md:bottom-0 md:left-0 md:right-0"
+        className="relative z-10 glass-ink py-8 md:py-10 md:absolute md:bottom-0 md:left-0 md:right-0"
       >
         <div className="max-w-6xl mx-auto px-6 md:px-8">
-          <p className="font-mono text-slate tracking-widest text-xs font-semibold mb-5 uppercase">
+          <p className="font-mono text-paper/60 tracking-widest text-xs font-semibold mb-5 uppercase">
             Industries we serve
           </p>
-          <ul ref={listRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 font-mono text-sm text-slate">
+          <ul ref={listRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 font-mono text-sm text-paper/85">
             {INDUSTRIES.map((industry) => (
               <li key={industry} className="flex items-center gap-4">
                 <span className="w-4 h-[1px] bg-recovered block flex-shrink-0" />
@@ -997,7 +990,7 @@ function TrustStrip() {
         />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8">
+      <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8 glass-ink">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 sm:divide-x divide-paper/10">
           <div className="py-6 sm:py-0 sm:pr-12 border-b sm:border-b-0 border-paper/10">
             <p className="font-mono text-[10px] text-paper/40 uppercase tracking-widest mb-3">Placement Model</p>
@@ -1093,7 +1086,7 @@ function GivingBackSection() {
   return (
     <section ref={sectionRef} data-folio-n={6} className="relative isolate bg-ink text-paper py-24 md:py-32 border-b border-ink">
       <SectionFolio n={6} />
-      <div className="max-w-6xl mx-auto px-6 md:px-8">
+      <div className="glass-ink max-w-6xl mx-auto px-6 md:px-8 py-8 md:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
             <p className="font-mono text-recovered tracking-widest text-xs font-semibold mb-4 uppercase">Giving Back</p>
@@ -1286,7 +1279,7 @@ function ClosingCTA() {
         style={reducedMotion ? {} : { transform: 'scaleX(0)', transformOrigin: 'left' }}
       />
 
-      <div className="relative z-[1] max-w-4xl mx-auto px-6 md:px-8 text-center flex flex-col items-center">
+      <div className="relative z-[1] max-w-4xl mx-auto px-6 md:px-8 py-10 md:py-12 text-center flex flex-col items-center glass-ink">
         {/* Headline */}
         <h2 ref={headlineRef} className="text-h2 font-serif text-paper mb-8">
           Ready to recover what you&rsquo;re owed?
@@ -1438,9 +1431,6 @@ function HeroSection() {
       scrubTl = createPinScrub(sectionRef.current, {
         id: 'hero-pin',
         end: '+=150%',
-        onEnter:     () => { if (sectionRef.current) sectionRef.current.style.willChange = 'transform'; },
-        onLeave:     () => { if (sectionRef.current) sectionRef.current.style.willChange = ''; },
-        onLeaveBack: () => { if (sectionRef.current) sectionRef.current.style.willChange = ''; },
       });
 
       // Headline drifts up
@@ -1538,7 +1528,6 @@ function HeroSection() {
       ref={sectionRef}
       data-folio-n={1}
       className="relative isolate bg-ink border-b border-ink/20 overflow-hidden md:flex md:items-center hero-height"
-      style={{ transform: 'translateZ(0)' }}
     >
       {/* hero-film: AmbientVideo — observer-driven play/pause, poster fallback, save-data */}
       {!reducedMotion && (
@@ -1774,8 +1763,8 @@ export default function HomePage() {
       <GivingBackSection />
 
       {/* BLOG TEASER */}
-      <section className="relative isolate bg-mist py-24 md:py-32 border-b border-rule">
-        <div className="max-w-6xl mx-auto px-6 md:px-8">
+      <section className="relative isolate bg-transparent py-24 md:py-32 border-b border-rule">
+        <div className="glass-paper max-w-6xl mx-auto px-6 md:px-8 py-8 md:py-10">
           <Reveal>
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
               <div>

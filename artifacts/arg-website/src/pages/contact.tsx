@@ -219,7 +219,7 @@ function HoursLedger({ activeRow }: { activeRow: ActiveRow }) {
 function LocalityCard({ status }: { status: OfficeStatus }) {
   const nowET = useNowET();
   return (
-    <div className="border border-rule rounded-sm overflow-hidden">
+    <div className="glass-field overflow-hidden">
       <div className="px-4 py-3 border-b border-rule">
         <p className="font-mono text-[10px] uppercase tracking-widest text-slate">
           The Office — Fairfield, NJ
@@ -577,14 +577,14 @@ export default function ContactPage() {
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="font-mono text-xs uppercase tracking-wider text-slate" htmlFor="field-name">Full Name *</FormLabel>
-                  <FormControl><Input id="field-name" className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans text-base" disabled={status === 'submitting'} {...field} /></FormControl>
+                  <FormControl><Input id="field-name" className="glass-field focus-visible:ring-recovered font-sans text-base" disabled={status === 'submitting'} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="company" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="font-mono text-xs uppercase tracking-wider text-slate" htmlFor="field-company">Company *</FormLabel>
-                  <FormControl><Input id="field-company" className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans text-base" disabled={status === 'submitting'} {...field} /></FormControl>
+                  <FormControl><Input id="field-company" className="glass-field focus-visible:ring-recovered font-sans text-base" disabled={status === 'submitting'} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -593,14 +593,14 @@ export default function ContactPage() {
               <FormField control={form.control} name="email" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="font-mono text-xs uppercase tracking-wider text-slate" htmlFor="field-email">Email Address *</FormLabel>
-                  <FormControl><Input id="field-email" type="email" className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans text-base" disabled={status === 'submitting'} {...field} /></FormControl>
+                  <FormControl><Input id="field-email" type="email" className="glass-field focus-visible:ring-recovered font-sans text-base" disabled={status === 'submitting'} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="phone" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="font-mono text-xs uppercase tracking-wider text-slate" htmlFor="field-phone">Phone Number</FormLabel>
-                  <FormControl><Input id="field-phone" type="tel" className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans text-base" disabled={status === 'submitting'} {...field} /></FormControl>
+                  <FormControl><Input id="field-phone" type="tel" className="glass-field focus-visible:ring-recovered font-sans text-base" disabled={status === 'submitting'} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -612,7 +612,7 @@ export default function ContactPage() {
                   <FormControl>
                     <select
                       id="field-category"
-                      className="w-full border border-rule bg-paper text-ink font-sans text-base px-3 py-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered h-11"
+                      className="glass-field w-full text-ink font-sans text-base px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered h-11"
                       disabled={status === 'submitting'}
                       {...field}
                     >
@@ -629,7 +629,7 @@ export default function ContactPage() {
                   <FormControl>
                     <select
                       id="field-balance"
-                      className="w-full border border-rule bg-paper text-ink font-sans text-base px-3 py-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered h-11"
+                      className="glass-field w-full text-ink font-sans text-base px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-recovered h-11"
                       disabled={status === 'submitting'}
                       {...field}
                     >
@@ -648,7 +648,7 @@ export default function ContactPage() {
                   <Textarea
                     id="field-message"
                     rows={5}
-                    className="rounded-sm border-rule bg-paper focus-visible:ring-recovered font-sans resize-y min-h-[120px] text-base"
+                    className="glass-field focus-visible:ring-recovered font-sans resize-y min-h-[120px] text-base"
                     disabled={status === 'submitting'}
                     {...field}
                   />
@@ -660,7 +660,7 @@ export default function ContactPage() {
               <p className="font-mono text-xs text-destructive">{form.formState.errors.root.message}</p>
             )}
             {status === 'error' && (
-              <div className="border border-rule bg-mist px-5 py-4 rounded-sm text-sm text-slate leading-relaxed">
+              <div className="glass-field px-5 py-4 text-sm text-slate leading-relaxed">
                 Something went wrong. Call{' '}
                 <a href="tel:8774648470" className="text-ink font-medium hover:text-recovered transition-colors">(877) 464-8470</a>{' '}
                 or email{' '}
@@ -740,7 +740,7 @@ export default function ContactPage() {
         subline="Tell us what you're owed. A recovery specialist responds within one business day."
         ariaLabel="Contact page header"
         footer={
-          <div className="flex items-center gap-2.5 font-mono text-xs text-paper/70">
+          <div className="glass-paper inline-flex items-center gap-2.5 px-3 py-2 font-mono text-xs text-slate">
             {/* Pulsing status dot — 2s interval, respects reduced-motion */}
             <span className="relative flex-shrink-0 w-2 h-2" aria-hidden="true">
               {officeStatus.open && (
@@ -749,7 +749,7 @@ export default function ContactPage() {
                   style={{ animationDuration: '2s' }}
                 />
               )}
-              <span className={`absolute inset-0 rounded-full ${officeStatus.open ? 'bg-recovered' : 'bg-paper/30'}`} />
+              <span className={`absolute inset-0 rounded-full ${officeStatus.open ? 'bg-recovered' : 'bg-slate/30'}`} />
             </span>
             {officeStatus.label}
           </div>
@@ -757,9 +757,9 @@ export default function ContactPage() {
       />
 
       {/* ── TWO-COLUMN BODY ───────────────────────────────────────── */}
-      <section className="bg-paper pt-14 pb-16 md:pt-16 md:pb-20 border-b border-rule">
+      <section className="bg-transparent pt-14 pb-16 md:pt-16 md:pb-20 border-b border-rule">
         <div className="max-w-6xl mx-auto px-6 md:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 lg:gap-16">
+          <div className="glass-paper grid grid-cols-1 lg:grid-cols-5 gap-12 lg:gap-16 p-6 md:p-8">
             <div ref={leftColRef} className="lg:col-span-3">
               {showDirectCard ? directLeftContent : formLeftContent}
             </div>
@@ -771,8 +771,8 @@ export default function ContactPage() {
       </section>
 
       {/* ── FAQ ──────────────────────────────────────────────────── */}
-      <section className="bg-mist py-16 md:py-20 border-b border-rule">
-        <div className="max-w-6xl mx-auto px-6 md:px-8">
+      <section className="bg-transparent py-16 md:py-20 border-b border-rule">
+        <div className="glass-paper max-w-6xl mx-auto px-6 md:px-8 py-8 md:py-10">
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate mb-3">Common Questions</p>
           <h2 className="font-serif text-2xl md:text-3xl text-ink mb-10">
             Everything you need to place an account.

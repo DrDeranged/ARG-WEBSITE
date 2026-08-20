@@ -53,8 +53,9 @@ Font stack loaded via `@font-face` in `src/index.css`. Three roles, no exception
   - Page headers (light): `pt-32 pb-10 md:pt-48 md:pb-10`
 - **Separators:** `1px border-rule` only. No `box-shadow`, no `drop-shadow`. Use `border-b border-rule` between sections.
 - **Radii:** `rounded-sm` (2px) for interactive elements. Never exceed `rounded` (4px) for ARG surfaces. Larger radii feel consumer; ARG is institutional.
-- **Sections are opaque:** every `<section>` has an explicit background color (`bg-paper`, `bg-mist`, `bg-ink`). No transparent section backgrounds — they cause compositing glitches and white flashes on scroll.
+- **Three layers:** L0 is the fixed ambient backdrop; L1 is one bounded glass plane for a content section; L2 is text, rules, controls, and imagery. Flat page sections are transparent so L1 can reveal L0. Cinema/video sections remain ink-backed and keep the film layer untouched.
 - **Viewport units:** Use `svh` with a `vh` fallback for layout-sizing heights. Use the `.h-svh` / `.min-h-svh` utility classes defined in `index.css`. Never use `vh` alone for layout heights.
+- **Smoked glass:** The `.glass-paper` and `.glass-ink` utility classes are the sole approved glass surfaces. They have a maximum 4px radius, a 1px material border, static backdrop blur, and no drop shadow; the only exception is `.glass-paper`’s 1px inset top-edge highlight.
 
 ```css
 /* Correct — declared in index.css as .h-svh */
@@ -102,7 +103,31 @@ mm.add('(min-width: 768px)', () => {
 
 ---
 
-## 6. Content Laws
+## 6. Three-Layer Glass Material
+
+Glass is the default material system for UI surfaces. Films, posters, editorial
+images, and ambient video backdrops are media layers, never glass.
+
+| Token | Material |
+|---|---|
+| `.glass-paper` | Paper at 68% minimum opacity, 16px blur and 1.15 saturation on desktop; paper/45 border and paper/60 inset top-edge highlight. |
+| `.glass-ink` | Ink at 55% minimum opacity, 14px blur and 1.1 saturation on desktop; paper/15 border for dark-context panels. |
+| `.glass-field` | A non-blurring paper-glass echo for dense inputs and nested content within an existing L1 panel. |
+
+- On viewports below 768px, both tokens use an 8px blur.
+- Browsers without `backdrop-filter` use 92% opaque fallbacks.
+- Raise the relevant surface opacity in 4% increments when the brightest video frame would make text fail AA. Never darken the footage to compensate.
+- L0 is `.ambient-backdrop`: fixed, pointer-events-none, with subtle ledger baselines and a 90-second transform-only drift. Under reduced motion it is static.
+- Use **one L1 blur plane per section**, not one per row: Why ARG rows, process, estimator, FAQ, careers listings, blog rows, Contact body, CloserBand, and footer are grouped panels.
+- Forms use `.glass-field` inside their shared L1 form plane. Do not create a blurred backdrop per input.
+- Header, command palette, Assist sheet header/tab, status chip, toasts, Trust Strip, and CTA panels use the appropriate L1 token.
+- Never add `will-change: backdrop-filter`, box shadows, or a glass surface inside a scroll-scrubbed transformed ancestor. Animate the material element itself for short entrances, and freeze a pin-scrubbed scale if it drops below 55fps.
+- At any viewport and scroll position, no more than **five** backdrop-filter surfaces may be visible. Demote nested or dense elements to `.glass-field` before exceeding the cap.
+- Tokens use CSS custom properties so dark-mode theming may change the material base without rewriting component classes.
+
+---
+
+## 7. Content Laws
 
 - **No invented facts.** Do not create phone numbers, email addresses, hours, statistics, prices, staff names, case outcomes, or URLs that haven't been verified against the real business.
 - **Unknown = ask.** If a fact is needed but not in the existing codebase, ask the user instead of inventing it.
@@ -111,7 +136,7 @@ mm.add('(min-width: 768px)', () => {
 
 ---
 
-## 7. Shared Section Components
+## 8. Shared Section Components
 
 Extract, don't duplicate. When two pages share a structural pattern, use a shared component from `src/components/`.
 
@@ -125,7 +150,7 @@ Extract, don't duplicate. When two pages share a structural pattern, use a share
 
 ---
 
-## 8. Standing Rules
+## 9. Standing Rules
 
 These apply to every agent session, every prompt, without exception.
 

@@ -1,0 +1,60 @@
+GLASS EVERYWHERE — v2, supersedes the restricted glass pass. Every
+UI surface becomes glassmorphic EXCEPT the motion backgrounds
+themselves (films, posters, ambient backdrop), which stay
+untouched. No motion/scroll/video behavior changes.
+
+1. THREE-LAYER ARCHITECTURE:
+   L0 BACKDROP — films where they exist, PLUS a new site-wide
+   ambient backdrop behind all flat sections: fixed-position
+   layer with a very subtle ink-tinted radial wash that drifts
+   slowly (CSS keyframes, 90s loop, transform-only) over faint
+   ledger baselines at 3%. Static under reduced-motion. This
+   gives every glass surface real content to frost.
+   L1 GLASS — all panels/cards/rows (below).
+   L2 TEXT — unchanged tokens.
+2. GLASS TOKENS (index.css utilities): .glass-paper (paper 68%,
+   blur 16px saturate 1.15, 1px paper/45 border, 1px inner top
+   highlight), .glass-ink (ink 55%, blur 14px, paper/15 border).
+   Mobile <768px: blur 8px. @supports-not fallback: bg opacity
+   92%. Sharp corners, ≤4px radius, no new shadows.
+3. SURFACE CONVERSION — exhaustive:
+   a. HERO LEDGER CARD (the recovery file board) → .glass-paper,
+      the marquee surface; its deck edges become glass outlines.
+   b. Header (scrolled), command palette, assist tab + sheet
+      header, toasts → glass-paper (sheet body stays opaque for
+      reading comfort).
+   c. WHY ARG: the six rows wrap in ONE .glass-paper section
+      panel (rows separated by rules inside it) — one blur plane,
+      not six. SAME single-panel rule for: Process steps,
+      Estimator instrument panel, FAQ accordion, careers
+      listings, blog list rows, contact direct-line block, hours
+      table, what-happens-next, locality card.
+   d. Forms: inputs/selects/textarea become glass-paper fields
+      with rule borders; focus = recovered ring, unchanged.
+   e. Industries tiles panel over the skyline, trust-strip and
+      closing-CTA text blocks → glass-ink.
+   f. Footer: columns wrap in one glass-ink panel over the
+      backdrop (the ink band itself may lighten to 85% so the
+      backdrop breathes through).
+4. PERFORMANCE LAW (critical at this scale): max FIVE
+   backdrop-filter surfaces composited per viewport at any scroll
+   position — the single-panel-per-section rule is how we meet
+   it; audit every scroll position and demote violations to
+   higher-opacity non-blur. Glass surfaces must not sit inside
+   per-frame animated transforms (reveals animate the panel as a
+   unit — fine; scrub-scaling a glass panel re-rasterizes — the
+   hero card's pin-scrub scale: verify fps with ?debugfps, and if
+   it drops below 55, freeze the card's scale during scrub and
+   keep only its translate).
+5. CONTRAST + THEME: AA for all text on every glass surface over
+   the brightest possible backdrop state (film frames included);
+   fix by raising that surface's opacity in 4% steps. All glass
+   internals reference CSS-variable tokens so the dark-mode pass
+   themes them automatically.
+6. Update DESIGN-SYSTEM.md: the material model (L0/L1/L2), the
+   single-panel rule, the five-surface law, and amend
+   _template.tsx to scaffold glass sections by default.
+7. VERIFY: home/contact/blog/careers at desktop + 390px; fps
+   report on hero + cinema + one flat section before/after;
+   reduced-motion (backdrop static, glass intact); build + tsc.
+Commit as "Glass everywhere: three-layer material system".

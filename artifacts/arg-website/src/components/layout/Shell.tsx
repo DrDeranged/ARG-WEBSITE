@@ -99,7 +99,7 @@ function CommandPalette({
       />
       {/* Panel: full-screen on mobile, floating card on desktop */}
       <div
-        className="relative w-full md:max-w-xl bg-paper border-b border-rule md:border md:rounded-sm flex flex-col overflow-hidden h-dvh md:h-auto"
+        className="relative w-full md:max-w-xl glass-paper border-b border-rule md:border md:rounded-sm flex flex-col overflow-hidden h-dvh md:h-auto"
         style={{
           paddingTop: 'env(safe-area-inset-top, 0px)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
@@ -237,25 +237,23 @@ function AssistTab({
           Clicks through to the assist sheet, same as the tab.
       ─────────────────────────────────────────────────────── */}
       <div
+        className="glass-paper relative px-3.5 py-2.5 cursor-pointer select-none"
         aria-hidden={!calloutShown}
         style={{
           opacity:    calloutShown ? 1 : 0,
           transform:  calloutShown ? 'translateY(0) scale(1)' : 'translateY(6px) scale(0.97)',
           transition: 'opacity 380ms ease, transform 380ms ease',
           pointerEvents: calloutShown ? 'auto' : 'none',
+          maxWidth: '13rem',
+          borderLeftWidth: '2px',
+          borderLeftColor: 'var(--color-recovered)',
         }}
+        onClick={handleOpen}
+        role="button"
+        tabIndex={-1}
       >
         <div
-          className="relative bg-paper border border-rule rounded-[4px] px-3.5 py-2.5 cursor-pointer select-none"
-          style={{
-            maxWidth: '13rem',
-            borderLeftWidth: '2px',
-            borderLeftColor: 'var(--color-recovered)',
-            boxShadow: '0 2px 14px rgba(16,31,48,0.10)',
-          }}
-          onClick={handleOpen}
-          role="button"
-          tabIndex={-1}
+          className="contents"
         >
           {/* Down-pointing tail — points toward the tab below */}
           <div
@@ -275,20 +273,18 @@ function AssistTab({
           arg-nudge plays once ~1.2 s after the tab appears.
       ─────────────────────────────────────────────────────── */}
       <div
+        className="glass-paper relative flex items-center overflow-hidden"
         style={{
           opacity:    reducedMotion || tabVisible ? 1 : 0,
           transform:  reducedMotion || tabVisible ? 'translateY(0)' : 'translateY(8px)',
           transition: 'opacity 300ms ease, transform 300ms ease',
           animation:  nudgeActive ? 'arg-nudge 520ms ease forwards' : 'none',
+          borderTopWidth: '2px',
+          borderTopColor: 'var(--color-recovered)',
         }}
       >
         <div
-          className="relative flex items-center bg-paper border border-rule rounded-[4px] overflow-hidden"
-          style={{
-            borderTopWidth: '2px',
-            borderTopColor: 'var(--color-recovered)',
-            boxShadow: '0 2px 12px rgba(16,31,48,0.12)',
-          }}
+          className="contents"
         >
           {/* Recovered stripe accent — thin top bar already provided by
               borderTopColor, this inner shimmer reinforces the brand pop */}
@@ -477,12 +473,13 @@ export function Shell({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-paper font-sans">
+    <div className="min-h-[100dvh] flex flex-col bg-transparent font-sans">
+      <div className="ambient-backdrop" aria-hidden="true" />
       {/* ── Header ────────────────────────────────────── */}
       <header
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
         className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-          isScrolled ? 'bg-paper/95 md:backdrop-blur-md border-b border-rule py-3' : isDarkHero ? 'bg-transparent py-4 md:py-5' : 'bg-paper py-4 md:py-5'
+          isScrolled ? 'glass-paper border-b border-rule py-3' : isDarkHero ? 'glass-ink py-4 md:py-5' : 'glass-paper py-4 md:py-5'
         }`}
       >
         <div className="max-w-6xl mx-auto px-6 md:px-8 flex items-center justify-between gap-6">
@@ -553,7 +550,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
       {/* ── Mobile Menu ───────────────────────────────── */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-paper flex flex-col pt-24 px-6 pb-6 animate-in fade-in duration-200 overflow-y-auto"
+        <div className="fixed inset-0 z-40 glass-paper flex flex-col pt-24 px-6 pb-6 animate-in fade-in duration-200 overflow-y-auto"
           style={{ paddingTop: 'max(6rem, calc(env(safe-area-inset-top, 0px) + 4rem))' }}
         >
           <nav className="flex flex-col gap-6 text-2xl font-serif" aria-label="Mobile navigation">
@@ -589,8 +586,8 @@ export function Shell({ children }: { children: ReactNode }) {
       <main className="flex-1 flex flex-col relative z-10">{children}</main>
 
       {/* ── Footer ────────────────────────────────────── */}
-      <footer className="bg-ink text-paper/80 pt-16 pb-8 border-t-4 border-recovered">
-        <div className="max-w-6xl mx-auto px-6 md:px-8">
+      <footer className="relative z-10 bg-ink/85 text-paper/80 pt-8 pb-8 border-t-4 border-recovered">
+        <div className="glass-ink max-w-6xl mx-auto px-6 md:px-8 pt-8 md:pt-10">
 
           {/* Footer Finale */}
           <div ref={finaleRef} className="pb-16 mb-16 border-b border-paper/10">

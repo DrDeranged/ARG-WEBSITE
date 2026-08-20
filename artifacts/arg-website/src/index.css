@@ -84,6 +84,10 @@
 
 /* LIGHT MODE */
 :root {
+  --glass-paper-base: 0 0% 100%;
+  --glass-ink-base: 212 50% 12.5%;
+  --glass-paper-border: 0 0% 100%;
+  --glass-ink-border: 0 0% 100%;
   --button-outline: rgba(0, 0, 0, 0.1);
   --badge-outline: rgba(0, 0, 0, 0.05);
 
@@ -198,6 +202,10 @@
 }
 
 .dark {
+  --glass-paper-base: 212 50% 12.5%;
+  --glass-ink-base: 0 0% 100%;
+  --glass-paper-border: 0 0% 100%;
+  --glass-ink-border: 0 0% 100%;
   --button-outline: rgba(255, 255, 255, 0.1);
   --badge-outline: rgba(255, 255, 255, 0.05);
   --opaque-button-border-intensity: 9;
@@ -275,6 +283,11 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  .ambient-backdrop::before {
+    animation: none !important;
+    transform: none !important;
+  }
 }
 
 @keyframes ticker-scroll {
@@ -294,6 +307,13 @@
   45%  { transform: translateY(-3px); }
   70%  { transform: translateY(-6px); }
   100% { transform: translateY(0); }
+}
+
+/* L0 material motion: one deliberately slow, transform-only wash behind
+   flat page surfaces. It never participates in scroll or video behavior. */
+@keyframes ambient-drift {
+  0%, 100% { transform: translate3d(-2%, -1%, 0) scale(1.04); }
+  50%      { transform: translate3d(2%, 1.5%, 0) scale(1.08); }
 }
 
 @layer base {
@@ -329,6 +349,57 @@
 }
 
 @layer utilities {
+  /* Three-layer material tokens. Static blur only: never add
+     will-change: backdrop-filter or place L1 below a scrubbed transform. */
+  .glass-paper {
+    background-color: hsl(var(--glass-paper-base) / 0.68);
+    border: 1px solid hsl(var(--glass-paper-border) / 0.45);
+    border-radius: 4px;
+    -webkit-backdrop-filter: blur(16px) saturate(1.15);
+    backdrop-filter: blur(16px) saturate(1.15);
+    box-shadow: inset 0 1px 0 hsl(var(--glass-paper-border) / 0.60);
+  }
+
+  .glass-ink {
+    background-color: hsl(var(--glass-ink-base) / 0.55);
+    border: 1px solid hsl(var(--glass-ink-border) / 0.15);
+    border-radius: 4px;
+    -webkit-backdrop-filter: blur(14px) saturate(1.1);
+    backdrop-filter: blur(14px) saturate(1.1);
+  }
+
+  /* Dense forms live inside one L1 section panel. This echo preserves the
+     material hierarchy without creating a blur surface for every field. */
+  .glass-field {
+    background-color: hsl(var(--glass-paper-base) / 0.52);
+    border: 1px solid hsl(var(--glass-paper-border) / 0.45);
+    border-radius: 4px;
+    box-shadow: inset 0 1px 0 hsl(var(--glass-paper-border) / 0.40);
+  }
+
+  .ambient-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 14% 10%, hsl(159 60% 30% / 0.055), transparent 32rem),
+      radial-gradient(circle at 86% 82%, hsl(212 50% 13% / 0.09), transparent 38rem),
+      hsl(210 33% 96% / 0.78);
+  }
+
+  .ambient-backdrop::before {
+    content: '';
+    position: absolute;
+    inset: -12%;
+    background-image:
+      repeating-linear-gradient(0deg, transparent 0 47px, hsl(212 50% 13% / 0.03) 47px 48px),
+      repeating-linear-gradient(90deg, transparent 0 47px, hsl(212 50% 13% / 0.025) 47px 48px),
+      radial-gradient(ellipse at 50% 50%, hsl(212 50% 13% / 0.035), transparent 55%);
+    animation: ambient-drift 90s ease-in-out infinite;
+  }
+
   /* Link underline system: draws L→R on hover, retracts R→L on leave */
   .link-draw {
     background-image: linear-gradient(to right, currentColor 50%, transparent 50%);
@@ -475,6 +546,21 @@
   .border.active-elevate-2:not(.no-active-interaction-elevate)::after {
     inset: -1px;
   }
+}
+
+/* Blur costs less on touch devices while retaining the material cue. */
+@media (max-width: 767px) {
+  .glass-paper,
+  .glass-ink {
+    -webkit-backdrop-filter: blur(8px) saturate(1.1);
+    backdrop-filter: blur(8px) saturate(1.1);
+  }
+}
+
+/* Readable opaque fallback for browsers without backdrop-filter support. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-paper { background-color: hsl(var(--glass-paper-base) / 0.92); }
+  .glass-ink { background-color: hsl(var(--glass-ink-base) / 0.92); }
 }
 
 /* ── Global horizontal overflow guard + ink paint backstop ───────────── */

@@ -82,7 +82,6 @@ export default function BlogListPage() {
       <PageHeader
         variant="cinema"
         mp4="/videos/hands-ledger.mp4"
-        webm="/videos/hands-ledger.webm"
         poster="/videos/hands-ledger-poster.jpg"
         eyebrow="Insights"
         headline="Insights &amp; updates."
@@ -90,13 +89,13 @@ export default function BlogListPage() {
         ariaLabel="Blog insights listing header"
       />
 
-      {/* ── ARTICLE LEDGER ROWS ──────────────────────────────────────
-          Full-width rule-separated rows — no card background.
+       {/* ── ARTICLE LEDGER ROWS ──────────────────────────────────────
+           One bounded glass ledger, with rule-separated rows inside.
           Recovered appears only as: left accent bar + Read More arrow.
           Title is always ink — never recovered on hover.
       ─────────────────────────────────────────────────────────────── */}
-      <section className="bg-paper py-16 md:py-24 min-h-[50svh]">
-        <div className="max-w-4xl mx-auto px-6 md:px-8">
+      <section className="bg-transparent py-16 md:py-24 min-h-[50svh]">
+        <div className="glass-paper max-w-4xl mx-auto px-6 md:px-8 py-8 md:py-10">
           <div className="flex flex-col">
             {articles.map((article, i) => (
               <div

@@ -402,7 +402,7 @@ export function ArgAssist({ open, onClose }: { open: boolean; onClose: () => voi
       >
         {/* ── Header — ink bar ──────────────────────────────────────── */}
         <header
-          className="bg-ink flex-shrink-0"
+          className="glass-ink flex-shrink-0"
           style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
         >
           <div className="flex items-start justify-between gap-4 px-5 pt-4 pb-3">
