@@ -224,6 +224,7 @@ function ArticleHeader({
 
   return (
     <header
+      data-cinema
       className="relative bg-ink overflow-hidden flex flex-col justify-end"
       style={{ minHeight: '50svh' }}
       aria-label="Article header"

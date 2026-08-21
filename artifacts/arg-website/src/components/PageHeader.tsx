@@ -146,6 +146,7 @@ function CinemaHeader({
 
   return (
     <section
+      data-cinema
       className="relative bg-ink border-b border-ink/20 overflow-hidden min-h-[40vh] md:min-h-[52vh] flex flex-col justify-end"
       aria-label={ariaLabel ?? 'Page header'}
     >

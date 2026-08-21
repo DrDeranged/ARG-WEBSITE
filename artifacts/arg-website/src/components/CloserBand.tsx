@@ -45,7 +45,7 @@ export function CloserBand({
   children,
 }: CloserBandProps) {
   return (
-    <section className="relative bg-ink overflow-hidden py-14 md:py-16">
+    <section data-cinema className="relative bg-ink overflow-hidden py-14 md:py-16">
       {mp4 && poster && (
         <div className="absolute inset-0 z-0">
           <AmbientVideo

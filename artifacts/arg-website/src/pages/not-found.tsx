@@ -16,6 +16,7 @@ export default function NotFound() {
       </Helmet>
 
       <section
+        data-cinema
         className="relative bg-ink overflow-hidden flex flex-col justify-end"
         style={{ minHeight: '100svh' }}
         aria-label="404 — page not found"

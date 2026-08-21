@@ -489,6 +489,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <div className="ambient-backdrop" aria-hidden="true" />
       {/* ── Header ────────────────────────────────────── */}
       <header
+        data-cinema={isDarkHero ? '' : undefined}
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
         className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
           isScrolled ? 'glass-paper border-b border-rule py-3' : isDarkHero ? 'glass-ink py-4 md:py-5' : 'glass-paper py-4 md:py-5'

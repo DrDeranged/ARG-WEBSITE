@@ -50,7 +50,7 @@ export function CinemaBand({
   children,
 }: CinemaBandProps) {
   return (
-    <section className="w-full border-b border-rule">
+    <section data-cinema className="w-full border-b border-rule">
       <div className="relative">
         <AmbientVideo
           mp4={mp4}
