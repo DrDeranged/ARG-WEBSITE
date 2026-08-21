@@ -46,9 +46,10 @@ function OfficeStatusIndicator({ dark = false }: { dark?: boolean }) {
 type PaletteAction = { id: string; label: string; sub: string; icon: ReactNode; action: () => void };
 
 function CommandPalette({
-  onClose, navigate, animated, showAssist,
+  onClose, navigate, animated, showAssist, isDark, onToggleTheme,
 }: {
   onClose: () => void; navigate: (path: string) => void; animated: boolean; showAssist: boolean;
+  isDark: boolean; onToggleTheme: () => void;
 }) {
   const [query, setQuery]      = useState('');
   const [activeIdx, setActive] = useState(0);
@@ -61,6 +62,7 @@ function CommandPalette({
     { id: 'careers', label: 'Careers',     sub: 'View open positions',  icon: <Search size={14} />, action: () => { navigate('/careers/'); onClose(); } },
     { id: 'blog',    label: 'Blog',        sub: 'Insights & updates',   icon: <Search size={14} />, action: () => { navigate('/blog/'); onClose(); } },
     ...(showAssist ? [{ id: 'assist', label: 'ARG Assist', sub: 'AI placement concierge', icon: <Bot size={14} />, action: () => { window.dispatchEvent(new CustomEvent('arg:assist')); onClose(); } } as PaletteAction] : []),
+    { id: 'theme',   label: isDark ? 'Switch to DAY mode' : 'Switch to NIGHT mode', sub: 'Toggle light / dark theme', icon: <Search size={14} />, action: () => { onToggleTheme(); onClose(); } },
     { id: 'call',    label: 'Call (877) 464-8470',                       sub: 'Talk to a specialist',   icon: <Phone size={14} />,        action: () => { window.location.href = 'tel:8774648470'; onClose(); } },
     { id: 'email',   label: 'Email collect@advancedrecoverygroup.com',   sub: 'Send us a message',      icon: <Mail size={14} />,         action: () => { window.location.href = 'mailto:collect@advancedrecoverygroup.com'; onClose(); } },
     { id: 'portal',  label: 'Open Client Portal',                        sub: 'Log in to your account', icon: <ExternalLink size={14} />, action: () => { window.open('https://app.simplicitycollect.com/Login.aspx', '_blank', 'noopener'); onClose(); } },
@@ -335,6 +337,16 @@ export function Shell({ children }: { children: ReactNode }) {
   const [assistOpen, setAssistOpen]           = useState(false);
   const [assistConfigured, setAssistConfigured] = useState<boolean | null>(null);
   const [finaleRevealed, setFinale]           = useState(false);
+  // ── Theme state — synced from html.dark class + localStorage ───────────
+  const [isDark, setIsDark] = useState<boolean>(() =>
+    typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+  );
+  const toggleTheme = useCallback(() => {
+    const next = !isDark;
+    document.documentElement.classList.toggle('dark', next);
+    try { localStorage.setItem('arg-theme', next ? 'dark' : 'light'); } catch {}
+    setIsDark(next);
+  }, [isDark]);
 
   // ── Floating Assist Tab state ───────────────────────────────────────────
   // tabSeenThisSession: user has hit 600px scroll at least once this session
@@ -484,7 +496,11 @@ export function Shell({ children }: { children: ReactNode }) {
       >
         <div className="max-w-6xl mx-auto px-6 md:px-8 flex items-center justify-between gap-6">
           <Link href="/" className="flex items-center gap-3 relative z-50 flex-shrink-0">
-            <img src={isDarkHero ? '/images/logo-light.png' : '/images/logo-dark.png'} alt="Advanced Recovery Group" className="h-8 w-auto object-contain" />
+            <img
+              src={(isDark || isDarkHero) ? '/images/logo-light.png' : '/images/logo-dark.png'}
+              alt="Advanced Recovery Group"
+              className="h-8 w-auto object-contain"
+            />
           </Link>
 
           <nav className="hidden md:flex items-center gap-6" aria-label="Main navigation">
@@ -501,6 +517,21 @@ export function Shell({ children }: { children: ReactNode }) {
 
           <div className="hidden md:flex items-center gap-4 flex-shrink-0">
             <OfficeStatusIndicator />
+            {/* ── DAY / NIGHT toggle ── */}
+            <button
+              onClick={toggleTheme}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              className={`flex items-center font-mono text-[10px] tracking-widest transition-colors ${isDarkHero ? 'text-paper/50 hover:text-paper' : 'text-slate/50 hover:text-ink'}`}
+              style={{ minHeight: '44px', minWidth: '44px', justifyContent: 'center', gap: '2px' }}
+            >
+              <span className={!isDark ? 'text-recovered' : undefined}>
+                {!isDark && <span aria-hidden="true">● </span>}DAY
+              </span>
+              <span className="mx-[2px] opacity-40">/</span>
+              <span className={isDark ? 'text-recovered' : undefined}>
+                NIGHT{isDark && <span aria-hidden="true"> ●</span>}
+              </span>
+            </button>
             <button
               onClick={openPalette}
               aria-label="Open command palette (⌘K)"
@@ -579,6 +610,20 @@ export function Shell({ children }: { children: ReactNode }) {
             >
               <Search size={14} aria-hidden="true" /> Quick Actions
             </button>
+            {/* DAY / NIGHT — full-width row in mobile menu */}
+            <button
+              onClick={toggleTheme}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="flex items-center justify-center gap-1.5 border border-rule px-6 py-4 rounded-sm font-mono text-xs tracking-widest"
+            >
+              <span className={!isDark ? 'text-recovered' : 'text-slate/50'}>
+                {!isDark && <span aria-hidden="true">● </span>}DAY
+              </span>
+              <span className="text-slate/40">/</span>
+              <span className={isDark ? 'text-recovered' : 'text-slate/50'}>
+                NIGHT{isDark && <span aria-hidden="true"> ●</span>}
+              </span>
+            </button>
           </div>
         </div>
       )}
@@ -586,7 +631,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <main className="flex-1 flex flex-col relative z-10">{children}</main>
 
       {/* ── Footer ────────────────────────────────────── */}
-      <footer className="relative z-10 bg-ink/85 text-paper/80 pt-8 pb-8 border-t-4 border-recovered">
+      <footer data-cinema className="relative z-10 bg-ink/85 text-paper/80 pt-8 pb-8 border-t-4 border-recovered">
         <div className="glass-ink max-w-6xl mx-auto px-6 md:px-8 pt-8 md:pt-10">
 
           {/* Footer Finale */}
@@ -620,8 +665,10 @@ export function Shell({ children }: { children: ReactNode }) {
                 Advanced Recovery Group is a full-service commercial collections agency, providing successful management solutions with professionalism and efficiency.
               </p>
               <div className="mt-8">
-                {/* CONFIRM: BBB accreditation active — remove seal if not */}
-                <img src="/images/bbb-seal.svg" alt="BBB Accredited Business" className="h-12 opacity-80" />
+                {/* BBB seal — wrapped in a glass chip in dark mode */}
+                <div className={isDark ? 'inline-flex p-2 bg-paper/[0.08] border border-paper/10 rounded-sm' : ''}>
+                  <img src="/images/bbb-seal.svg" alt="BBB Accredited Business" className="h-12 opacity-80" />
+                </div>
               </div>
             </div>
 
@@ -660,7 +707,7 @@ export function Shell({ children }: { children: ReactNode }) {
       </footer>
 
       {paletteOpen && (
-        <CommandPalette onClose={closePalette} navigate={navigate} animated={paletteAnimated} showAssist={assistConfigured === true} />
+        <CommandPalette onClose={closePalette} navigate={navigate} animated={paletteAnimated} showAssist={assistConfigured === true} isDark={isDark} onToggleTheme={toggleTheme} />
       )}
 
       {/* ── ARG Assist sheet — only mounted when key is configured ── */}

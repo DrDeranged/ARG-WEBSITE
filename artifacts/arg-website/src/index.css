@@ -67,14 +67,14 @@
   --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
 
-  --color-ink: hsl(212 50% 12.5%);
-  --color-paper: hsl(0 0% 100%);
-  --color-mist: hsl(210 33.3% 96.5%);
-  --color-slate: hsl(213 19.5% 36.1%);
-  --color-recovered: hsl(159 60.4% 29.8%);
-  --color-recovered-bright: #27A578;   /* hover/active states of green elements */
-  --color-signal: #D97D0E;             /* amber — Moderate states ONLY */
-  --color-rule: hsl(210 24.1% 87.8%);
+  --color-ink: hsl(var(--arg-ink));
+  --color-paper: hsl(var(--arg-paper));
+  --color-mist: hsl(var(--arg-mist));
+  --color-slate: hsl(var(--arg-slate));
+  --color-recovered: hsl(var(--arg-recovered));
+  --color-recovered-bright: var(--arg-recovered-bright);   /* hover/active states of green elements */
+  --color-signal: var(--arg-signal);                        /* amber — Moderate states ONLY */
+  --color-rule: hsl(var(--arg-rule));
 
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
@@ -84,6 +84,18 @@
 
 /* LIGHT MODE */
 :root {
+  /* ── ARG semantic colour tokens (overridable by .dark) ── */
+  --arg-ink: 212 50% 12.5%;
+  --arg-paper: 0 0% 100%;
+  --arg-mist: 210 33.3% 96.5%;
+  --arg-slate: 213 19.5% 36.1%;
+  --arg-recovered: 159 60.4% 29.8%;
+  --arg-recovered-bright: #27A578;
+  --arg-signal: #D97D0E;
+  --arg-rule: 210 24.1% 87.8%;
+  /* html overscroll backstop — matches ink in light, dark paper in dark */
+  --html-backstop: 212 50% 12.5%;
+
   --glass-paper-base: 0 0% 100%;
   --glass-ink-base: 212 50% 12.5%;
   --glass-paper-border: 0 0% 100%;
@@ -202,50 +214,62 @@
 }
 
 .dark {
-  --glass-paper-base: 212 50% 12.5%;
-  --glass-ink-base: 0 0% 100%;
-  --glass-paper-border: 0 0% 100%;
-  --glass-ink-border: 0 0% 100%;
+  /* ── ARG semantic colour overrides ── */
+  --arg-ink: 210 25% 91%;              /* near-white text on dark */
+  --arg-paper: 214 46% 9%;             /* deep night-navy surface */
+  --arg-mist: 214 35% 14%;             /* dark elevated surface */
+  --arg-slate: 213 22% 62%;            /* readable secondary text */
+  --arg-recovered: 159 65% 38%;        /* slightly brighter green */
+  --arg-recovered-bright: #33C28B;     /* brighter hover green */
+  --arg-signal: #F09030;               /* slightly brighter amber */
+  --arg-rule: 214 28% 20%;             /* dark divider lines */
+  --html-backstop: 214 46% 9%;         /* matches dark paper */
+
+  /* ── Glass internals ── */
+  --glass-paper-base: 214 46% 9%;      /* dark navy glass surface */
+  --glass-ink-base: 210 25% 91%;       /* light glass on dark */
+  --glass-paper-border: 210 25% 91%;   /* light borders */
+  --glass-ink-border: 210 25% 91%;
   --button-outline: rgba(255, 255, 255, 0.1);
   --badge-outline: rgba(255, 255, 255, 0.05);
   --opaque-button-border-intensity: 9;
   --elevate-1: rgba(255, 255, 255, 0.04);
   --elevate-2: rgba(255, 255, 255, 0.09);
 
-  --background: 212 50% 12.5%;
-  --foreground: 0 0% 100%;
-  --border: 213 19.5% 36.1%;
-  --card: 212 50% 12.5%;
-  --card-foreground: 0 0% 100%;
-  --card-border: 213 19.5% 36.1%;
-  --sidebar: 212 50% 12.5%;
-  --sidebar-foreground: 0 0% 100%;
-  --sidebar-border: 213 19.5% 36.1%;
-  --sidebar-primary: 0 0% 100%;
-  --sidebar-primary-foreground: 212 50% 12.5%;
-  --sidebar-accent: 213 19.5% 36.1%;
-  --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 159 60.4% 29.8%;
-  --popover: 212 50% 12.5%;
-  --popover-foreground: 0 0% 100%;
-  --popover-border: 213 19.5% 36.1%;
-  --primary: 0 0% 100%;
-  --primary-foreground: 212 50% 12.5%;
-  --secondary: 213 19.5% 36.1%;
-  --secondary-foreground: 0 0% 100%;
-  --muted: 213 19.5% 36.1%;
-  --muted-foreground: 210 33.3% 96.5%;
-  --accent: 159 60.4% 29.8%;
-  --accent-foreground: 0 0% 100%;
+  --background: 214 46% 9%;
+  --foreground: 210 25% 91%;
+  --border: 214 28% 20%;
+  --card: 214 46% 9%;
+  --card-foreground: 210 25% 91%;
+  --card-border: 214 28% 20%;
+  --sidebar: 214 46% 9%;
+  --sidebar-foreground: 210 25% 91%;
+  --sidebar-border: 214 28% 20%;
+  --sidebar-primary: 210 25% 91%;
+  --sidebar-primary-foreground: 214 46% 9%;
+  --sidebar-accent: 213 22% 62%;
+  --sidebar-accent-foreground: 210 25% 91%;
+  --sidebar-ring: 159 65% 38%;
+  --popover: 214 46% 9%;
+  --popover-foreground: 210 25% 91%;
+  --popover-border: 214 28% 20%;
+  --primary: 210 25% 91%;
+  --primary-foreground: 214 46% 9%;
+  --secondary: 214 35% 14%;
+  --secondary-foreground: 210 25% 91%;
+  --muted: 214 35% 14%;
+  --muted-foreground: 213 22% 62%;
+  --accent: 159 65% 38%;
+  --accent-foreground: 210 25% 91%;
   --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 100%;
-  --input: 213 19.5% 36.1%;
-  --ring: 159 60.4% 29.8%;
-  --chart-1: 159 60.4% 29.8%;
-  --chart-2: 0 0% 100%;
-  --chart-3: 210 33.3% 96.5%;
-  --chart-4: 213 19.5% 36.1%;
-  --chart-5: 210 24.1% 87.8%;
+  --destructive-foreground: 210 25% 91%;
+  --input: 214 28% 20%;
+  --ring: 159 65% 38%;
+  --chart-1: 159 65% 38%;
+  --chart-2: 210 25% 91%;
+  --chart-3: 214 35% 14%;
+  --chart-4: 213 22% 62%;
+  --chart-5: 214 28% 20%;
 
   --shadow-2xs: none;
   --shadow-xs: none;
@@ -255,6 +279,26 @@
   --shadow-lg: none;
   --shadow-xl: none;
   --shadow-2xl: none;
+}
+
+/* ── Cinema-invariant sections: always render in light-mode ink palette ─── */
+/* Hero, ink bands, trust strips, and footer keep absolute colours regardless
+   of the .dark class on <html>. Achieved by re-asserting light-mode arg-*
+   custom properties at the element level, which wins over the html.dark
+   cascade for all descendants. */
+[data-cinema] {
+  --arg-ink: 212 50% 12.5%;
+  --arg-paper: 0 0% 100%;
+  --arg-mist: 210 33.3% 96.5%;
+  --arg-slate: 213 19.5% 36.1%;
+  --arg-recovered: 159 60.4% 29.8%;
+  --arg-recovered-bright: #27A578;
+  --arg-signal: #D97D0E;
+  --arg-rule: 210 24.1% 87.8%;
+  --glass-paper-base: 0 0% 100%;
+  --glass-ink-base: 212 50% 12.5%;
+  --glass-paper-border: 0 0% 100%;
+  --glass-ink-border: 0 0% 100%;
 }
 
 @layer base {
@@ -400,6 +444,20 @@
     animation: ambient-drift 90s ease-in-out infinite;
   }
 
+  /* Dark-mode ambient backdrop — deep navy with subtle green glow */
+  .dark .ambient-backdrop {
+    background:
+      radial-gradient(circle at 14% 10%, hsl(159 65% 38% / 0.07), transparent 32rem),
+      radial-gradient(circle at 86% 82%, hsl(214 46% 18% / 0.4), transparent 38rem),
+      hsl(214 46% 9% / 1);
+  }
+  .dark .ambient-backdrop::before {
+    background-image:
+      repeating-linear-gradient(0deg, transparent 0 47px, hsl(210 25% 91% / 0.018) 47px 48px),
+      repeating-linear-gradient(90deg, transparent 0 47px, hsl(210 25% 91% / 0.012) 47px 48px),
+      radial-gradient(ellipse at 50% 50%, hsl(214 46% 14% / 0.5), transparent 55%);
+  }
+
   /* Link underline system: draws L→R on hover, retracts R→L on leave */
   .link-draw {
     background-image: linear-gradient(to right, currentColor 50%, transparent 50%);
@@ -451,14 +509,14 @@
       repeating-linear-gradient(
         0deg,
         transparent, transparent 47px,
-        hsl(210 24.1% 87.8% / 0.04) 47px,
-        hsl(210 24.1% 87.8% / 0.04) 48px
+        hsl(var(--arg-rule) / 0.06) 47px,
+        hsl(var(--arg-rule) / 0.06) 48px
       ),
       repeating-linear-gradient(
         90deg,
         transparent, transparent 47px,
-        hsl(210 24.1% 87.8% / 0.04) 47px,
-        hsl(210 24.1% 87.8% / 0.04) 48px
+        hsl(var(--arg-rule) / 0.06) 47px,
+        hsl(var(--arg-rule) / 0.06) 48px
       );
   }
 
@@ -565,10 +623,11 @@
 
 /* ── Global horizontal overflow guard + ink paint backstop ───────────── */
 /* ink backstop: any overscroll rubber-band, paint lag, or viewport
-   mismatch shows ink (#101F30), never white. body stays bg-paper. */
+   mismatch shows the backstop colour, never white. body stays bg-paper.
+   --html-backstop is set to ink in light mode, dark paper in dark mode. */
 html {
   overflow-x: hidden;
-  background-color: #101F30;
+  background-color: hsl(var(--html-backstop));
   overscroll-behavior-y: none;
 }
 body {

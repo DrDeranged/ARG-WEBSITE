@@ -150,7 +150,58 @@ Extract, don't duplicate. When two pages share a structural pattern, use a share
 
 ---
 
-## 9. Standing Rules
+## 9. Theming — DAY / NIGHT Mode
+
+The site has a full DAY/NIGHT mode toggle. The `.dark` class is applied to `<html>` and controls a complete token inversion. All colour tokens resolve through CSS custom properties so components never need mode-specific class names.
+
+### How it works
+
+| Layer | Mechanism |
+|---|---|
+| **No-flash script** | Tiny inline `<script>` in `<head>` reads `localStorage['arg-theme']` → `prefers-color-scheme` → `'light'` and applies `.dark` to `<html>` before any stylesheet renders. |
+| **Token system** | All ARG semantic tokens (`--color-ink`, `--color-paper`, etc.) resolve via `hsl(var(--arg-ink))` etc. The `--arg-*` custom properties are set in `:root` (light) and overridden in `.dark {}` (dark). |
+| **React state** | `Shell` tracks `isDark` via `useState` initialised from `document.documentElement.classList.contains('dark')`. `toggleTheme` updates the class AND `localStorage['arg-theme']`. |
+| **Toggle** | Mono **DAY / NIGHT** in the desktop header right cluster (44 px tap target) and a full-width row in the mobile menu. The active word renders in `text-recovered` with a `●` prefix. Also available as a ⌘K palette action. |
+
+### Token values
+
+| `--arg-*` var | Light (`:root`) | Dark (`.dark`) |
+|---|---|---|
+| `--arg-ink` | `212 50% 12.5%` | `210 25% 91%` |
+| `--arg-paper` | `0 0% 100%` | `214 46% 9%` |
+| `--arg-mist` | `210 33.3% 96.5%` | `214 35% 14%` |
+| `--arg-slate` | `213 19.5% 36.1%` | `213 22% 62%` |
+| `--arg-recovered` | `159 60.4% 29.8%` | `159 65% 38%` |
+| `--arg-recovered-bright` | `#27A578` | `#33C28B` |
+| `--arg-signal` | `#D97D0E` | `#F09030` |
+| `--arg-rule` | `210 24.1% 87.8%` | `214 28% 20%` |
+| `--html-backstop` | `212 50% 12.5%` | `214 46% 9%` |
+
+### Cinema-invariant sections
+
+Hero, TrustStrip, Giving Back, Closing CTA, and the footer are **cinema-invariant** — they must render identically in both themes. Mark them with `data-cinema`:
+
+```tsx
+<section data-cinema className="relative isolate bg-ink ...">
+```
+
+The `[data-cinema]` CSS selector re-asserts all `--arg-*` custom properties to their light-mode values at the element level, overriding the `html.dark` cascade for all descendants. This means `bg-ink`, `text-paper`, `glass-ink`, etc. always use the absolute ink-navy values inside these sections regardless of the active theme.
+
+**Rule:** Any new full-bleed ink/video section must carry `data-cinema`. Content sections (glass-paper, bg-mist/paper, bg-background) must NOT carry it — they should respond to the theme.
+
+### Glass internals in dark mode
+
+`.dark` overrides `--glass-paper-base` to `214 46% 9%` (dark navy) and `--glass-ink-base` to `210 25% 91%` (near-white). The blur opacity and border values remain identical. No component class names need to change.
+
+### Logo swap
+
+The header logo source is `(isDark || isDarkHero) ? '/images/logo-light.png' : '/images/logo-dark.png'`. Two files exist:
+- `logo-dark.png` — dark mark on transparent → used in light theme on non-hero pages
+- `logo-light.png` — light mark on transparent → used in dark theme or over the dark hero
+
+---
+
+## 10. Standing Rules
 
 These apply to every agent session, every prompt, without exception.
 
@@ -159,3 +210,4 @@ These apply to every agent session, every prompt, without exception.
 3. **Push via Git pane.** The agent shell cannot authenticate to push. Commits accumulate locally; the user pushes via the Replit Git pane.
 4. **TSC must be clean** before committing. Run `pnpm --filter @workspace/arg-website exec tsc --noEmit`.
 5. **Screenshot at 375px** before marking any page change complete.
+6. **No inline opacity-0.** Elements must never start invisible via JSX `style={{ opacity: 0 }}`. Initial hidden state belongs inside `gsap.set()` / `gsap.from()` inside the `useLayoutEffect` GSAP context. The GSAP context fires synchronously with layout, preventing any flash of styled content.

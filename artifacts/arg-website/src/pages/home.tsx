@@ -303,7 +303,6 @@ function WhyArgSection() {
                 <span
                   ref={el => { numRefs.current[i] = el; }}
                   className="font-mono text-sm text-slate/40 mt-0.5 tabular-nums flex-shrink-0 w-8"
-                  style={reducedMotion ? {} : { opacity: 0 }}
                 >
                   {f.num}
                 </span>
@@ -311,14 +310,12 @@ function WhyArgSection() {
                   <h3
                     ref={el => { titleRefs.current[i] = el; }}
                     className="text-xl font-serif text-ink mb-2"
-                    style={reducedMotion ? {} : { opacity: 0, transform: 'translateY(6px)' }}
                   >
                     {f.title}
                   </h3>
                   <p
                     ref={el => { descRefs.current[i] = el; }}
                     className="text-slate leading-relaxed font-sans max-w-prose"
-                    style={reducedMotion ? {} : { opacity: 0 }}
                   >
                     {f.desc}
                   </p>
@@ -376,6 +373,7 @@ function ProcessSection() {
       checkRefs.current.forEach(el => {
         if (el) el.style.opacity = '0';
       });
+      stepChipRefs.current.forEach(el => el && gsap.set(el, { opacity: 0 }));
 
       // V2: IO-based activation for ALL viewports (no pin)
       gsap.set(imgColRef.current, { opacity: 0, x: 16 });
@@ -479,7 +477,6 @@ function ProcessSection() {
                 <div
                   ref={el => { bodyRefs.current[i] = el; }}
                   className="flex-1"
-                  style={reducedMotion ? {} : { opacity: 0, transform: 'translateY(10px)' }}
                 >
                   {/* Row header: title + ✓ badge right-aligned */}
                   <div className="flex items-start justify-between gap-4 mb-2">
@@ -488,7 +485,7 @@ function ProcessSection() {
                       <span
                         ref={el => { checkRefs.current[i] = el; }}
                         className="font-mono text-xs text-recovered font-semibold whitespace-nowrap mt-1 flex-shrink-0"
-                        style={reducedMotion ? {} : { opacity: 0, transition: 'opacity 0.35s ease' }}
+                        style={reducedMotion ? {} : { transition: 'opacity 0.35s ease' }}
                       >
                         ✓ COMPLETE
                       </span>
@@ -498,7 +495,6 @@ function ProcessSection() {
                   <div
                     ref={el => { stepChipRefs.current[i] = el; }}
                     className="hidden lg:inline-flex items-center gap-2 border border-rule bg-mist px-2.5 py-1 font-mono text-[9px] whitespace-nowrap mb-3"
-                    style={reducedMotion ? {} : { opacity: 0 }}
                     aria-hidden="true"
                   >
                     <span className="text-slate/50">FILE №</span>
@@ -638,12 +634,11 @@ function RecoveryEstimator() {
   useLayoutEffect(() => {
     if (reducedMotion || !ready) return;
     const ctx = gsap.context(() => {
-      gsap.set(sectionRef.current, { opacity: 0, y: 24 });
       createReveal(sectionRef.current, {
         id: 'estimator-reveal',
         start: 'top 85%',
         onEnter: () => {
-          gsap.to(sectionRef.current, { opacity: 1, y: 0, duration: 0.65, ease: 'power2.out' });
+          gsap.from(sectionRef.current, { opacity: 0, y: 24, duration: 0.65, ease: 'power2.out' });
           const proxy = { balance: 0, months: 0 };
           gsap.to(proxy, {
             balance: 500_000,
@@ -681,7 +676,7 @@ function RecoveryEstimator() {
           aria-hidden="true"
         />
       )}
-      <section ref={sectionRef} data-folio-n={4} className="relative isolate glass-paper ledger-grid py-24 md:py-32 border-b border-rule" style={reducedMotion ? {} : { opacity: 0 }}>
+      <section ref={sectionRef} data-folio-n={4} className="relative isolate glass-paper ledger-grid py-24 md:py-32 border-b border-rule">
         <SectionFolio n={4} />
         <div className="max-w-6xl mx-auto px-6 md:px-8">
           <SectionRule />
@@ -976,7 +971,7 @@ function IndustriesSection() {
 ───────────────────────────────────────────────────────── */
 function TrustStrip() {
   return (
-    <section className="relative isolate bg-ink overflow-hidden py-12 md:py-16 border-b border-ink/20">
+    <section data-cinema className="relative isolate bg-ink overflow-hidden py-12 md:py-16 border-b border-ink/20">
       {/* office-floor: barely-there ambient beneath the ink */}
       <div className="absolute inset-0 z-0">
         <AmbientVideo
@@ -1084,7 +1079,7 @@ function GivingBackSection() {
   }, [reducedMotion, ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <section ref={sectionRef} data-folio-n={6} className="relative isolate bg-ink text-paper py-24 md:py-32 border-b border-ink">
+    <section ref={sectionRef} data-cinema data-folio-n={6} className="relative isolate bg-ink text-paper py-24 md:py-32 border-b border-ink">
       <SectionFolio n={6} />
       <div className="glass-ink max-w-6xl mx-auto px-6 md:px-8 py-8 md:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -1096,7 +1091,7 @@ function GivingBackSection() {
             >
               Feeding hope, building community
             </h2>
-            <div ref={copyRef} style={reducedMotion ? {} : { opacity: 0 }}>
+            <div ref={copyRef}>
               <p className="text-paper/80 leading-relaxed mb-6 max-w-prose">
                 At Advanced Recovery Group, our mission extends beyond the ledger. We believe in leveraging our success to create tangible impact globally.
               </p>
@@ -1256,7 +1251,7 @@ function ClosingCTA() {
   }, [reducedMotion, ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <section ref={sectionRef} data-folio-n={7} className="relative isolate bg-ink text-paper py-24 md:py-32 overflow-hidden">
+    <section ref={sectionRef} data-cinema data-folio-n={7} className="relative isolate bg-ink text-paper py-24 md:py-32 overflow-hidden">
       {/* dusk-skyline ambient video — barely-there motion behind the ink band */}
       <div className="absolute inset-0 z-0">
         <AmbientVideo
@@ -1293,7 +1288,6 @@ function ClosingCTA() {
           style={{
             fontSize: 'clamp(2.25rem, 6vw, 4.5rem)',
             letterSpacing: '-0.02em',
-            ...(reducedMotion ? {} : { opacity: 0, transform: 'translateY(12px)' }),
           }}
         >
           {reducedMotion ? PHONE_DISPLAY : <ScramblePhone phone={PHONE_DISPLAY} trigger={phoneTriggered} />}
@@ -1303,7 +1297,6 @@ function ClosingCTA() {
         <p
           ref={taglineRef}
           className="relative text-lg md:text-xl text-paper/80 mb-10 font-sans max-w-prose mx-auto inline-block"
-          style={reducedMotion ? {} : { opacity: 0, transform: 'translateY(8px)' }}
         >
           Still owed? Let&rsquo;s fix that.
           {/* Underline draws after tagline fades in */}
@@ -1526,6 +1519,7 @@ function HeroSection() {
   return (
     <section
       ref={sectionRef}
+      data-cinema
       data-folio-n={1}
       className="relative isolate bg-ink border-b border-ink/20 overflow-hidden md:flex md:items-center hero-height"
     >

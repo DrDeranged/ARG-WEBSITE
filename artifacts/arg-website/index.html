@@ -3,6 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <!-- No-flash theme script: must run before any stylesheet to prevent FOUC -->
+    <script>
+      (function(){
+        try {
+          var t = localStorage.getItem('arg-theme');
+          if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch(e) {}
+      })();
+    </script>
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#101f30" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f4f7fa" media="(prefers-color-scheme: light)" />
     <title>Advanced Recovery Group | Commercial Collections Agency</title>
     <meta name="description" content="Advanced Recovery Group is a full-service B2B commercial collections agency operating exclusively on contingency. No recovery, no fee." />
     <meta name="robots" content="index, follow" />
