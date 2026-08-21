@@ -894,6 +894,7 @@ function IndustriesSection() {
        bg-ink sits under the video so nothing shows through before first paint. */
     <section
       ref={sectionRef}
+      data-cinema
       data-folio-n={5}
       className="relative bg-ink isolate overflow-hidden md:h-svh"
     >
