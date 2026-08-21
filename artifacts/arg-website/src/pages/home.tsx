@@ -362,14 +362,13 @@ function ProcessSection() {
   useLayoutEffect(() => {
     if (reducedMotion || !ready) return;
     const ctx = gsap.context(() => {
-      // Initial states — read rule colour from the live token so dark mode works
-      const ruleHsl = () => `hsl(${getComputedStyle(document.documentElement).getPropertyValue('--arg-rule').trim()})`;
+      // Initial states — use CSS var() references so colours live-update on theme toggle
       bodyRefs.current.forEach(el => el && gsap.set(el, { opacity: 0, y: 10 }));
       dotRefs.current.forEach(el => {
-        if (el) el.style.backgroundColor = ruleHsl();
+        if (el) el.style.setProperty('background-color', 'hsl(var(--arg-rule))');
       });
       numRefs.current.forEach(el => {
-        if (el) el.style.color = ruleHsl();
+        if (el) el.style.setProperty('color', 'hsl(var(--arg-rule))');
       });
       checkRefs.current.forEach(el => {
         if (el) el.style.opacity = '0';
@@ -399,13 +398,9 @@ function ProcessSection() {
           id: `process-step-${i}`,
           start: 'top 78%',
           onEnter: () => {
-            // Read live tokens so activated colours respond to the current theme
-            const root = document.documentElement;
-            const cs = getComputedStyle(root);
-            const inkHsl   = `hsl(${cs.getPropertyValue('--arg-ink').trim()})`;
-            const paperHsl = `hsl(${cs.getPropertyValue('--arg-paper').trim()})`;
-            if (dotRefs.current[i]) dotRefs.current[i]!.style.backgroundColor = inkHsl;
-            if (numRefs.current[i]) numRefs.current[i]!.style.color = paperHsl;
+            // Use CSS var() references so colours live-update when theme toggles
+            if (dotRefs.current[i]) dotRefs.current[i]!.style.setProperty('background-color', 'hsl(var(--arg-ink))');
+            if (numRefs.current[i]) numRefs.current[i]!.style.setProperty('color', 'hsl(var(--arg-paper))');
             gsap.to(bodyRefs.current[i], { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' });
             if (i > 0 && checkRefs.current[i - 1]) {
               checkRefs.current[i - 1]!.style.opacity = '1';

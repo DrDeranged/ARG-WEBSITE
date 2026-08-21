@@ -517,7 +517,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="hidden md:flex items-center gap-4 flex-shrink-0">
-            <OfficeStatusIndicator />
+            <OfficeStatusIndicator dark={isDarkHero} />
             {/* ── DAY / NIGHT toggle ── */}
             <button
               onClick={toggleTheme}
