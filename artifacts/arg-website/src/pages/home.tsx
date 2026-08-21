@@ -461,14 +461,14 @@ function ProcessSection() {
                     ref={el => { dotRefs.current[i] = el; }}
                     className="absolute inset-0 rounded-full"
                     style={{
-                      border: '1px solid hsl(210 24.1% 87.8%)',
-                      backgroundColor: reducedMotion ? 'hsl(212 50% 12.5%)' : 'hsl(210 24.1% 87.8%)',
+                      border: '1px solid hsl(var(--arg-rule))',
+                      backgroundColor: reducedMotion ? 'hsl(var(--arg-ink))' : 'hsl(var(--arg-rule))',
                     }}
                   />
                   <span
                     ref={el => { numRefs.current[i] = el; }}
                     className="relative z-10 font-mono text-[10px] tabular-nums font-bold"
-                    style={{ color: reducedMotion ? 'hsl(246 100% 98%)' : 'hsl(210 24.1% 87.8%)' }}
+                    style={{ color: reducedMotion ? 'hsl(var(--arg-paper))' : 'hsl(var(--arg-rule))' }}
                   >
                     {p.step}
                   </span>
